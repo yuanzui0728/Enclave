@@ -204,7 +204,7 @@ const personalEntries: ExploreEntry[] = [
   {
     key: "favorites",
     label: msg`收藏`,
-    hint: msg`收藏的角色`,
+    hint: msg`收藏的内容`,
     icon: Star,
     to: "/profile/favorites",
   },

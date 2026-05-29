@@ -39,7 +39,7 @@ msgstr "一時停止"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
-msgstr ""
+msgstr "音声の進行状況"
 
 #: apps/app/src/components/avatar-chip.tsx:115
 #: apps/app/src/components/avatar-chip.tsx:132
@@ -49,60 +49,60 @@ msgstr "アバター"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:58
 msgid "轮到对方了，等 TA 看完这一轮"
-msgstr ""
+msgstr "相手のターンです。相手がこのラウンドを確認するまでお待ちください"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:68
 msgid "已想要 · 已匹配"
-msgstr ""
+msgstr "気になる · マッチ済み"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:73
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:86
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:62
 msgid "已略过"
-msgstr ""
+msgstr "スキップ済み"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:75
 msgid "这次相遇结束了"
-msgstr ""
+msgstr "この出会いは終了しました"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:79
 msgid "已选择继续 · 等待对方也想继续"
-msgstr ""
+msgstr "続けることを選択 · 相手の返答を待っています"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:82
 msgid "已想要 · 等待对方"
-msgstr ""
+msgstr "気になる · 相手を待っています"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:124
 msgid "继续聊下去"
-msgstr ""
+msgstr "話し続ける"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:139
 msgid "略过"
-msgstr ""
+msgstr "スキップ"
 
 #: apps/app/src/components/avatar-encounter-decision-bar.tsx:156
 msgid "想要TA的联系方式"
-msgstr ""
+msgstr "連絡先を交換したい"
 
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:18
 msgid "已匹配"
-msgstr ""
+msgstr "マッチ済み"
 
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:42
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:53
 msgid "待查看"
-msgstr ""
+msgstr "確認待ち"
 
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:46
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:57
 msgid "等待对方"
-msgstr ""
+msgstr "相手を待っています"
 
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:62
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:66
 msgid "对方略过"
-msgstr ""
+msgstr "相手にスキップされました"
 
 #: apps/app/src/components/avatar-encounter-inbox-card.tsx:68
 #: apps/app/src/components/chat-message-list.tsx:7570
@@ -114,7 +114,7 @@ msgstr "終了しました"
 
 #: apps/app/src/components/avatar-encounter-transcript.tsx:136
 msgid "匹配理由"
-msgstr ""
+msgstr "マッチした理由"
 
 #: apps/app/src/components/avatar-encounter-transcript.tsx:166
 #: apps/app/src/components/chat-message-list.tsx:6272
@@ -124,7 +124,7 @@ msgstr "会話を続ける"
 
 #: apps/app/src/components/avatar-encounter-transcript.tsx:215
 msgid "点这里直接看全部"
-msgstr ""
+msgstr "ここをタップして全部見る"
 
 #: apps/app/src/components/bootstrap-screen.tsx:43
 #: apps/app/src/routes/splash-page.tsx:222
@@ -343,38 +343,38 @@ msgstr "スクリーンショットに失敗しました。しばらくしてか
 #: apps/app/src/components/chat-composer.tsx:2049
 #: apps/app/src/components/chat-composer.tsx:2168
 msgid "一次最多发送 {MAX_ALBUM_IMAGE_COUNT} 张图片，已为您保留前 {MAX_ALBUM_IMAGE_COUNT} 张。"
-msgstr ""
+msgstr "一度に送れる写真は {MAX_ALBUM_IMAGE_COUNT} 枚までです。最初の {MAX_ALBUM_IMAGE_COUNT} 枚のみ保持されました。"
 
 #. placeholder {0}: Math.round(CHAT_ATTACHMENT_UPLOAD_LIMIT_BYTES / 1024 / 1024)
 #: apps/app/src/components/chat-composer.tsx:1997
 msgid "文件大小不能超过 {0} MB，请压缩后再发送。"
-msgstr ""
+msgstr "ファイルサイズは {0} MB 以内にしてください。圧縮してから送ってください。"
 
 #: apps/app/src/components/chat-composer.tsx:2070
 msgid "粘贴里包含 {skippedNonImageCount} 个非图片文件、{truncatedImageCount} 张超额图片，已只放入前 {MAX_ALBUM_IMAGE_COUNT} 张图片。"
-msgstr ""
+msgstr "貼り付けに {skippedNonImageCount} 個の非画像ファイルと {truncatedImageCount} 枚の超過写真が含まれていました。最初の {MAX_ALBUM_IMAGE_COUNT} 枚の写真のみ追加されました。"
 
 #: apps/app/src/components/chat-composer.tsx:2073
 msgid "粘贴里包含 {skippedNonImageCount} 个非图片文件，已只放入图片；其它文件请再单独粘贴一次。"
-msgstr ""
+msgstr "貼り付けに {skippedNonImageCount} 個の非画像ファイルが含まれていました。画像のみ追加されました。他のファイルは個別に貼り付けてください。"
 
 #. placeholder {0}: pastedFiles.length - 1
 #: apps/app/src/components/chat-composer.tsx:2083
 msgid "一次只能发送一个文件，已放入第一个；剩余 {0} 个请再单独粘贴一次。"
-msgstr ""
+msgstr "一度に送れるファイルは 1 つだけです。最初のファイルが追加されました。残りの {0} 個は個別に貼り付けてください。"
 
 #: apps/app/src/components/chat-composer.tsx:2184
 msgid "这次拖入包含 {skippedNonImageCount} 个非图片文件、{truncatedImageCount} 张超额图片，已只放入前 {MAX_ALBUM_IMAGE_COUNT} 张图片。"
-msgstr ""
+msgstr "ドロップに {skippedNonImageCount} 個の非画像ファイルと {truncatedImageCount} 枚の超過写真が含まれていました。最初の {MAX_ALBUM_IMAGE_COUNT} 枚の写真のみ追加されました。"
 
 #: apps/app/src/components/chat-composer.tsx:2187
 msgid "这次拖入包含 {skippedNonImageCount} 个非图片文件，已只放入图片；其它文件请再单独拖一次。"
-msgstr ""
+msgstr "ドロップに {skippedNonImageCount} 個の非画像ファイルが含まれていました。画像のみ追加されました。他のファイルは個別にドロップしてください。"
 
 #. placeholder {0}: droppedFiles.length - 1
 #: apps/app/src/components/chat-composer.tsx:2197
 msgid "一次只能发送一个文件，已放入第一个；剩余 {0} 个请再单独拖一次。"
-msgstr ""
+msgstr "一度に送れるファイルは 1 つだけです。最初のファイルが追加されました。残りの {0} 個は個別にドロップしてください。"
 
 #: apps/app/src/components/chat-composer.tsx:2680
 #: apps/app/src/components/chat-composer.tsx:7023
@@ -670,7 +670,7 @@ msgstr "Enter で送信"
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:206
 #: apps/app/src/features/world/world-page.tsx:455
 #: apps/app/src/routes/channels-page.tsx:5677
-#: apps/app/src/routes/discover-page.tsx:1139
+#: apps/app/src/routes/discover-page.tsx:1335
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1422
 msgid "发送"
@@ -955,7 +955,7 @@ msgstr "元画像で送信 (Cmd/Ctrl+Enter)"
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-result-card.tsx:115
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:194
 #: apps/app/src/routes/character-detail-page.tsx:400
-#: apps/app/src/routes/discover-page.tsx:1138
+#: apps/app/src/routes/discover-page.tsx:1334
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1120
 #: apps/app/src/routes/welcome-page.tsx:1814
 msgid "发送中..."
@@ -985,7 +985,7 @@ msgstr "返信をキャンセル"
 
 #: apps/app/src/components/chat-composer.tsx:6185
 msgid "@提及成员候选"
-msgstr ""
+msgstr "@メンションの候補メンバー"
 
 #: apps/app/src/components/chat-composer.tsx:6192
 msgid "选择要提到的成员"
@@ -1098,7 +1098,7 @@ msgstr "メッセージの転送を続行"
 
 #: apps/app/src/components/chat-message-list.tsx:1146
 msgid "当前会话暂不支持撤回消息。"
-msgstr ""
+msgstr "このトークでのメッセージ取り消しはサポートされていません。"
 
 #: apps/app/src/components/chat-message-list.tsx:1204
 #: apps/app/src/i18n/static-dom-seed.ts:944
@@ -1116,7 +1116,7 @@ msgstr "取り消しを続行"
 
 #: apps/app/src/components/chat-message-list.tsx:1229
 msgid "当前会话暂不支持删除消息。"
-msgstr ""
+msgstr "このトークでのメッセージ削除はサポートされていません。"
 
 #: apps/app/src/components/chat-message-list.tsx:1276
 #: apps/app/src/i18n/static-dom-seed.ts:946
@@ -1386,11 +1386,11 @@ msgstr "画像プレビューを開けなかったため、このページで表
 
 #: apps/app/src/components/chat-message-list.tsx:2280
 msgid "已存为笔记。"
-msgstr ""
+msgstr "ノートに保存しました。"
 
 #: apps/app/src/components/chat-message-list.tsx:2285
 msgid "存为笔记失败，请稍后再试。"
-msgstr ""
+msgstr "ノートへの保存に失敗しました。もう一度お試しください。"
 
 #: apps/app/src/components/chat-message-list.tsx:2316
 #: apps/app/src/components/chat-message-list.tsx:2347
@@ -1565,16 +1565,16 @@ msgstr "選択したメッセージのお気に入り追加を続行"
 #. placeholder {1}: describeRequestError(firstError)
 #: apps/app/src/components/chat-message-list.tsx:3208
 msgid "已收藏 {0} 条；剩余 {failedCount} 条未收藏：{1}"
-msgstr ""
+msgstr "{0} 件を保存しました。{failedCount} 件は保存できませんでした：{1}"
 
 #. placeholder {0}: fulfilledMessageIds.size
 #: apps/app/src/components/chat-message-list.tsx:3211
 msgid "已收藏 {0} 条；剩余 {failedCount} 条收藏失败，请稍后再试。"
-msgstr ""
+msgstr "{0} 件を保存しました。{failedCount} 件は失敗しました。もう一度お試しください。"
 
 #: apps/app/src/components/chat-message-list.tsx:3214
 msgid "继续收藏剩余消息"
-msgstr ""
+msgstr "残りのメッセージを保存"
 
 #: apps/app/src/components/chat-message-list.tsx:3367
 msgid "已删除 1 条消息。"
@@ -1598,16 +1598,16 @@ msgstr "選択したメッセージの削除を続行"
 #. placeholder {1}: describeRequestError(firstError)
 #: apps/app/src/components/chat-message-list.tsx:3391
 msgid "已删除 {0} 条；剩余 {failedCount} 条未删除：{1}"
-msgstr ""
+msgstr "{0} 件を削除しました。{failedCount} 件は削除できませんでした：{1}"
 
 #. placeholder {0}: deletedMessageIdSet.size
 #: apps/app/src/components/chat-message-list.tsx:3392
 msgid "已删除 {0} 条；剩余 {failedCount} 条删除失败，请稍后再试。"
-msgstr ""
+msgstr "{0} 件を削除しました。{failedCount} 件は失敗しました。もう一度お試しください。"
 
 #: apps/app/src/components/chat-message-list.tsx:3394
 msgid "继续删除剩余消息"
-msgstr ""
+msgstr "残りのメッセージを削除"
 
 #. placeholder {0}: messagesToRecall.length
 #: apps/app/src/components/chat-message-list.tsx:3494
@@ -1635,15 +1635,15 @@ msgstr "選択したメッセージの取り消しを続行"
 #. placeholder {0}: describeRequestError(firstError)
 #: apps/app/src/components/chat-message-list.tsx:3518
 msgid "已撤回 {succeededCount} 条；剩余 {failedCount} 条未撤回：{0}"
-msgstr ""
+msgstr "{succeededCount} 件を取り消しました。{failedCount} 件は取り消せませんでした：{0}"
 
 #: apps/app/src/components/chat-message-list.tsx:3519
 msgid "已撤回 {succeededCount} 条；剩余 {failedCount} 条撤回失败，请稍后再试。"
-msgstr ""
+msgstr "{succeededCount} 件を取り消しました。{failedCount} 件は失敗しました。もう一度お試しください。"
 
 #: apps/app/src/components/chat-message-list.tsx:3521
 msgid "继续撤回剩余消息"
-msgstr ""
+msgstr "残りのメッセージを取り消す"
 
 #: apps/app/src/components/chat-message-list.tsx:3636
 #: apps/app/src/routes/desktop-chat-history-page.tsx:604
@@ -1831,7 +1831,7 @@ msgstr "マイ"
 #: apps/app/src/lib/conversation-preview.ts:113
 #: apps/app/src/routes/character-detail-page.tsx:154
 #: apps/app/src/routes/chat-details-page.tsx:120
-#: apps/app/src/routes/discover-page.tsx:544
+#: apps/app/src/routes/discover-page.tsx:602
 #: apps/app/src/routes/friend-moments-page.tsx:463
 #: apps/app/src/routes/group-chat-details-page.tsx:467
 #: apps/app/src/routes/mobile-add-friend-page.tsx:118
@@ -2306,7 +2306,7 @@ msgstr "記事"
 
 #: apps/app/src/components/chat-message-list.tsx:6561
 msgid "文字动态"
-msgstr ""
+msgstr "テキスト投稿"
 
 #: apps/app/src/components/chat-message-list.tsx:6562
 #: apps/app/src/features/shell/desktop-nav-matching.ts:91
@@ -2316,7 +2316,7 @@ msgstr ""
 #: apps/app/src/lib/message-attachment-semantic.ts:324
 #: apps/app/src/routes/channels-page.tsx:2190
 #: apps/app/src/routes/channels-page.tsx:2498
-#: apps/app/src/routes/discover-page.tsx:213
+#: apps/app/src/routes/discover-page.tsx:218
 #: apps/app/src/routes/favorites-page.tsx:82
 #: apps/app/src/routes/mobile-favorites-page.tsx:129
 msgid "视频号"
@@ -2349,11 +2349,11 @@ msgstr "動画チャンネルを開く"
 
 #: apps/app/src/components/chat-message-list.tsx:6822
 msgid "送你一份礼物"
-msgstr ""
+msgstr "プレゼントを贈ります"
 
 #: apps/app/src/components/chat-message-list.tsx:6828
 msgid "隐界礼物"
-msgstr ""
+msgstr "Enclave ギフト"
 
 #: apps/app/src/components/chat-message-list.tsx:6853
 #: apps/app/src/features/games/farm/components/quest-sheet.tsx:134
@@ -2362,7 +2362,7 @@ msgstr "受領済"
 
 #: apps/app/src/components/chat-message-list.tsx:6855
 msgid "已退回"
-msgstr ""
+msgstr "返却済み"
 
 #: apps/app/src/components/chat-message-list.tsx:6857
 #: apps/app/src/features/desktop/contacts/desktop-contacts-friend-requests-pane.tsx:174
@@ -2374,32 +2374,32 @@ msgstr "期限切れ"
 
 #: apps/app/src/components/chat-message-list.tsx:6859
 msgid "等待对方领取"
-msgstr ""
+msgstr "相手の受け取りを待っています"
 
 #: apps/app/src/components/chat-message-list.tsx:6860
 msgid "领取红包"
-msgstr ""
+msgstr "紅包を受け取る"
 
 #: apps/app/src/components/chat-message-list.tsx:6863
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:182
 msgid "恭喜发财，大吉大利"
-msgstr ""
+msgstr "大吉大利、ご繁栄をお祈りします"
 
 #: apps/app/src/components/chat-message-list.tsx:6896
 msgid "隐界红包"
-msgstr ""
+msgstr "Enclave 紅包"
 
 #: apps/app/src/components/chat-message-list.tsx:6911
 msgid "查看红包"
-msgstr ""
+msgstr "紅包を確認"
 
 #: apps/app/src/components/chat-message-list.tsx:7016
 msgid "暂停语音，时长 {durationLabel}"
-msgstr ""
+msgstr "音声メッセージを一時停止、{durationLabel}"
 
 #: apps/app/src/components/chat-message-list.tsx:7017
 msgid "播放语音，时长 {durationLabel}"
-msgstr ""
+msgstr "音声メッセージを再生、{durationLabel}"
 
 #: apps/app/src/components/chat-message-list.tsx:7133
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:133
@@ -2492,7 +2492,7 @@ msgstr "音声通話"
 
 #: apps/app/src/components/chat-message-list.tsx:7460
 msgid "已超时"
-msgstr ""
+msgstr "タイムアウト"
 
 #: apps/app/src/components/chat-message-list.tsx:7462
 #: apps/app/src/lib/message-attachment-semantic.ts:335
@@ -2503,7 +2503,7 @@ msgstr "接続異常"
 #: apps/app/src/components/chat-message-list.tsx:7464
 #: apps/app/src/lib/message-attachment-semantic.ts:337
 msgid "未接通"
-msgstr ""
+msgstr "応答なし"
 
 #: apps/app/src/components/chat-message-list.tsx:7559
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:253
@@ -2541,7 +2541,7 @@ msgstr "[スタンプ]"
 #: apps/app/src/components/chat-message-list.tsx:8024
 #: apps/app/src/routes/desktop-chat-files-page.tsx:1273
 msgid "图片查看器"
-msgstr ""
+msgstr "画像ビューア"
 
 #: apps/app/src/components/chat-message-list.tsx:8031
 #: apps/app/src/components/chat-message-list.tsx:8073
@@ -2589,7 +2589,7 @@ msgstr "左右にスワイプして画像を切り替え"
 
 #: apps/app/src/components/chat-message-list.tsx:8262
 msgid "位置查看器"
-msgstr ""
+msgstr "位置情報ビューア"
 
 #: apps/app/src/components/chat-message-list.tsx:8269
 #: apps/app/src/components/chat-message-list.tsx:8290
@@ -2621,7 +2621,7 @@ msgstr "無題のメモ"
 
 #: apps/app/src/components/chat-message-list.tsx:8471
 msgid "笔记查看器"
-msgstr ""
+msgstr "ノートビューア"
 
 #: apps/app/src/components/chat-message-list.tsx:8481
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:887
@@ -2897,7 +2897,7 @@ msgstr "画像を保存して X / 小紅書 / Weibo に投稿、もっと多く�
 #: apps/app/src/routes/discover-feed-page.tsx:2238
 #: apps/app/src/routes/discover-feed-page.tsx:2508
 #: apps/app/src/routes/discover-feed-page.tsx:3015
-#: apps/app/src/routes/discover-page.tsx:1047
+#: apps/app/src/routes/discover-page.tsx:1243
 #: apps/app/src/routes/live-companion-page.tsx:396
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:1350
 #: apps/app/src/routes/moments-page.tsx:2686
@@ -2913,8 +2913,8 @@ msgstr "世界の主人"
 
 #: apps/app/src/components/feed-post-share-card-modal.tsx:73
 #: apps/app/src/routes/discover-feed-page.tsx:2509
-#: apps/app/src/routes/discover-page.tsx:822
-#: apps/app/src/routes/discover-page.tsx:1047
+#: apps/app/src/routes/discover-page.tsx:920
+#: apps/app/src/routes/discover-page.tsx:1243
 msgid "居民动态"
 msgstr "住民の投稿"
 
@@ -3040,20 +3040,20 @@ msgstr "紅包は未接続"
 
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:139
 msgid "红包仅在单聊中可用。"
-msgstr ""
+msgstr "紅包は個別トークでのみ使用できます。"
 
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:143
 #: apps/app/src/lib/message-attachment-semantic.ts:347
 msgid "礼物"
-msgstr ""
+msgstr "ギフト"
 
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:148
 msgid "礼物暂未接入"
-msgstr ""
+msgstr "ギフト機能は近日公開予定"
 
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:149
 msgid "送礼物仅在单聊中可用。"
-msgstr ""
+msgstr "ギフトは個別トークでのみ送れます。"
 
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:153
 msgid "转账"
@@ -3475,7 +3475,7 @@ msgstr "動画カバーを生成しました。公開後は動画カードとし
 
 #: apps/app/src/components/moment-compose-media-preview.tsx:161
 msgid "未能生成视频封面，发布后会用首帧兜底。"
-msgstr ""
+msgstr "動画のサムネイルを生成できませんでした。投稿後は先頭フレームが使用されます。"
 
 #. placeholder {0}: draft.file.name || index + 1
 #: apps/app/src/components/moment-compose-media-preview.tsx:208
@@ -3485,7 +3485,7 @@ msgstr "画像 {0} をプレビュー"
 #: apps/app/src/components/moment-compose-media-preview.tsx:212
 #: apps/app/src/components/moment-media-gallery.tsx:587
 msgid "图片预览"
-msgstr ""
+msgstr "画像プレビュー"
 
 #. placeholder {0}: draft.file.name || ""
 #: apps/app/src/components/moment-compose-media-preview.tsx:224
@@ -3565,7 +3565,7 @@ msgstr "ライブ"
 
 #: apps/app/src/components/moment-media-gallery.tsx:724
 msgid "视频预览"
-msgstr ""
+msgstr "動画プレビュー"
 
 #: apps/app/src/components/moment-media-gallery.tsx:792
 msgid "播放视频"
@@ -3784,7 +3784,7 @@ msgstr "通知をミュート"
 #: apps/app/src/routes/chat-list-page.tsx:2202
 #: apps/app/src/routes/chat-list-page.tsx:2221
 msgid "超过 99 条未读消息"
-msgstr ""
+msgstr "99 件以上の未読メッセージ"
 
 #: apps/app/src/components/official-message-entry-row.tsx:133
 #: apps/app/src/components/official-message-entry-row.tsx:159
@@ -3833,7 +3833,7 @@ msgstr "画像を生成中…"
 
 #: apps/app/src/components/share-card-modal.tsx:506
 msgid "处理中…"
-msgstr ""
+msgstr "処理中…"
 
 #: apps/app/src/components/share-card-modal.tsx:506
 msgid "保存 / 分享图片"
@@ -3885,7 +3885,7 @@ msgstr "コメント"
 #: apps/app/src/components/wechat-action-bubble.tsx:247
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:80
 msgid "举报"
-msgstr ""
+msgstr "通報"
 
 #. placeholder {0}: replyTarget.authorName
 #. placeholder {0}: replyTo.authorName
@@ -3902,11 +3902,11 @@ msgstr "コメントを閉じる"
 
 #: apps/app/src/components/wechat-comment-bar.tsx:217
 msgid "回复评论"
-msgstr ""
+msgstr "コメントに返信"
 
 #: apps/app/src/components/wechat-comment-bar.tsx:217
 msgid "发表评论"
-msgstr ""
+msgstr "コメントを追加"
 
 #: apps/app/src/components/wechat-comment-bar.tsx:286
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:324
@@ -3918,16 +3918,16 @@ msgstr "送信中"
 
 #: apps/app/src/components/wechat-moment-card.tsx:247
 msgid "朗读生成失败"
-msgstr ""
+msgstr "読み上げに失敗しました"
 
 #: apps/app/src/components/wechat-moment-card.tsx:519
 #: apps/app/src/components/wechat-moment-card.tsx:528
 msgid "朗读这条朋友圈"
-msgstr ""
+msgstr "この投稿を読み上げる"
 
 #: apps/app/src/components/wechat-moment-card.tsx:527
 msgid "正在合成…"
-msgstr ""
+msgstr "合成中…"
 
 #: apps/app/src/components/wechat-moment-card.tsx:750
 msgid "{diffMin} 分钟前"
@@ -3945,7 +3945,7 @@ msgstr "昨日"
 
 #: apps/app/src/components/wechat-moment-card.tsx:782
 msgid "{calendarDayDiff} 天前"
-msgstr ""
+msgstr "{calendarDayDiff} 日前"
 
 #: apps/app/src/components/wechat-moment-card.tsx:787
 msgid "{month}月{day}日"
@@ -4078,42 +4078,42 @@ msgstr "パスワードを更新"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:130
 msgid "验证码已发送至你的手机，请查收短信。"
-msgstr ""
+msgstr "確認コードをお客様の携帯電話に送信しました。SMSをご確認ください。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:164
 #: apps/app/src/features/account-security/delete-account-panel.tsx:217
 msgid "账号已注销，即将退出。"
-msgstr ""
+msgstr "アカウントが削除されました。サインアウトします。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:176
 msgid "注销账号失败，请稍后重试。"
-msgstr ""
+msgstr "アカウントの削除に失敗しました。後でもう一度お試しください。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:185
 msgid "请输入收到的 6 位验证码。"
-msgstr ""
+msgstr "受け取った 6 桁のコードを入力してください。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:199
 msgid "请先勾选确认你已了解注销的后果。"
-msgstr ""
+msgstr "アカウント削除の影響を理解したことを確認するためにチェックを入れてください。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:226
 msgid "云账号会话已失效，请重新登录后再注销账号。"
-msgstr ""
+msgstr "クラウドアカウントのセッションが切れています。アカウントを削除する前に、再度ログインしてください。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:242
 msgid "注销将停用你的云账号并取消生效中的订阅。注销后账号无法登录，数据将被永久归档且不可恢复；用同一手机号/邮箱重新注册将得到一个全新的空账号，不会找回任何原有数据。"
-msgstr ""
+msgstr "アカウントを削除すると、クラウドアカウントが無効になり、有効なサブスクリプションもすべてキャンセルされます。削除後はログインできなくなり、データは永久にアーカイブされて復元できません。同じ電話番号またはメールアドレスで再登録しても、まったく新しい空のアカウントが作成され、以前のデータは引き継がれません。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:256
 #: apps/app/src/routes/profile-settings-account-security-page.tsx:61
 #: apps/app/src/routes/profile-settings-desktop.tsx:918
 msgid "注销账号"
-msgstr ""
+msgstr "アカウントを削除"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:262
 msgid "为确认是你本人操作，我们会向你的手机或绑定邮箱发送验证码。输入验证码并勾选确认后，账号将被注销。"
-msgstr ""
+msgstr "本人確認のため、登録の電話番号またはメールアドレスに確認コードを送信します。コードを入力してチェックボックスにチェックを入れると、アカウントが削除されます。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:268
 #: apps/app/src/routes/welcome-page.tsx:1748
@@ -4123,19 +4123,19 @@ msgstr "認証コード"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:268
 msgid "手机验证码"
-msgstr ""
+msgstr "SMS認証コード"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:322
 msgid "我已了解：注销后账号无法登录，数据将被永久归档且不可恢复；重新注册不会找回原有数据。"
-msgstr ""
+msgstr "了承しました：削除後はログインできなくなり、データは永久にアーカイブされて復元できません。再登録しても以前のデータは引き継がれません。"
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:350
 msgid "注销中..."
-msgstr ""
+msgstr "削除中..."
 
 #: apps/app/src/features/account-security/delete-account-panel.tsx:351
 msgid "永久注销账号"
-msgstr ""
+msgstr "アカウントを完全に削除"
 
 #: apps/app/src/features/channels/channels-section-badge.ts:12
 msgid "朋友视频号"
@@ -4320,7 +4320,7 @@ msgid "视频通话暂未开放"
 msgstr "ビデオ通話はまだ利用できません"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:10
-#: apps/app/src/routes/discover-page.tsx:83
+#: apps/app/src/routes/discover-page.tsx:88
 #: apps/app/src/routes/discover-scene-page.tsx:50
 msgid "咖啡馆"
 msgstr "カフェ"
@@ -4330,7 +4330,7 @@ msgid "窗边有热咖啡和低声播放的爵士乐。"
 msgstr "窓際にはホットコーヒーと小さく流れるジャズ。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:15
-#: apps/app/src/routes/discover-page.tsx:85
+#: apps/app/src/routes/discover-page.tsx:90
 #: apps/app/src/routes/discover-scene-page.tsx:52
 msgid "图书馆"
 msgstr "図書館"
@@ -4340,7 +4340,7 @@ msgid "安静的阅读区里，翻页声比说话声更清楚。"
 msgstr "静かな読書エリアでは、ページをめくる音が話し声よりはっきり聞こえます。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:20
-#: apps/app/src/routes/discover-page.tsx:86
+#: apps/app/src/routes/discover-page.tsx:91
 #: apps/app/src/routes/discover-scene-page.tsx:53
 msgid "公园"
 msgstr "公園"
@@ -4350,7 +4350,7 @@ msgid "树荫、长椅和慢下来的傍晚风。"
 msgstr "木陰、ベンチ、そしてゆっくり吹く夕方の風。"
 
 #: apps/app/src/features/chat/chat-location-scenes.ts:25
-#: apps/app/src/routes/discover-page.tsx:84
+#: apps/app/src/routes/discover-page.tsx:89
 #: apps/app/src/routes/discover-scene-page.tsx:51
 msgid "健身房"
 msgstr "ジム"
@@ -4471,7 +4471,7 @@ msgstr "時間フィルター"
 #. placeholder {0}: activeCategoryMeta.shortLabel
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:422
 msgid "没有来自 {senderFilterDisplayLabel} 的{0}"
-msgstr ""
+msgstr "{senderFilterDisplayLabel} からの{0}はありません"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:434
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1971
@@ -4506,7 +4506,7 @@ msgstr "検索"
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:458
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:421
 msgid "搜索聊天记录"
-msgstr ""
+msgstr "チャット履歴を検索"
 
 #. placeholder {0}: indexedMessages.length
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:479
@@ -4938,12 +4938,12 @@ msgstr "相手が返信中..."
 #: apps/app/src/features/chat/conversation-thread-panel.tsx:361
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:799
 msgid "新消息"
-msgstr ""
+msgstr "新しいメッセージ"
 
 #: apps/app/src/features/chat/conversation-thread-panel.tsx:367
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:805
 msgid "{senderName}：{preview}"
-msgstr ""
+msgstr "{senderName}：{preview}"
 
 #: apps/app/src/features/chat/conversation-thread-panel.tsx:982
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:2025
@@ -5013,15 +5013,15 @@ msgstr "この機能は未公開です。お楽しみに。"
 
 #: apps/app/src/features/chat/delegation-collaboration-fold.tsx:17
 msgid "正在安排助手…"
-msgstr ""
+msgstr "アシスタントを手配中…"
 
 #: apps/app/src/features/chat/delegation-collaboration-fold.tsx:19
 msgid "助手正在处理…"
-msgstr ""
+msgstr "アシスタントが処理中…"
 
 #: apps/app/src/features/chat/delegation-collaboration-fold.tsx:21
 msgid "正在为你汇总…"
-msgstr ""
+msgstr "まとめています…"
 
 #: apps/app/src/features/chat/delegation-collaboration-fold.tsx:23
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:475
@@ -5030,20 +5030,20 @@ msgstr "処理済み"
 
 #: apps/app/src/features/chat/delegation-collaboration-fold.tsx:25
 msgid "暂时没能处理"
-msgstr ""
+msgstr "現在処理できませんでした"
 
 #: apps/app/src/features/chat/delegation-collaboration-fold.tsx:55
 msgid "{expertNames} 正在帮你看"
-msgstr ""
+msgstr "{expertNames} が確認中です"
 
 #: apps/app/src/features/chat/delegation-collaboration-fold.tsx:56
 msgid "{expertNames} 已经帮你看过了"
-msgstr ""
+msgstr "{expertNames} が確認しました"
 
 #. placeholder {0}: delegation.expertName
 #: apps/app/src/features/chat/delegation-collaboration-fold.tsx:154
 msgid "补充点信息给{0}…"
-msgstr ""
+msgstr "{0} に補足情報を追加…"
 
 #: apps/app/src/features/chat/digital-human-entry-guard.ts:20
 #: apps/app/src/lib/error-translate.ts:516
@@ -5092,11 +5092,11 @@ msgstr "デジタルヒューマンテンプレートが未設定"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:21
 msgid "外部数字人的播放地址还没配好，视频通话会先用占位画面，或切回内置模式。"
-msgstr ""
+msgstr "外部デジタルヒューマンの再生URLがまだ設定されていません。ビデオ通話は今のところプレースホルダー画面を使用するか、内蔵モードにフォールバックします。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:25
 msgid "外部数字人 `playerUrlTemplate` 没填。请到 Admin 的数字人服务配置里补上播放地址，再回来测试视频通话。"
-msgstr ""
+msgstr "外部デジタルヒューマンの `playerUrlTemplate` が未入力です。Admin の「デジタルヒューマンサービス設定」で再生URLを入力してから、ビデオ通話をテストしてください。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:32
 msgid "数字人回调未配置"
@@ -5104,11 +5104,11 @@ msgstr "デジタルヒューマンのコールバックが未設定"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:34
 msgid "播放地址已经填好了，但外部服务那边的状态回传还没配，画面就绪通知拿不到。"
-msgstr ""
+msgstr "再生URLは設定済みですが、外部サービスのステータスコールバックが未設定のため、画面準備完了通知を受け取れません。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:38
 msgid "数字人服务的回调 token 没填。建议先补 `callbackToken`，否则外部播放器没法把画面状态回传到当前会话。"
-msgstr ""
+msgstr "デジタルヒューマンサービスのコールバックトークンが未設定です。`callbackToken` を入力することをお勧めします。設定しないと、外部プレーヤーが現在のセッションに再生ステータスを返せません。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:45
 msgid "数字人参数无效"
@@ -5116,11 +5116,11 @@ msgstr "デジタルヒューマンのパラメータが無効です"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:47
 msgid "外部服务的参数 JSON 解析失败了，播放地址虽然填了，但外部数字人需要的参数没传进去。"
-msgstr ""
+msgstr "外部サービスのパラメータJSONの解析に失敗しました。再生URLは設定されていますが、外部デジタルヒューマンに必要なパラメータが渡されませんでした。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:51
 msgid "数字人服务的参数 JSON 不合法。请到 Admin 修正 `providerParams`，确认 JSON 没问题后再试一次视频通话。"
-msgstr ""
+msgstr "デジタルヒューマンサービスのパラメータJSONが無効です。Admin で `providerParams` を修正してから、ビデオ通話を再試行してください。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:57
 msgid "数字人待配置"
@@ -5128,7 +5128,7 @@ msgstr "デジタルヒューマンは設定待ち"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:59
 msgid "外部数字人服务还没准备好，视频通话会先用占位画面，等配置好再切过去。"
-msgstr ""
+msgstr "外部デジタルヒューマンサービスはまだ準備できていません。設定が完了するまで、ビデオ通話はプレースホルダー画面を使用します。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:68
 msgid "外部数字人已就绪"
@@ -5137,16 +5137,16 @@ msgstr "外部デジタルヒューマンは準備完了"
 #. placeholder {0}: gateway.paramsCount
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:72
 msgid "外部数字人服务已就绪，已传入 {0} 个参数，接下来会优先用外部画面。"
-msgstr ""
+msgstr "外部デジタルヒューマンサービスの準備が完了しました。{0} 個のパラメータが渡されました。今後は外部映像を優先して使用します。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:75
 msgid "外部数字人服务已就绪，接下来会优先用外部画面。"
-msgstr ""
+msgstr "外部デジタルヒューマンサービスの準備が完了しました。今後は外部映像を優先して使用します。"
 
 #. placeholder {0}: gateway.paramsKeys.join(" / ")
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:81
 msgid "外部数字人服务已接通，当前参数：{0}。"
-msgstr ""
+msgstr "外部デジタルヒューマンサービスに接続しました。現在のパラメータ：{0}。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:89
 msgid "数字人模拟模式"
@@ -5154,11 +5154,11 @@ msgstr "デジタルヒューマンシミュレーションモード"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:91
 msgid "当前用的是内置数字人画面，可以正常对话，只是还没切到外部真实视频。"
-msgstr ""
+msgstr "内蔵デジタルヒューマン画面を使用中です。通常通り会話できますが、外部のリアル映像にはまだ切り替わっていません。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:95
 msgid "当前视频通话用内置数字人画面承载，可以先验证会话、语音和状态。"
-msgstr ""
+msgstr "ビデオ通話は内蔵デジタルヒューマン画面で動作中です。セッション、音声、ステータスを先に確認できます。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:101
 msgid "数字人内置播放器"
@@ -5167,11 +5167,11 @@ msgstr "デジタルヒューマン内蔵プレーヤー"
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:103
 #: apps/app/src/i18n/static-dom-seed.ts:1001
 msgid "当前用的是内置数字人播放器，播放框架已经联通，但还没切到外部真实服务。"
-msgstr ""
+msgstr "内蔵デジタルヒューマンプレーヤーを使用中です。再生フレームワークは接続済みですが、外部のリアルサービスにはまだ切り替わっていません。"
 
 #: apps/app/src/features/chat/digital-human-gateway-copy.ts:107
 msgid "当前视频通话用内置播放器，占位通话可用，但还不是外部真实数字人服务。"
-msgstr ""
+msgstr "ビデオ通話は内蔵プレーヤーを使用中です。プレースホルダー通話は利用できますが、外部デジタルヒューマンサービスはまだ有効ではありません。"
 
 #: apps/app/src/features/chat/digital-human-player.tsx:34
 msgid "视频流"
@@ -5189,7 +5189,7 @@ msgstr "再接続"
 
 #: apps/app/src/features/chat/digital-human-player.tsx:86
 msgid "{name} 的视频播放器"
-msgstr ""
+msgstr "{name} のビデオプレーヤー"
 
 #: apps/app/src/features/chat/digital-human-player.tsx:110
 #: apps/app/src/features/chat/digital-human-player.tsx:215
@@ -5388,7 +5388,7 @@ msgstr "{0} のグループ通話履歴を表示"
 #. placeholder {0}: invite.groupName
 #: apps/app/src/features/chat/group-call-card.ts:67
 msgid "回到 {0} 的群通话"
-msgstr ""
+msgstr "{0} のグループ通話に戻る"
 
 #. placeholder {0}: invite.groupName
 #: apps/app/src/features/chat/group-call-card.ts:77
@@ -5572,7 +5572,7 @@ msgstr "メッセージメニューを閉じる"
 
 #: apps/app/src/features/chat/group-message-context-menu.tsx:212
 msgid "消息操作菜单"
-msgstr ""
+msgstr "メッセージアクションメニュー"
 
 #: apps/app/src/features/chat/group-message-context-menu.tsx:240
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:265
@@ -5611,7 +5611,7 @@ msgstr "元のメッセージ"
 
 #: apps/app/src/features/chat/message-quote-selection-sheet.tsx:188
 msgid "原消息内容"
-msgstr ""
+msgstr "元のメッセージ内容"
 
 #: apps/app/src/features/chat/message-quote-selection-sheet.tsx:212
 msgid "将引用：{selectedText}"
@@ -5669,7 +5669,7 @@ msgstr "通話は一時的に利用できません"
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:974
 #: apps/app/src/routes/create-group-page.tsx:674
 msgid "正在重试..."
-msgstr ""
+msgstr "再試行中..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:671
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:701
@@ -5721,7 +5721,7 @@ msgstr "音声通話を開始できません"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:811
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1012
 msgid "桌面端通话入口已收口到聊天顶部工具栏。"
-msgstr ""
+msgstr "デスクトップでは、通話ボタンがチャット上部のツールバーに移動しました。"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:829
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1030
@@ -5738,7 +5738,7 @@ msgstr "デスクトップ版ではチャットページから音声通話を続
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:842
 msgid "这个独立页面主要给手机端通话用。桌面端已经改成在聊天页里直接打开通话，这样消息、侧栏和通话控制会保持在同一窗口里。"
-msgstr ""
+msgstr "このページは主にモバイルの通話用です。デスクトップでは、通話がチャットページ内で直接開くようになり、メッセージ・サイドバー・通話コントロールが同じウィンドウに表示されます。"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:850
 #: apps/app/src/i18n/static-dom-seed.ts:498
@@ -5757,7 +5757,7 @@ msgstr "会話の相手"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:878
 msgid "回到聊天页后，点顶部通话按钮就能进入桌面通话。"
-msgstr ""
+msgstr "チャットページに戻り、上部の通話ボタンをタップするとデスクトップ通話が始まります。"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:890
 msgid "返回聊天继续"
@@ -5770,7 +5770,7 @@ msgstr "チャット情報を表示"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:943
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1191
 msgid "网络不稳定，请重试"
-msgstr ""
+msgstr "接続が不安定です。もう一度お試しください"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:971
 msgid "没有自动播报，点一下继续"
@@ -5784,7 +5784,7 @@ msgstr "自動再生されていません、タップで再生"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:976
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1207
 msgid "补播"
-msgstr ""
+msgstr "補完再生"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1004
 msgid "切换到语音"
@@ -5792,14 +5792,14 @@ msgstr "音声に切替"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-#: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
-msgid "挂断"
-msgstr "切断"
+msgid "挂断中..."
+msgstr "切断中..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "切断中..."
+#: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
+msgid "挂断"
+msgstr "切断"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -5836,7 +5836,7 @@ msgstr "応答を待っています..."
 
 #: apps/app/src/features/chat/mobile-chat-scroll-bottom-button.tsx:28
 msgid "查看 {badgeLabel} 条新消息"
-msgstr ""
+msgstr "{badgeLabel} 件の新しいメッセージを見る"
 
 #: apps/app/src/features/chat/mobile-chat-scroll-bottom-button.tsx:29
 #: apps/app/src/features/chat/mobile-chat-scroll-bottom-button.tsx:42
@@ -5846,7 +5846,7 @@ msgstr "最下部へ戻る"
 
 #: apps/app/src/features/chat/mobile-chat-scroll-bottom-button.tsx:42
 msgid "{badgeLabel} 条新消息"
-msgstr ""
+msgstr "{badgeLabel} 件の新しいメッセージ"
 
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:873
 #: apps/app/src/i18n/static-dom-seed.ts:996
@@ -5895,7 +5895,7 @@ msgstr "デスクトップ版ではチャットページからグループ音声
 
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1043
 msgid "这个独立页面主要给手机端通话用。桌面端已经改成在群聊页里直接打开通话，这样成员列表、聊天记录和侧栏信息会保持在同一窗口里。"
-msgstr ""
+msgstr "このページは主にモバイルの通話用です。デスクトップでは、通話がグループチャットページ内で直接開くようになり、メンバーリスト・チャット履歴・サイドバーが同じウィンドウに表示されます。"
 
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1069
 msgid "成员规模"
@@ -5958,7 +5958,7 @@ msgstr "ここまで選択"
 
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:66
 msgid "存为笔记"
-msgstr ""
+msgstr "ノートとして保存"
 
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:198
 #: apps/app/src/i18n/static-dom-seed.ts:939
@@ -5995,48 +5995,48 @@ msgstr "リマインダーバーを一時的に閉じる"
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:123
 #: apps/app/src/features/wallet/wallet-format.ts:49
 msgid "发红包"
-msgstr ""
+msgstr "紅包を送る"
 
 #. placeholder {0}: formatCents(balanceCents, currency)
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:127
 msgid "钱包余额 {0}，金额将从钱包扣除。"
-msgstr ""
+msgstr "ウォレット残高 {0}。金額はウォレットから差し引かれます。"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:128
 msgid "金额将从钱包余额扣除。"
-msgstr ""
+msgstr "金額はウォレット残高から差し引かれます。"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:171
 msgid "自定义金额（最高 ¥{MAX_YUAN}）"
-msgstr ""
+msgstr "カスタム金額（上限 ¥{MAX_YUAN}）"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:172
 msgid "自定义红包金额"
-msgstr ""
+msgstr "紅包金額をカスタム"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:183
 msgid "红包祝福语"
-msgstr ""
+msgstr "紅包メッセージ"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:189
 msgid "单个红包最高 ¥{MAX_YUAN}。"
-msgstr ""
+msgstr "1件の紅包の上限は ¥{MAX_YUAN} です。"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:193
 msgid "钱包余额不足。"
-msgstr ""
+msgstr "ウォレット残高が不足しています。"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:200
 msgid "去充值"
-msgstr ""
+msgstr "チャージする"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:232
 msgid "发送中…"
-msgstr ""
+msgstr "送信中…"
 
 #: apps/app/src/features/chat/red-packet-compose-dialog.tsx:232
 msgid "塞钱进红包"
-msgstr ""
+msgstr "紅包に入金する"
 
 #. placeholder {0}: task.title
 #: apps/app/src/features/chat/reminder-task-panel.tsx:88
@@ -6900,7 +6900,7 @@ msgstr "画像や GIF を追加し続けられます。よく使うものを残�
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:2721
 msgid "自定义表情排序"
-msgstr ""
+msgstr "スタンプの並び順をカスタム"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:2731
 msgid "最近添加"
@@ -6939,7 +6939,7 @@ msgstr "先頭項目のグループ"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:3097
 msgid "表情包切换"
-msgstr ""
+msgstr "スタンプパックを切り替え"
 
 #: apps/app/src/features/chat/stickers/sticker-panel.tsx:3314
 msgid "删除自定义表情"
@@ -6957,7 +6957,7 @@ msgstr "ネットワークに一時的に接続できません。メッセージ
 #: apps/app/src/features/chat/use-conversation-thread.ts:892
 #: apps/app/src/features/chat/use-conversation-thread.ts:934
 msgid "这位联系人暂时不可用，请稍后再试。"
-msgstr ""
+msgstr "この連絡先は現在利用できません。しばらくしてからもう一度お試しください。"
 
 #. placeholder {0}: sticker.label || sticker.stickerId
 #: apps/app/src/features/chat/use-conversation-thread.ts:907
@@ -7003,19 +7003,19 @@ msgstr "音声は生成されましたがブラウザで再生されませんで
 
 #: apps/app/src/features/chat/use-group-voice-call-session.ts:409
 msgid "系统拦截了自动播报，点\"重播上一句\"即可播放。"
-msgstr ""
+msgstr "システムにより自動再生がブロックされました。「直前を再生」をタップすると再生できます。"
 
 #: apps/app/src/features/chat/use-group-voice-call-session.ts:410
 msgid "浏览器拦截了自动播报，点\"重播上一句\"即可播放。"
-msgstr ""
+msgstr "ブラウザにより自動再生がブロックされました。「直前を再生」をタップすると再生できます。"
 
 #: apps/app/src/features/chat/use-group-voice-call-session.ts:415
 msgid "语音已生成，但当前设备没有成功播放。可以点\"重播上一句\"再试。"
-msgstr ""
+msgstr "音声は生成されましたが、このデバイスでの再生に失敗しました。「直前を再生」をタップしてみてください。"
 
 #: apps/app/src/features/chat/use-group-voice-call-session.ts:416
 msgid "语音已生成，但浏览器没有成功播放。可以点\"重播上一句\"再试。"
-msgstr ""
+msgstr "音声は生成されましたが、ブラウザでの再生に失敗しました。「直前を再生」をタップしてみてください。"
 
 #: apps/app/src/features/chat/use-message-reminders.ts:99
 #: apps/app/src/features/chat/use-message-reminders.ts:119
@@ -7266,7 +7266,7 @@ msgstr "タグが一致"
 #: apps/app/src/features/contacts/voice-picker.tsx:255
 #: apps/app/src/routes/character-detail-page.tsx:2342
 msgid "默认（跟随系统）"
-msgstr ""
+msgstr "デフォルト（システムに従う）"
 
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:182
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:389
@@ -7306,7 +7306,8 @@ msgstr "ニックネーム: {0}"
 #: apps/app/src/routes/contacts-page.tsx:1832
 #: apps/app/src/routes/discover-encounter-page.tsx:201
 #: apps/app/src/routes/discover-encounter-page.tsx:430
-#: apps/app/src/routes/discover-page.tsx:396
+#: apps/app/src/routes/discover-page.tsx:443
+#: apps/app/src/routes/discover-page.tsx:965
 #: apps/app/src/routes/world-characters-page.tsx:338
 #: apps/app/src/routes/world-characters-page.tsx:496
 msgid "世界角色"
@@ -7479,8 +7480,8 @@ msgstr "ソーシャルとコンテンツ"
 #: apps/app/src/features/world/world-page.tsx:149
 #: apps/app/src/i18n/static-dom-seed.ts:33
 #: apps/app/src/routes/character-detail-page.tsx:412
-#: apps/app/src/routes/discover-page.tsx:129
-#: apps/app/src/routes/discover-page.tsx:770
+#: apps/app/src/routes/discover-page.tsx:134
+#: apps/app/src/routes/discover-page.tsx:868
 #: apps/app/src/routes/favorites-page.tsx:80
 #: apps/app/src/routes/friend-moments-page.tsx:1172
 #: apps/app/src/routes/mobile-favorites-page.tsx:127
@@ -7604,7 +7605,7 @@ msgstr "デフォルトで音声で返信"
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:468
 #: apps/app/src/routes/character-detail-page.tsx:2337
 msgid "音色"
-msgstr ""
+msgstr "音声"
 
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:478
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:559
@@ -7693,7 +7694,7 @@ msgstr "デスクトップの連絡先に切り替え中"
 
 #: apps/app/src/features/contacts/contacts-route-redirect-shell.tsx:58
 msgid "正在同步路由并切换到桌面通讯录。"
-msgstr ""
+msgstr "ルートを同期してデスクトップの連絡先に切り替えています。"
 
 #: apps/app/src/features/contacts/contacts-route-redirect-shell.tsx:59
 msgid "切换桌面通讯录..."
@@ -7904,7 +7905,7 @@ msgstr "{0} 件選択中"
 #: apps/app/src/features/official-accounts/service/official-account-service-thread.tsx:498
 #: apps/app/src/routes/channel-author-page.tsx:651
 #: apps/app/src/routes/channels-page.tsx:4497
-#: apps/app/src/routes/discover-page.tsx:1092
+#: apps/app/src/routes/discover-page.tsx:1288
 #: apps/app/src/routes/official-account-detail-page.tsx:511
 msgid "处理中..."
 msgstr "処理中..."
@@ -8029,56 +8030,56 @@ msgstr "一括管理"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:96
 msgid "声音克隆完成，可以选用啦。"
-msgstr ""
+msgstr "音声クローンが完了しました。使用できます！"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:99
 msgid "克隆未成功，请换段更清晰的样本再试。"
-msgstr ""
+msgstr "クローンに失敗しました。より明瞭なサンプルでお試しください。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:113
 msgid "声音克隆失败，请稍后再试。"
-msgstr ""
+msgstr "音声クローンに失敗しました。しばらくしてからもう一度お試しください。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:131
 msgid "请先选择一段声音样本。"
-msgstr ""
+msgstr "まず音声サンプルを選択してください。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:136
 msgid "请给音色起个名字。"
-msgstr ""
+msgstr "この音声に名前をつけてください。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:189
 msgid "音色设置失败，请稍后再试。"
-msgstr ""
+msgstr "音声設定の保存に失敗しました。しばらくしてからもう一度お試しください。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:202
 msgid "你好呀，很高兴认识你，这是我现在的声音。"
-msgstr ""
+msgstr "こんにちは！はじめまして。これが今の私の声です。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:225
 msgid "试听播放失败，请稍后再试。"
-msgstr ""
+msgstr "試聴の再生に失敗しました。しばらくしてからお試しください。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:238
 msgid "试听生成失败，请稍后再试。"
-msgstr ""
+msgstr "試聴の生成に失敗しました。しばらくしてからお試しください。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:281
 msgid "选择音色"
-msgstr ""
+msgstr "音声を選択"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:340
 #: apps/app/src/features/contacts/voice-picker.tsx:350
 msgid "试听"
-msgstr ""
+msgstr "試聴"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:362
 msgid "克隆我的声音"
-msgstr ""
+msgstr "自分の声をクローン"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:366
 msgid "上传一段清晰的人声样本（10 秒以上，mp3 / m4a / wav）。请仅上传你本人或已授权的声音。"
-msgstr ""
+msgstr "クリアな音声サンプルをアップロードしてください（10秒以上、mp3 / m4a / wav）。ご自身の声か、使用許可を得た声のみアップロードしてください。"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:382
 #: apps/app/src/routes/desktop-feedback-page.tsx:269
@@ -8099,41 +8100,41 @@ msgstr "処理中"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:385
 msgid "失败"
-msgstr ""
+msgstr "失敗"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:406
 msgid "音色名字，如「我的声音」"
-msgstr ""
+msgstr "音声名（例：「マイボイス」）"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:425
 msgid "选择样本"
-msgstr ""
+msgstr "サンプルを選択"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:428
 msgid "未选择文件"
-msgstr ""
+msgstr "ファイルが選択されていません"
 
 #: apps/app/src/features/contacts/voice-picker.tsx:440
 msgid "开始克隆"
-msgstr ""
+msgstr "クローン開始"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-figure.tsx:28
 #: apps/app/src/features/world/world-page.tsx:128
 #: apps/app/src/routes/cyber-avatar-page.tsx:139
 #: apps/app/src/routes/cyber-avatar-page.tsx:142
-#: apps/app/src/routes/discover-page.tsx:170
+#: apps/app/src/routes/discover-page.tsx:175
 msgid "赛博分身"
-msgstr ""
+msgstr "サイバー分身"
 
 #. placeholder {0}: profile.signalCount
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:87
 msgid "已分析 {0} 条行为信号"
-msgstr ""
+msgstr "{0}件の行動シグナルを分析済み"
 
 #. placeholder {0}: profile.pendingSignalCount
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:89
 msgid "还有 {0} 条待分析"
-msgstr ""
+msgstr "あと{0}件が分析待ち"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:102
 #: apps/app/src/features/desktop/feed/desktop-feed-toolbar.tsx:61
@@ -8148,11 +8149,11 @@ msgstr "更新"
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:114
 #: apps/app/src/routes/cyber-avatar-page.tsx:235
 msgid "还没有新的互动可以更新，多去世界里逛逛再来。"
-msgstr ""
+msgstr "まだ更新できる新しいやり取りがありません。世界をもっと楽しんでからまた来てください。"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:124
 msgid "刷新失败，请稍后再试。"
-msgstr ""
+msgstr "更新に失敗しました。しばらくしてからお試しください。"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:130
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:520
@@ -8166,48 +8167,48 @@ msgstr "現在の状態"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:131
 msgid "心情"
-msgstr ""
+msgstr "気分"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:132
 msgid "精力"
-msgstr ""
+msgstr "エネルギー"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:133
 msgid "专注"
-msgstr ""
+msgstr "集中力"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:134
 msgid "当前话题"
-msgstr ""
+msgstr "現在のトピック"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:135
 msgid "未了的事"
-msgstr ""
+msgstr "未解決のこと"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:141
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:179
 msgid "稳定内核"
-msgstr ""
+msgstr "安定したコア"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:145
 msgid "身份速写"
-msgstr ""
+msgstr "アイデンティティスケッチ"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:153
 msgid "沟通风格"
-msgstr ""
+msgstr "コミュニケーションスタイル"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:154
 msgid "决策风格"
-msgstr ""
+msgstr "意思決定スタイル"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:155
 msgid "偏好"
-msgstr ""
+msgstr "好み"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:156
 msgid "社交姿态"
-msgstr ""
+msgstr "ソーシャルスタンス"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:162
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
@@ -8217,108 +8218,108 @@ msgstr "最近の動向"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:163
 msgid "反复出现"
-msgstr ""
+msgstr "繰り返されるパターン"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:164
 msgid "最近目标"
-msgstr ""
+msgstr "最近の目標"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:169
 msgid "了解程度"
-msgstr ""
+msgstr "理解度"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:171
 msgid "实时状态"
-msgstr ""
+msgstr "リアルタイム状態"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:175
 msgid "近期状态"
-msgstr ""
+msgstr "最近の状態"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:184
 msgid "数据来源"
-msgstr ""
+msgstr "データソース"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:204
 msgid "正在生成结论…"
-msgstr ""
+msgstr "インサイトを生成中…"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:209
 msgid "重新生成结论"
-msgstr ""
+msgstr "インサイトを再生成"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:209
 msgid "生成结论报告"
-msgstr ""
+msgstr "インサイトレポートを生成"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:234
 msgid "性格速写"
-msgstr ""
+msgstr "パーソナリティスケッチ"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:240
 msgid "优势"
-msgstr ""
+msgstr "強み"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:241
 msgid "盲点"
-msgstr ""
+msgstr "ブラインドスポット"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:243
 msgid "行为模式"
-msgstr ""
+msgstr "行動パターン"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:247
 msgid "社交风格"
-msgstr ""
+msgstr "ソーシャルスタイル"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:253
 msgid "建议"
-msgstr ""
+msgstr "アドバイス"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-portrait.tsx:46
 msgid "赛博分身立绘"
-msgstr ""
+msgstr "サイバー分身の立ち絵"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:91
 msgid "我最近在纠结什么？"
-msgstr ""
+msgstr "最近何を悩んでいる？"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:92
 msgid "我的沟通风格是怎样的？"
-msgstr ""
+msgstr "私のコミュニケーションスタイルはどんな感じ？"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:93
 msgid "给我一些建议"
-msgstr ""
+msgstr "アドバイスをください"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:105
 msgid "正在加载对话…"
-msgstr ""
+msgstr "会話を読み込み中…"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:114
 msgid "你好，我是你的赛博分身。问我任何关于你自己的问题吧。"
-msgstr ""
+msgstr "こんにちは、私はあなたのサイバー分身です。自分自身について何でも聞いてください。"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:140
 msgid "对方正在输入…"
-msgstr ""
+msgstr "入力中…"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:156
 msgid "发送失败，请重试。"
-msgstr ""
+msgstr "送信に失敗しました。もう一度お試しください。"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:169
 msgid "重发"
-msgstr ""
+msgstr "再送信"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-self-chat-thread.tsx:187
 msgid "问问你的分身…"
-msgstr ""
+msgstr "分身に聞く…"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:815
 #: apps/app/src/routes/channels-page.tsx:2540
 msgid "视频号分组"
-msgstr ""
+msgstr "チャンネルグループ"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:903
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:1051
@@ -8396,7 +8397,7 @@ msgstr "{0} のチャンネルコンテンツ"
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2126
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3038
 msgid "取消关注 {0}"
-msgstr ""
+msgstr "{0}のフォローを解除"
 
 #. placeholder {0}: post.authorName
 #. placeholder {0}: profile.authorName
@@ -8404,7 +8405,7 @@ msgstr ""
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3039
 #: apps/app/src/routes/channels-page.tsx:4487
 msgid "关注 {0}"
-msgstr ""
+msgstr "{0}をフォロー"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2142
 msgid "+ 关注"
@@ -8424,7 +8425,7 @@ msgstr "いいね、現在 {0} 件のいいね"
 #. placeholder {0}: post.commentCount
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2211
 msgid "关闭评论，当前 {0} 条"
-msgstr ""
+msgstr "コメントをオフにする（現在{0}件）"
 
 #. placeholder {0}: post.commentCount
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2212
@@ -8434,11 +8435,11 @@ msgstr "コメントを開く、現在 {0} 件"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2261
 msgid "已收藏这条视频号"
-msgstr ""
+msgstr "このチャンネル投稿をブックマーク済み"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2262
 msgid "收藏这条视频号"
-msgstr ""
+msgstr "このチャンネル投稿をブックマーク"
 
 #. placeholder {0}: selectedPost.commentCount
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:2491
@@ -8503,7 +8504,7 @@ msgstr "{0} 人のフォロワー"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3017
 msgid "{postCount} 条内容"
-msgstr ""
+msgstr "{postCount}件の投稿"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3020
 msgid "{liveClipCount} 条直播回放"
@@ -8606,16 +8607,16 @@ msgstr "{0} に返信中"
 #. placeholder {0}: replyTarget.authorName
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3654
 msgid "取消回复 {0}"
-msgstr ""
+msgstr "{0}への返信をキャンセル"
 
 #. placeholder {0}: replyTarget.authorName
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3681
 msgid "回复 {0} 的评论"
-msgstr ""
+msgstr "{0}のコメントに返信"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3683
 msgid "评论这条视频号"
-msgstr ""
+msgstr "このチャンネル投稿にコメント"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3684
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3706
@@ -9069,13 +9070,13 @@ msgstr "{0}人のグループメンバーを追加しました。"
 #. placeholder {1}: failures.length
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1490
 msgid "已添加 {0} 位；剩余 {1} 位添加失败：{errorMessage}"
-msgstr ""
+msgstr "{0}人を追加しました。{1}人の追加に失敗しました：{errorMessage}"
 
 #. placeholder {0}: succeededIds.length
 #. placeholder {1}: failures.length
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1493
 msgid "已添加 {0} 位；剩余 {1} 位添加失败，请稍后再试。"
-msgstr ""
+msgstr "{0}人を追加しました。{1}人の追加に失敗しました。しばらくしてからお試しください。"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1515
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:3344
@@ -9096,13 +9097,13 @@ msgstr "{0}人のグループメンバーを削除しました。"
 #. placeholder {1}: failures.length
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1581
 msgid "已移除 {0} 位；剩余 {1} 位移除失败：{errorMessage}"
-msgstr ""
+msgstr "{0}人を削除しました。{1}人の削除に失敗しました：{errorMessage}"
 
 #. placeholder {0}: succeededIds.length
 #. placeholder {1}: failures.length
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1584
 msgid "已移除 {0} 位；剩余 {1} 位移除失败，请稍后再试。"
-msgstr ""
+msgstr "{0}人を削除しました。{1}人の削除に失敗しました。しばらくしてからお試しください。"
 
 #. placeholder {0}: item.memberName?.trim() || item.memberId
 #. placeholder {1}: item.role === "admin" ? t(msg`管理员`) : t(msg`群成员`)
@@ -9334,7 +9335,7 @@ msgstr "グループメンバーを検索"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2832
 msgid "成员筛选"
-msgstr ""
+msgstr "メンバーを絞り込む"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:2854
 msgid "↑ ↓ 选择，Enter 打开"
@@ -9372,7 +9373,7 @@ msgstr "通話"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-header-actions.tsx:102
 msgid "通话操作菜单"
-msgstr ""
+msgstr "通話操作メニュー"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-header-actions.tsx:136
 #: apps/app/src/features/desktop/contacts/desktop-contacts-groups-pane.tsx:343
@@ -9426,7 +9427,7 @@ msgstr "日付"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:545
 msgid "日期范围"
-msgstr ""
+msgstr "日付範囲"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:552
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1164
@@ -9450,7 +9451,7 @@ msgstr "グループメンバーを読み込み中…"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:722
 msgid "发言人筛选"
-msgstr ""
+msgstr "発言者で絞り込む"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:764
 msgid "没有找到匹配的群成员"
@@ -9501,7 +9502,7 @@ msgstr "さらにチャット履歴を表示"
 #. placeholder {0}: item.senderName || t(msg`消息`)
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:905
 msgid "定位到 {0} 的这条消息"
-msgstr ""
+msgstr "{0}のこのメッセージに移動"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1049
 msgid "未命名成员"
@@ -9763,7 +9764,7 @@ msgstr "会話リスト"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:1895
 msgid "搜索聊天和联系人"
-msgstr ""
+msgstr "チャットと連絡先を検索"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:1904
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:1910
@@ -9798,7 +9799,7 @@ msgstr "クイックメニューを開く"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:1977
 msgid "快捷操作菜单"
-msgstr ""
+msgstr "クイック操作メニュー"
 
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:2146
 #: apps/app/src/routes/chat-list-page.tsx:1611
@@ -9918,7 +9919,7 @@ msgstr "会話メニューを閉じる"
 
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:166
 msgid "会话操作菜单"
-msgstr ""
+msgstr "会話操作メニュー"
 
 #: apps/app/src/features/desktop/chat/desktop-conversation-context-menu.tsx:175
 msgid "在独立窗口打开"
@@ -10106,7 +10107,7 @@ msgstr "聞いています"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:192
 msgid "数字人画面加载中"
-msgstr ""
+msgstr "デジタルヒューマンを読み込み中"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:196
 msgid "数字人排队中"
@@ -10114,7 +10115,7 @@ msgstr "AI アバター待機中"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:200
 msgid "数字人画面加载失败"
-msgstr ""
+msgstr "デジタルアバターの映像を読み込めませんでした"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:208
 msgid "数字人视频已接通"
@@ -10130,11 +10131,11 @@ msgstr "話し続ける"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:236
 msgid "数字人视频正在准备，连上后就能开始通话。"
-msgstr ""
+msgstr "デジタルアバターの映像を準備中です。接続後に通話が始まります。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:242
 msgid "连接数字人失败，请稍后再试。"
-msgstr ""
+msgstr "デジタルアバターへの接続に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:248
 msgid "先取消静音，再开始这一轮数字人视频通话。"
@@ -10146,7 +10147,7 @@ msgstr "ミュートを解除してから、この音声会話のラウンドを
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:254
 msgid "本轮语音已收到，数字人正在整理文本、语音和画面。"
-msgstr ""
+msgstr "音声を受信しました。デジタルアバターがテキスト・音声・映像を生成しています。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:255
 msgid "本轮语音已收到，正在转写并组织回复。"
@@ -10154,27 +10155,27 @@ msgstr "音声を受け取りました。文字起こしと返答の作成を行
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:260
 msgid "数字人视频通话需要轮流说，等 TA 说完后再开始下一轮。"
-msgstr ""
+msgstr "デジタルアバターのビデオ通話は交互に話す方式です。相手が話し終わってから次のターンを始めてください。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:261
 msgid "需要轮流说，等 TA 说完后再开始下一轮。"
-msgstr ""
+msgstr "交互に話してください。相手が話し終わってから次のターンを始めてください。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:266
 msgid "语音回复已生成，数字人画面正在加载，完成后会自动切过去。"
-msgstr ""
+msgstr "音声返答を生成しました。デジタルアバターの映像を読み込んでいます。準備完了後、自動的に切り替わります。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:271
 msgid "数字人视频正在排队，可以先保持语音通话。"
-msgstr ""
+msgstr "デジタルアバターの映像は待機中です。その間、音声通話を続けることができます。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:276
 msgid "数字人画面没能加载出来，语音通话仍可继续；可重新连接数字人。"
-msgstr ""
+msgstr "デジタルアバターの映像を読み込めませんでしたが、音声通話は続けられます。デジタルアバターに再接続できます。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:285
 msgid "数字人视频已就绪，桌面端会优先展示外部画面。"
-msgstr ""
+msgstr "デジタルアバターの映像が準備できました。デスクトップでは外部映像を優先して表示します。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:293
 msgid "松开按钮后会自动发起这一轮数字人视频通话。"
@@ -10194,7 +10195,7 @@ msgstr "このブラウザーはデスクトップでの音声録音に対応し
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:309
 msgid "对方画面是 AI 数字人，本地摄像头只用于桌面预览，不影响 AI 回复。"
-msgstr ""
+msgstr "相手の映像はAIデジタルアバターです。ローカルカメラはデスクトッププレビューにのみ使用され、AIの返答には影響しません。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:311
 msgid "按住说一段，AI 会写入聊天并自动语音回复。"
@@ -10254,16 +10255,16 @@ msgstr "開始待ち"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:540
 msgid "成功后会同步到当前聊天消息里。"
-msgstr ""
+msgstr "完了後、現在のチャットに同期されます。"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
+msgid "解除麦克风静音"
+msgstr "マイクのミュートを解除"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:460
 msgid "静音麦克风"
 msgstr "マイクをミュート"
-
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
-msgid "解除麦克风静音"
-msgstr "マイクのミュートを解除"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:562
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:466
@@ -10416,7 +10417,7 @@ msgstr "{activeCount} 人"
 
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:442
 msgid "已加入当前桌面通话"
-msgstr ""
+msgstr "現在のデスクトップ通話に参加しました"
 
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:445
 #: apps/app/src/i18n/static-dom-seed.ts:988
@@ -10624,7 +10625,7 @@ msgstr "現実の外側から、別のワールドへ。"
 
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:270
 msgid "当前世界的唯一主人"
-msgstr ""
+msgstr "このワールドの唯一のオーナー"
 
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:281
 msgid "我的资料"
@@ -10658,11 +10659,11 @@ msgstr "{commonGroupCount} 個"
 
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:482
 msgid "{displayName} 的资料卡片"
-msgstr ""
+msgstr "{displayName}のプロフィールカード"
 
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:483
 msgid "{displayName} 的角色资料卡片"
-msgstr ""
+msgstr "{displayName}のキャラクタープロフィールカード"
 
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:570
 msgid "正在读取资料..."
@@ -10763,7 +10764,7 @@ msgstr "転送メッセージを受け取るチャットを選ぶ"
 
 #: apps/app/src/features/desktop/chat/desktop-message-forward-dialog.tsx:386
 msgid "转发模式"
-msgstr ""
+msgstr "転送モード"
 
 #: apps/app/src/features/desktop/chat/desktop-message-forward-dialog.tsx:392
 msgid "逐条"
@@ -10817,7 +10818,7 @@ msgstr "転送できる最近の会話はまだありません"
 
 #: apps/app/src/features/desktop/chat/desktop-message-forward-dialog.tsx:458
 msgid "先去消息列表里开几个聊天，再回来转发消息。"
-msgstr ""
+msgstr "先にメッセージ一覧でチャットをいくつか開いてから、戻って転送してください。"
 
 #: apps/app/src/features/desktop/chat/desktop-message-forward-dialog.tsx:473
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:274
@@ -10875,7 +10876,7 @@ msgstr "送信できる最近の会話がまだありません"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:266
 msgid "先去消息列表里开几个聊天，再回来发送笔记。"
-msgstr ""
+msgstr "先にメッセージ一覧でチャットをいくつか開いてから、戻ってノートを送信してください。"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:318
 #: apps/app/src/routes/desktop-chat-history-page.tsx:471
@@ -11006,7 +11007,7 @@ msgstr "お気に入りへ戻る"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1144
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1375
 msgid "笔记标题"
-msgstr ""
+msgstr "ノートのタイトル"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1151
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1454
@@ -11089,7 +11090,7 @@ msgstr "タグを入力して Enter"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1311
 msgid "添加标签"
-msgstr ""
+msgstr "タグを追加"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1348
 #: apps/app/src/routes/mobile-notes-page.tsx:353
@@ -11150,7 +11151,7 @@ msgstr "公式アカウントメッセージメニューを閉じる"
 
 #: apps/app/src/features/desktop/chat/desktop-official-message-context-menu.tsx:89
 msgid "公众号消息操作菜单"
-msgstr ""
+msgstr "公式アカウントメッセージの操作メニュー"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-result-card.tsx:78
 msgid "已在通讯录中"
@@ -11253,7 +11254,7 @@ msgstr "友だち追加は現在デスクトップ専用です"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:425
 msgid "添加朋友目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到新的朋友继续处理联系人入口。"
-msgstr ""
+msgstr "友達の追加は現在、Webデスクトップレイアウトとデスクトップアプリでのみ利用できます。モバイルでは「新しい友達」に戻って連絡先リクエストを処理してください。"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:427
 #: apps/app/src/routes/contacts-page.tsx:1966
@@ -11727,7 +11728,7 @@ msgstr "この入口は現在デスクトップ専用です"
 
 #: apps/app/src/features/desktop/desktop-placeholder-workspace.tsx:42
 msgid "这项能力暂时只在桌面布局里提供，移动端还没单独开放。"
-msgstr ""
+msgstr "この機能はデスクトップレイアウトのみで利用可能で、モバイルではまだ提供されていません。"
 
 #: apps/app/src/features/desktop/desktop-placeholder-workspace.tsx:48
 msgid "返回继续使用"
@@ -11775,14 +11776,14 @@ msgid "图片最多 9 张，视频当前支持 1 条且不超过 5 分钟。图�
 msgstr "画像は最大 9 枚、動画は 1 本かつ 5 分以内。画像と動画の混在投稿には今のところ対応していません。"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:160
-#: apps/app/src/routes/discover-page.tsx:920
+#: apps/app/src/routes/discover-page.tsx:1116
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:664
 msgid "写点想让世界居民都能看到的内容..."
 msgstr "世界の住民に見せたい内容を書いてください..."
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:185
 #: apps/app/src/features/desktop/moments/desktop-moment-compose-panel.tsx:162
-#: apps/app/src/routes/discover-page.tsx:949
+#: apps/app/src/routes/discover-page.tsx:1145
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:726
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:920
 msgid "添加图片"
@@ -11790,14 +11791,14 @@ msgstr "画像を追加"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:194
 #: apps/app/src/features/desktop/moments/desktop-moment-compose-panel.tsx:171
-#: apps/app/src/routes/discover-page.tsx:964
+#: apps/app/src/routes/discover-page.tsx:1160
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:750
 msgid "更换视频"
 msgstr "動画を変更"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:194
 #: apps/app/src/features/desktop/moments/desktop-moment-compose-panel.tsx:171
-#: apps/app/src/routes/discover-page.tsx:965
+#: apps/app/src/routes/discover-page.tsx:1161
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:750
 msgid "添加视频"
 msgstr "動画を追加"
@@ -11808,7 +11809,7 @@ msgid "发布后会直接插入到公开流顶部。"
 msgstr "公開フィードの先頭に直接挿入されます。"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-compose-panel.tsx:237
-#: apps/app/src/routes/discover-page.tsx:978
+#: apps/app/src/routes/discover-page.tsx:1174
 msgid "发布到广场"
 msgstr "広場に公開"
 
@@ -11818,7 +11819,7 @@ msgid "发布中..."
 msgstr "投稿中..."
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:109
-#: apps/app/src/routes/discover-page.tsx:1030
+#: apps/app/src/routes/discover-page.tsx:1226
 msgid "正在读取广场动态..."
 msgstr "広場投稿を読み込み中..."
 
@@ -11834,7 +11835,7 @@ msgstr "さらに読み込めませんでした"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:185
 msgid "当前页的动态作者都在你的屏蔽名单里，翻下一页找未屏蔽的居民动态时出错了。"
-msgstr ""
+msgstr "このページの投稿者が全員ブロックリストに入っています。ブロックされていない住民の投稿を次ページで読み込む際にエラーが発生しました。"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:190
 #: apps/app/src/routes/discover-feed-page.tsx:2943
@@ -11869,13 +11870,13 @@ msgid "打开通讯录"
 msgstr "連絡先を開く"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:226
-#: apps/app/src/routes/discover-page.tsx:1160
+#: apps/app/src/routes/discover-page.tsx:1356
 msgid "广场还没有新动态"
 msgstr "広場にはまだ新しい投稿がありません"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-list.tsx:227
 #: apps/app/src/routes/discover-feed-page.tsx:2988
-#: apps/app/src/routes/discover-page.tsx:1162
+#: apps/app/src/routes/discover-page.tsx:1358
 msgid "你先发一条居民公开可见的动态，或者等世界里的居民先开口。"
 msgstr "住民に公開される投稿を先に出すか、世界の住民が話し始めるのを待ちましょう。"
 
@@ -11886,7 +11887,7 @@ msgstr "{0} のプロフィールを見る"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:296
 #: apps/app/src/routes/discover-feed-page.tsx:2547
-#: apps/app/src/routes/discover-page.tsx:1053
+#: apps/app/src/routes/discover-page.tsx:1249
 msgid "居民公开可见"
 msgstr "住民に公開表示"
 
@@ -11904,13 +11905,13 @@ msgstr "もう一度タップでいいね解除"
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:412
 #: apps/app/src/i18n/static-dom-seed.ts:366
 #: apps/app/src/routes/channels-page.tsx:4804
-#: apps/app/src/routes/discover-page.tsx:1094
+#: apps/app/src/routes/discover-page.tsx:1290
 msgid "已赞"
 msgstr "いいね済み"
 
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:354
 #: apps/app/src/routes/channels-page.tsx:4804
-#: apps/app/src/routes/discover-page.tsx:1095
+#: apps/app/src/routes/discover-page.tsx:1291
 msgid "点赞"
 msgstr "いいね"
 
@@ -11969,7 +11970,7 @@ msgstr "「{0}」"
 #: apps/app/src/features/desktop/feed/desktop-feed-row.tsx:573
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:594
 #: apps/app/src/i18n/static-dom-seed.ts:431
-#: apps/app/src/routes/discover-page.tsx:1125
+#: apps/app/src/routes/discover-page.tsx:1321
 msgid "写评论..."
 msgstr "コメントを書く..."
 
@@ -11991,9 +11992,9 @@ msgstr "："
 #: apps/app/src/routes/discover-feed-page.tsx:1051
 #: apps/app/src/routes/discover-feed-page.tsx:1943
 #: apps/app/src/routes/discover-feed-page.tsx:2269
-#: apps/app/src/routes/discover-page.tsx:197
-#: apps/app/src/routes/discover-page.tsx:783
-#: apps/app/src/routes/discover-page.tsx:1006
+#: apps/app/src/routes/discover-page.tsx:202
+#: apps/app/src/routes/discover-page.tsx:881
+#: apps/app/src/routes/discover-page.tsx:1202
 #: apps/app/src/routes/favorites-page.tsx:81
 #: apps/app/src/routes/mobile-favorites-page.tsx:128
 msgid "广场动态"
@@ -12093,7 +12094,7 @@ msgstr "ゲーム開始"
 #: apps/app/src/features/world/world-page.tsx:177
 #: apps/app/src/i18n/static-dom-seed.ts:74
 #: apps/app/src/routes/desktop-mobile-page.tsx:129
-#: apps/app/src/routes/discover-page.tsx:226
+#: apps/app/src/routes/discover-page.tsx:231
 #: apps/app/src/routes/games-page.tsx:623
 msgid "游戏"
 msgstr "ゲーム"
@@ -12536,7 +12537,7 @@ msgstr "{0} さんのモーメンツを見る"
 #. placeholder {1}: post.commentCount
 #. placeholder {1}: visibleComments.length
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:385
-#: apps/app/src/routes/discover-page.tsx:1069
+#: apps/app/src/routes/discover-page.tsx:1265
 msgid "{0} 赞 · {1} 评论"
 msgstr "{0} いいね · {1} コメント"
 
@@ -12587,7 +12588,7 @@ msgstr "まず1件投稿するか、世界の誰かが話し始めるのを待�
 
 #: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:72
 msgid "刷新中…"
-msgstr ""
+msgstr "更新中…"
 
 #: apps/app/src/features/desktop/moments/desktop-moments-toolbar.tsx:126
 msgid "已加载 {loadedCount} / 共 {totalCount} 条动态"
@@ -13494,28 +13495,28 @@ msgstr "お隣の水やりを手伝いました（+{NEIGHBOR_HELP_REWARD} ガー
 
 #: apps/app/src/features/games/embedded/community-games-section.tsx:41
 msgid "社区共创"
-msgstr ""
+msgstr "コミュニティ共同制作"
 
 #: apps/app/src/features/games/embedded/community-games-section.tsx:44
 msgid "大家用一句话造的游戏"
-msgstr ""
+msgstr "みんなが一言で作ったゲーム"
 
 #. placeholder {0}: g.authorDisplayName
 #: apps/app/src/features/games/embedded/community-games-section.tsx:68
 msgid "作者 {0}"
-msgstr ""
+msgstr "作者：{0}"
 
 #: apps/app/src/features/games/embedded/community-games-section.tsx:69
 msgid "社区作品"
-msgstr ""
+msgstr "コミュニティ作品"
 
 #: apps/app/src/features/games/embedded/embedded-game-host.tsx:167
 msgid "正在载入游戏…"
-msgstr ""
+msgstr "ゲームを読み込んでいます…"
 
 #: apps/app/src/features/games/embedded/embedded-game-host.tsx:174
 msgid "游戏载入失败"
-msgstr ""
+msgstr "ゲームの読み込みに失敗しました"
 
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:48
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:90
@@ -13719,33 +13720,33 @@ msgstr "相手との好感度の変化"
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:90
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:301
 msgid "施了肥"
-msgstr ""
+msgstr "肥料をやった"
 
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:92
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:303
 msgid "喷了农药"
-msgstr ""
+msgstr "農薬をまいた"
 
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:94
 msgid "铲掉了"
-msgstr ""
+msgstr "除去した"
 
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:96
 msgid "买了一条看家狗"
-msgstr ""
+msgstr "番犬を買った"
 
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:98
 msgid "升级了看家狗 Lv."
-msgstr ""
+msgstr "番犬をLv.にアップグレードした"
 
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:100
 msgid "喂了狗"
-msgstr ""
+msgstr "犬にエサをあげた"
 
 #: apps/app/src/features/games/farm/components/event-log-panel.tsx:102
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:307
 msgid "摆了一件装饰"
-msgstr ""
+msgstr "デコレーションを置いた"
 
 #: apps/app/src/features/games/farm/components/farm-iso-tile.tsx:82
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:206
@@ -13901,7 +13902,7 @@ msgstr "肥料 / 農薬"
 #. placeholder {0}: neighbor.characterName
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:130
 msgid "{0} 的好感度已满，送礼不会再涨好感。"
-msgstr ""
+msgstr "{0}の好感度が最大です。贈り物をしてもこれ以上上がりません。"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:137
 msgid "每 100 金币换 1 点好感。最多 2000 金币 / 次。"
@@ -14005,7 +14006,7 @@ msgstr "好感度の変化"
 
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:305
 msgid "铲掉了作物"
-msgstr ""
+msgstr "作物を除去した"
 
 #: apps/app/src/features/games/farm/components/neighbor-list-panel.tsx:19
 msgid "世界邻居"
@@ -16252,7 +16253,7 @@ msgstr "マイ駐車場"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:76
 msgid "邻居"
-msgstr ""
+msgstr "隣人"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:77
 msgid "车库"
@@ -16260,35 +16261,35 @@ msgstr "ガレージ"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:127
 msgid "原存档已废弃，已为你开通云端车场"
-msgstr ""
+msgstr "古いセーブデータは廃止されました。クラウド駐車場を開設しました。"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:144
 msgid "车场连不上服务端"
-msgstr ""
+msgstr "駐車場サーバーに接続できません"
 
 #. placeholder {0}: formatYuan(r.amountCents)
 #. placeholder {1}: r.streakDays
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:211
 msgid "日签 +{0}，连签 {1} 天"
-msgstr ""
+msgstr "デイリーチェックイン +{0}、連続 {1} 日"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:237
 msgid "完美复刻 · 服务端"
-msgstr ""
+msgstr "完全再現 · サーバー"
 
 #. placeholder {0}: state.dailyShieldRemaining
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:253
 msgid "今日免罚 ×{0}"
-msgstr ""
+msgstr "本日の罰則免除 ×{0}"
 
 #. placeholder {0}: state.streakDays
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:259
 msgid "连签 {0} 天"
-msgstr ""
+msgstr "連続 {0} 日"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:282
 msgid "领日签"
-msgstr ""
+msgstr "デイリーチェックインを受け取る"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:283
 msgid "已签到"
@@ -16301,12 +16302,12 @@ msgstr "チェックイン済み"
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:379
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:914
 msgid "车位 {0} / {1}"
-msgstr ""
+msgstr "駐車スペース {0} / {1}"
 
 #. placeholder {0}: formatYuan(state.totalEarnedCents)
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:382
 msgid "累计 {0}"
-msgstr ""
+msgstr "合計 {0}"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:447
 msgid "空位"
@@ -16318,314 +16319,314 @@ msgstr "マイカー"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:467
 msgid "访客"
-msgstr ""
+msgstr "来訪者"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:488
 msgid "可拖车"
-msgstr ""
+msgstr "レッカー可"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:488
 msgid "罚单"
-msgstr ""
+msgstr "違反切符"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:488
 msgid "警告"
-msgstr ""
+msgstr "警告"
 
 #. placeholder {0}: formatYuan(r.gainedCents)
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:567
 msgid "车已收回，到账 {0}"
-msgstr ""
+msgstr "車を回収しました。{0} 受取済み"
 
 #. placeholder {0}: formatYuan(r.gainedCents)
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:577
 msgid "收入 {0}"
-msgstr ""
+msgstr "収入 {0}"
 
 #. placeholder {0}: formatYuan(r.finedCents)
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:588
 msgid "贴条收到 {0}"
-msgstr ""
+msgstr "違反切符を発行し、{0} を徴収しました"
 
 #. placeholder {0}: formatYuan(r.finedCents)
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:597
 msgid "拖车费 {0}"
-msgstr ""
+msgstr "レッカー料金 {0}"
 
 #. placeholder {0}: occupancy.slotIndex + 1
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:614
 msgid "你的车，停在自家车位 #{0}"
-msgstr ""
+msgstr "あなたの車、自分のスペース #{0} に駐車中"
 
 #. placeholder {0}: occupancy.slotIndex + 1
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:615
 msgid "访客车，占用 #{0}"
-msgstr ""
+msgstr "来訪者の車、#{0} を占有中"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:620
 msgid "累积收益"
-msgstr ""
+msgstr "累計収益"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:622
 msgid "占用时长"
-msgstr ""
+msgstr "占有時間"
 
 #. placeholder {0}: Math.max(0, Math.floor((state.serverNowMs - occupancy.parkedAtMs) / 60_000))
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:623
 msgid "{0} 分"
-msgstr ""
+msgstr "{0} 分"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:637
 msgid "收钱（不召回）"
-msgstr ""
+msgstr "料金を徴収（回収しない）"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:645
 msgid "召回车辆"
-msgstr ""
+msgstr "車を回収する"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:662
 msgid "已开过罚单"
-msgstr ""
+msgstr "すでに切符を発行済み"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:664
 msgid "暂无收益可罚"
-msgstr ""
+msgstr "罰則を科せる収益がありません"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:665
 msgid "贴罚单（需 ≥ 警告）"
-msgstr ""
+msgstr "違反切符を発行（警告以上が必要）"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:673
 msgid "拖车（需 ≥ 可拖车）"
-msgstr ""
+msgstr "レッカー移動（レッカー可以上が必要）"
 
 #. placeholder {0}: slotIndex + 1
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:725
 msgid "已停进邻居家 #{0}"
-msgstr ""
+msgstr "隣人のスペース #{0} に駐車中"
 
 #. placeholder {0}: slotIndex + 1
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:726
 msgid "已停在 #{0}"
-msgstr ""
+msgstr "#{0} に駐車中"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:737
 msgid "挑一辆车停过去"
-msgstr ""
+msgstr "駐車する車を選んでください"
 
 #. placeholder {0}: slotIndex + 1
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:738
 msgid "挑一辆车停 #{0}"
-msgstr ""
+msgstr "#{0} に駐車する車を選んでください"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:742
 msgid "车库里没有闲置车（被外出 / 冷却中）。先收回一辆。"
-msgstr ""
+msgstr "ガレージに利用可能な車がありません（外出中またはクールダウン中）。まず1台回収してください。"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:793
 msgid "点谁的车场，把你的车停过去开始挂机"
-msgstr ""
+msgstr "相手の駐車場をタップして車を停め、放置プレイ開始"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:810
 msgid "你的 world 里还没有可访问的角色 —— 添加些 contacts 再回来。"
-msgstr ""
+msgstr "ワールドにアクセスできるキャラクターがいません。コンタクトを追加してから戻ってください。"
 
 #. placeholder {0}: n.emptySlotCount
 #. placeholder {1}: n.lotSize
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:864
 msgid "空 {0}/{1}"
-msgstr ""
+msgstr "空き {0}/{1}"
 
 #. placeholder {0}: n.intimacyLevel
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:866
 msgid "亲密度 {0}"
-msgstr ""
+msgstr "親密度 {0}"
 
 #. placeholder {0}: state.ownedCars.length
 #. placeholder {1}: state.garageSlots
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1004
 msgid "我的车（{0}/{1}）"
-msgstr ""
+msgstr "マイカー（{0}/{1}）"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1050
 msgid "升级成功"
-msgstr ""
+msgstr "アップグレード完了"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1055
 msgid "升级"
-msgstr ""
+msgstr "アップグレード"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1066
 msgid "已换色"
-msgstr ""
+msgstr "色変更済み"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1070
 msgid "换色"
-msgstr ""
+msgstr "色を変える"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1079
 msgid "已修复"
-msgstr ""
+msgstr "修理済み"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1083
 msgid "维修"
-msgstr ""
+msgstr "修理"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1094
 msgid "车场升级"
-msgstr ""
+msgstr "駐車場をアップグレード"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1106
 msgid "车位扩到 {size}"
-msgstr ""
+msgstr "駐車スペースを {size} に拡張"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1118
 msgid "{size} 车位"
-msgstr ""
+msgstr "{size} スペース"
 
 #. placeholder {0}: SURFACE_DISPLAY[sf].name
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1136
 msgid "已切到 {0}"
-msgstr ""
+msgstr "{0} に切り替えました"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1156
 msgid "车库 +1"
-msgstr ""
+msgstr "ガレージ +1"
 
 #. placeholder {0}: state.garageSlots
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1161
 msgid "车库扩容（当前 {0}）"
-msgstr ""
+msgstr "ガレージを拡張（現在 {0}）"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1167
 msgid "买车"
-msgstr ""
+msgstr "車を購入"
 
 #. placeholder {0}: TIER_DISPLAY[tier].name
 #. placeholder {1}: RARITY_DISPLAY[r].name
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1182
 msgid "已购入 {0}（{1}）"
-msgstr ""
+msgstr "{0}（{1}）を購入しました"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1196
 msgid "价格 = 档位 × 稀有度倍率（服务端计算）"
-msgstr ""
+msgstr "価格 = グレード × レアリティ倍率（サーバー計算）"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1224
 msgid "领奖成功"
-msgstr ""
+msgstr "報酬を受け取りました"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1233
 msgid "财富榜"
-msgstr ""
+msgstr "富豪ランキング"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1267
 msgid "榜单加载中..."
-msgstr ""
+msgstr "ランキングを読み込み中..."
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1274
 msgid "每日任务"
-msgstr ""
+msgstr "デイリークエスト"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1278
 msgid "今日任务即将刷新"
-msgstr ""
+msgstr "本日のクエストはまもなく更新されます"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1318
 msgid "已领"
-msgstr ""
+msgstr "受取済み"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1320
 msgid "领奖"
-msgstr ""
+msgstr "報酬を受け取る"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1321
 msgid "未达成"
-msgstr ""
+msgstr "未達成"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1331
 msgid "事件"
-msgstr ""
+msgstr "イベント"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1357
 msgid "暂时还没有事件"
-msgstr ""
+msgstr "まだイベントはありません"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1427
 msgid "操作失败"
-msgstr ""
+msgstr "操作に失敗しました"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1433
 msgid "今日停 3 次邻居车场"
-msgstr ""
+msgstr "今日は隣の駐車場に3回停める"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1435
 msgid "今日贴 2 张罚单"
-msgstr ""
+msgstr "今日は罰金チケットを2枚切る"
 
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1437
 msgid "今日累计收益 ¥20"
-msgstr ""
+msgstr "今日の累計収益 ¥20"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1453
 msgid "{0} 停了一辆自家车"
-msgstr ""
+msgstr "{0} が自分の車を停めました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1454
 msgid "{0} 停进了 {tgt} 的车场"
-msgstr ""
+msgstr "{0} が {tgt} の駐車場に停めました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1456
 msgid "{0} 召回了一辆车"
-msgstr ""
+msgstr "{0} が車を引き揚げました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1458
 msgid "{0} 收了一波钱"
-msgstr ""
+msgstr "{0} が料金を回収しました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1460
 msgid "{0} 给 {tgt} 贴了张罚单"
-msgstr ""
+msgstr "{0} が {tgt} に罰金チケットを切りました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1462
 msgid "{0} 把 {tgt} 的车拖走了"
-msgstr ""
+msgstr "{0} が {tgt} の車をレッカー移動しました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1464
 msgid "{0} 提了一辆新车"
-msgstr ""
+msgstr "{0} が新しい車を購入しました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1466
 msgid "{0} 给爱车升级"
-msgstr ""
+msgstr "{0} が愛車をアップグレードしました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1468
 msgid "{0} 升级了车场"
-msgstr ""
+msgstr "{0} が駐車場をアップグレードしました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1470
 msgid "{0} 完成了今日签到"
-msgstr ""
+msgstr "{0} が本日のチェックインを完了しました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1472
 msgid "{0} 领取了任务奖励"
-msgstr ""
+msgstr "{0} がクエスト報酬を受け取りました"
 
 #. placeholder {0}: e.actorName
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1474
 msgid "{0} 把车停进了你车场"
-msgstr ""
+msgstr "{0} があなたの駐車場に停めました"
 
 #: apps/app/src/features/games/pixel-arena/pixel-arena-data.ts:40
 msgid "一拳贴墙，特技节奏猛。"
@@ -17309,7 +17310,7 @@ msgstr "スコア {0}"
 
 #: apps/app/src/features/games/tank-war/tank-war-game.tsx:241
 msgid "游戏结束"
-msgstr ""
+msgstr "ゲームオーバー"
 
 #: apps/app/src/features/games/tank-war/tank-war-game.tsx:244
 msgid "恭喜过关，进入下一关"
@@ -17582,7 +17583,7 @@ msgstr "申し込み、リレー、グループ協業、関係の流れに向い
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:97
 #: apps/app/src/i18n/static-dom-seed.ts:149
 #: apps/app/src/lib/character-i18n.ts:43
-#: apps/app/src/routes/discover-page.tsx:214
+#: apps/app/src/routes/discover-page.tsx:219
 msgid "内容"
 msgstr "コンテンツ"
 
@@ -17605,7 +17606,7 @@ msgstr "手続き、地図、イベント、住民サービスに向いていま
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:107
 #: apps/app/src/features/world/world-page.tsx:187
 #: apps/app/src/i18n/static-dom-seed.ts:151
-#: apps/app/src/routes/discover-page.tsx:241
+#: apps/app/src/routes/discover-page.tsx:246
 msgid "工具"
 msgstr "ツール"
 
@@ -17976,7 +17977,7 @@ msgstr "世界内の手続きを1つの統一入口にします。"
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:226
 #: apps/app/src/i18n/static-dom-seed.ts:260
 msgid "集中承接报名、申请、生活服务和状态查询，移动端适合随手办，桌面端适合查完整记录。"
-msgstr ""
+msgstr "申し込み・申請・生活サービス・状況確認をまとめて管理。モバイルはサッと手続き、デスクトップは履歴の確認に便利。"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:227
 msgid "居民服务台"
@@ -18465,7 +18466,7 @@ msgstr "再送済み"
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:473
 #: apps/app/src/i18n/static-dom-seed.ts:1059
 msgid "清掉未读积压"
-msgstr ""
+msgstr "未読の積み残しをクリア"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:474
 msgid "优先清掉今天刚积压进来的文章、动态和链接。"
@@ -18509,7 +18510,7 @@ msgstr "チャットソースフィルターを使って、最近見返した一
 #: apps/app/src/features/world/world-page.tsx:186
 #: apps/app/src/i18n/static-dom-seed.ts:66
 #: apps/app/src/routes/desktop-mobile-page.tsx:124
-#: apps/app/src/routes/discover-page.tsx:240
+#: apps/app/src/routes/discover-page.tsx:245
 #: apps/app/src/routes/mini-programs-page.tsx:384
 #: apps/app/src/routes/mini-programs-page.tsx:385
 #: apps/app/src/routes/mini-programs-page.tsx:500
@@ -18618,11 +18619,11 @@ msgstr "動画の長さは 5 分を超えられません。"
 
 #: apps/app/src/features/moments/moment-compose-media.ts:628
 msgid "图片解析超时，请换一张再试。"
-msgstr ""
+msgstr "画像の解析がタイムアウトしました。別の画像でお試しください。"
 
 #: apps/app/src/features/moments/moment-compose-media.ts:672
 msgid "视频解析超时，请换一个文件再试。"
-msgstr ""
+msgstr "動画の解析がタイムアウトしました。別のファイルでお試しください。"
 
 #: apps/app/src/features/moments/moment-compose-media.ts:704
 msgid "视频解析失败，请换一个文件再试。"
@@ -18635,7 +18636,7 @@ msgstr "動画カバーの生成に失敗しました。後ほど再試行して
 
 #: apps/app/src/features/moments/moment-compose-media.ts:788
 msgid "视频封面生成超时。"
-msgstr ""
+msgstr "動画サムネイルの生成がタイムアウトしました。"
 
 #: apps/app/src/features/moments/moment-compose-media.ts:845
 msgid "图片处理失败，请稍后重试。"
@@ -18668,94 +18669,94 @@ msgstr "トーク内にメモカードとして表示されます。"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:78
 msgid "总结全文"
-msgstr ""
+msgstr "全文を要約"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:84
 msgid "润色全文"
-msgstr ""
+msgstr "全文を磨く"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:90
 msgid "续写"
-msgstr ""
+msgstr "続きを書く"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:96
 msgid "生成大纲"
-msgstr ""
+msgstr "アウトラインを生成"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:102
 msgid "提取待办"
-msgstr ""
+msgstr "TODOを抽出"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:108
 msgid "翻译成英文"
-msgstr ""
+msgstr "英語に翻訳"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:114
 msgid "起个标题"
-msgstr ""
+msgstr "タイトルをつける"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:157
 msgid "AI 处理失败，请稍后再试。"
-msgstr ""
+msgstr "AI処理に失敗しました。しばらくしてからもう一度お試しください。"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:166
 msgid "问题太短了，请写清楚一点再问。"
-msgstr ""
+msgstr "質問が短すぎます。もう少し詳しく書いてください。"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:176
 msgid "提问失败，请稍后再试。"
-msgstr ""
+msgstr "質問の送信に失敗しました。しばらくしてからお試しください。"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:194
 msgid "问我的笔记"
-msgstr ""
+msgstr "ノートに聞く"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:195
 msgid "AI 助手"
-msgstr ""
+msgstr "AIアシスタント"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:201
 msgid "关闭 AI 助手"
-msgstr ""
+msgstr "AIアシスタントを閉じる"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:256
 msgid "先写点内容，就能让 AI 帮你总结、润色、续写。"
-msgstr ""
+msgstr "まず何か書いてみましょう。AIが要約・ブラッシュアップ・続きの執筆をお手伝いします。"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:269
 msgid "问我的笔记（基于你所有笔记回答）"
-msgstr ""
+msgstr "ノートに聞く（すべてのノートをもとに回答）"
 
 #. placeholder {0}: stage.title
 #: apps/app/src/features/notes/note-ai-sheet.tsx:282
 msgid "AI 正在处理「{0}」..."
-msgstr ""
+msgstr "AIが「{0}」を処理中..."
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:283
 msgid "正在从你的笔记里找答案..."
-msgstr ""
+msgstr "ノートから答えを探しています..."
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:304
 msgid "插入到笔记"
-msgstr ""
+msgstr "ノートに挿入"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:317
 #: apps/app/src/features/notes/note-ai-sheet.tsx:369
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:847
 msgid "已复制"
-msgstr ""
+msgstr "コピーしました"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:334
 msgid "比如：我上周记了哪些待办？项目 X 的进展？"
-msgstr ""
+msgstr "例：先週どんなTODOを書いた？プロジェクトXの進捗は？"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:344
 msgid "提问"
-msgstr ""
+msgstr "質問する"
 
 #: apps/app/src/features/notes/note-ai-sheet.tsx:381
 msgid "再问一个"
-msgstr ""
+msgstr "もう一つ聞く"
 
 #: apps/app/src/features/official-accounts/official-article-route-shell.tsx:54
 #: apps/app/src/i18n/static-dom-seed.ts:1019
@@ -19328,7 +19329,7 @@ msgstr "検索を準備中"
 
 #: apps/app/src/features/search/mobile-search-workspace.tsx:330
 msgid "稍等一下，正在整理最近记录和搜索入口。"
-msgstr ""
+msgstr "少々お待ちください。最近の記録と検索入口を整理中です。"
 
 #: apps/app/src/features/search/mobile-search-workspace.tsx:342
 msgid "正在补全搜索范围，结果会继续完善。"
@@ -19358,7 +19359,7 @@ msgstr "{1} を {0} 件すべて表示"
 
 #: apps/app/src/features/search/mobile-search-workspace.tsx:709
 msgid "正在加载更多消息"
-msgstr ""
+msgstr "メッセージを読み込んでいます"
 
 #: apps/app/src/features/search/search-quick-links.ts:46
 msgid "收藏联系人"
@@ -19550,11 +19551,11 @@ msgstr "現在、隠界に入れません"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:207
 msgid "桌面应用里没有找到内置的后端服务，应用还没法启动。"
-msgstr ""
+msgstr "内蔵バックエンドサービスが見つかりません。アプリを起動できません。"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:209
 msgid "本地端口似乎已经被占用，桌面应用正在尝试重新接管入口。"
-msgstr ""
+msgstr "ローカルポートが使用中のようです。アプリが再取得を試みています。"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:212
 msgid "我们正在为你整理入口，稍等片刻后再试一次就好。"
@@ -19562,7 +19563,7 @@ msgstr "入口を準備しています。少し待ってから再試行してく
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:216
 msgid "当前设备还没有配置远程世界地址，请先回到欢迎页连接你的世界。"
-msgstr ""
+msgstr "リモートワールドのアドレスが設定されていません。ウェルカムページに戻り、ワールドに接続してください。"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:217
 #: apps/app/src/i18n/static-dom-seed.ts:9
@@ -19649,7 +19650,7 @@ msgstr "デスクトップロックのパスコードを設定しました。パ
 
 #: apps/app/src/features/shell/desktop-shell.tsx:450
 msgid "当前世界还没有\"我\"角色。"
-msgstr ""
+msgstr "このワールドに「自分」キャラクターがいません。"
 
 #: apps/app/src/features/shell/desktop-shell.tsx:468
 msgid "打开会话失败，请稍后再试。"
@@ -19732,47 +19733,47 @@ msgstr "最近の投稿を見る"
 
 #: apps/app/src/features/shell/desktop-shell.tsx:998
 msgid "和\"我\"对话"
-msgstr ""
+msgstr "「自分」と話す"
 
 #: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:92
 msgid "世界状态"
-msgstr ""
+msgstr "ワールドの状態"
 
 #: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:98
 msgid "连接暂时中断"
-msgstr ""
+msgstr "接続が一時中断されました"
 
 #: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:104
 msgid "服务器正忙或正在恢复，通常几秒内就会自动恢复。你的账号和数据都安全保存在云端，点「重试」即可继续。"
-msgstr ""
+msgstr "サーバーが混雑中または復旧中です。通常は数秒で自動的に回復します。アカウントとデータはクラウドに安全に保存されています。「再試行」をタップして続けてください。"
 
 #: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:122
 msgid "仍无法恢复？重新登录"
-msgstr ""
+msgstr "まだ復旧しない？再ログイン"
 
 #: apps/app/src/features/shop/gift-to-friend-sheet.tsx:54
 msgid "已把「{name}」送给 {characterName}"
-msgstr ""
+msgstr "「{name}」を{characterName}に贈りました"
 
 #: apps/app/src/features/shop/gift-to-friend-sheet.tsx:55
 msgid "赠送失败，请稍后重试。"
-msgstr ""
+msgstr "贈り物に失敗しました。しばらくしてからお試しください。"
 
 #: apps/app/src/features/shop/gift-to-friend-sheet.tsx:74
 msgid "送礼物给 {characterName}"
-msgstr ""
+msgstr "{characterName}にプレゼントを贈る"
 
 #: apps/app/src/features/shop/gift-to-friend-sheet.tsx:88
 msgid "正在加载收藏…"
-msgstr ""
+msgstr "お気に入りを読み込んでいます…"
 
 #: apps/app/src/features/shop/gift-to-friend-sheet.tsx:92
 msgid "你还没有可赠送的礼物。"
-msgstr ""
+msgstr "贈れるプレゼントがまだありません。"
 
 #: apps/app/src/features/shop/gift-to-friend-sheet.tsx:101
 msgid "去商城购买"
-msgstr ""
+msgstr "ショップで購入する"
 
 #: apps/app/src/features/subscription/checkout-contact-dialog.tsx:55
 msgid "微信号"
@@ -20061,84 +20062,84 @@ msgstr "まだ招待記録はありません。"
 
 #: apps/app/src/features/wallet/checkin-card.tsx:55
 msgid "签到失败，请稍后重试。"
-msgstr ""
+msgstr "チェックインに失敗しました。しばらくしてからお試しください。"
 
 #: apps/app/src/features/wallet/checkin-card.tsx:95
 msgid "已连续签到 {streak} 天"
-msgstr ""
+msgstr "{streak}日連続チェックイン"
 
 #: apps/app/src/features/wallet/checkin-card.tsx:96
 msgid "每天签到领随机零钱"
-msgstr ""
+msgstr "毎日チェックインでランダムな小銭をゲット"
 
 #: apps/app/src/features/wallet/checkin-card.tsx:110
 msgid "今日已签到"
-msgstr ""
+msgstr "本日チェックイン済み"
 
 #: apps/app/src/features/wallet/checkin-card.tsx:112
 msgid "签到中…"
-msgstr ""
+msgstr "チェックイン中…"
 
 #: apps/app/src/features/wallet/checkin-card.tsx:113
 msgid "签到"
-msgstr ""
+msgstr "チェックイン"
 
 #. placeholder {0}: formatCents(todayRewardCents)
 #: apps/app/src/features/wallet/checkin-card.tsx:118
 msgid "今日已领 +{0}，已存入零钱"
-msgstr ""
+msgstr "本日+{0}獲得！残高に追加されました"
 
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:95
 #: apps/app/src/features/wallet/wallet-format.ts:37
 #: apps/app/src/routes/wallet-page.tsx:199
 msgid "充值"
-msgstr ""
+msgstr "チャージ"
 
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:98
 msgid "选择或输入充值金额，提交后请联系运营完成支付。"
-msgstr ""
+msgstr "金額を選択または入力し、サポートに連絡して支払いを完了してください。"
 
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:140
 msgid "自定义金额"
-msgstr ""
+msgstr "金額を入力"
 
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:141
 msgid "自定义充值金额"
-msgstr ""
+msgstr "チャージ金額を入力"
 
 #: apps/app/src/features/wallet/recharge-amount-dialog.tsx:173
 msgid "确认充值"
-msgstr ""
+msgstr "チャージを確定"
 
 #: apps/app/src/features/wallet/wallet-format.ts:39
 msgid "余额调整"
-msgstr ""
+msgstr "残高調整"
 
 #: apps/app/src/features/wallet/wallet-format.ts:41
 msgid "退款"
-msgstr ""
+msgstr "返金"
 
 #: apps/app/src/features/wallet/wallet-format.ts:43
 msgid "消费"
-msgstr ""
+msgstr "購入"
 
 #: apps/app/src/features/wallet/wallet-format.ts:45
 msgid "冲正"
-msgstr ""
+msgstr "取消"
 
 #: apps/app/src/features/wallet/wallet-format.ts:51
 msgid "收红包"
-msgstr ""
+msgstr "紅包を受け取った"
 
 #: apps/app/src/features/wallet/wallet-format.ts:53
 msgid "红包退回"
-msgstr ""
+msgstr "紅包が返還されました"
 
 #: apps/app/src/features/world/world-page.tsx:101
 #: apps/app/src/routes/discover-encounter-page.tsx:280
 #: apps/app/src/routes/discover-encounter-page.tsx:367
-#: apps/app/src/routes/discover-page.tsx:143
-#: apps/app/src/routes/discover-page.tsx:844
+#: apps/app/src/routes/discover-page.tsx:148
+#: apps/app/src/routes/discover-page.tsx:944
 msgid "摇一摇"
 msgstr "シェイク"
 
@@ -20151,53 +20152,53 @@ msgstr "ランダムな出会い"
 #: apps/app/src/features/world/world-page.tsx:110
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:154
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:156
-#: apps/app/src/routes/discover-page.tsx:157
+#: apps/app/src/routes/discover-page.tsx:162
 msgid "分身相遇"
-msgstr ""
+msgstr "分身の出会い"
 
 #: apps/app/src/features/world/world-page.tsx:111
 msgid "分身互访"
-msgstr ""
+msgstr "分身の交流"
 
 #: apps/app/src/features/world/world-page.tsx:119
-#: apps/app/src/routes/discover-page.tsx:184
+#: apps/app/src/routes/discover-page.tsx:189
 #: apps/app/src/routes/discover-scene-page.tsx:377
 msgid "场景相遇"
 msgstr "シーンで出会う"
 
 #: apps/app/src/features/world/world-page.tsx:120
 msgid "特定场景"
-msgstr ""
+msgstr "特定シナリオ"
 
 #: apps/app/src/features/world/world-page.tsx:129
 msgid "你的镜像"
-msgstr ""
+msgstr "あなたの鏡"
 
 #: apps/app/src/features/world/world-page.tsx:141
 #: apps/app/src/routes/discover-feed-page.tsx:2270
-#: apps/app/src/routes/discover-page.tsx:786
+#: apps/app/src/routes/discover-page.tsx:884
 msgid "世界居民公开可见"
 msgstr "世界住民に公開"
 
 #: apps/app/src/features/world/world-page.tsx:150
-#: apps/app/src/routes/discover-page.tsx:773
+#: apps/app/src/routes/discover-page.tsx:871
 msgid "世界角色日常"
 msgstr "世界キャラクターの日常"
 
 #: apps/app/src/features/world/world-page.tsx:170
-#: apps/app/src/routes/discover-page.tsx:253
+#: apps/app/src/routes/discover-page.tsx:258
 #: apps/app/src/routes/profile-page.tsx:211
 #: apps/app/src/routes/shop-page.tsx:166
 msgid "商城"
-msgstr ""
+msgstr "ショップ"
 
 #: apps/app/src/features/world/world-page.tsx:171
-#: apps/app/src/routes/discover-page.tsx:254
+#: apps/app/src/routes/discover-page.tsx:259
 msgid "好物"
-msgstr ""
+msgstr "おすすめ"
 
 #: apps/app/src/features/world/world-page.tsx:178
-#: apps/app/src/routes/discover-page.tsx:227
+#: apps/app/src/routes/discover-page.tsx:232
 msgid "娱乐"
 msgstr "エンタメ"
 
@@ -20205,15 +20206,15 @@ msgstr "エンタメ"
 #: apps/app/src/routes/knowledge-base-page.tsx:253
 #: apps/app/src/routes/profile-page.tsx:168
 msgid "知识库"
-msgstr ""
+msgstr "ナレッジベース"
 
 #: apps/app/src/features/world/world-page.tsx:200
 msgid "我的资料库"
 msgstr "マイライブラリ"
 
 #: apps/app/src/features/world/world-page.tsx:207
-msgid "收藏的角色"
-msgstr "お気に入りのキャラ"
+msgid "收藏的内容"
+msgstr "保存したコンテンツ"
 
 #: apps/app/src/features/world/world-page.tsx:214
 msgid "我发布的动态"
@@ -20246,7 +20247,7 @@ msgstr "ご意見・ご要望"
 #: apps/app/src/routes/profile-page.tsx:199
 #: apps/app/src/routes/wallet-page.tsx:101
 msgid "钱包"
-msgstr ""
+msgstr "ウォレット"
 
 #: apps/app/src/features/world/world-page.tsx:246
 msgid "余额与账单"
@@ -20261,7 +20262,7 @@ msgstr "サブスクと特典"
 #: apps/app/src/routes/profile-page.tsx:217
 #: apps/app/src/routes/shop-page.tsx:186
 msgid "礼物柜"
-msgstr ""
+msgstr "プレゼントボックス"
 
 #: apps/app/src/features/world/world-page.tsx:260
 #: apps/app/src/routes/gift-cabinet-page.tsx:125
@@ -20270,88 +20271,88 @@ msgstr "受け取ったギフト"
 
 #: apps/app/src/features/world/world-page.tsx:282
 msgid "正在切换到发现页"
-msgstr ""
+msgstr "ディスカバーに切り替えています"
 
 #: apps/app/src/features/world/world-page.tsx:283
 msgid "「世界」首屏当前在移动端开放。"
-msgstr ""
+msgstr "「ワールド」トップ画面はモバイルでのみ利用できます。"
 
 #: apps/app/src/features/world/world-page.tsx:284
 msgid "正在切换..."
-msgstr ""
+msgstr "切り替え中…"
 
 #: apps/app/src/features/world/world-page.tsx:342
 msgid "你的世界"
-msgstr ""
+msgstr "あなたのワールド"
 
 #: apps/app/src/features/world/world-page.tsx:343
 msgid "第 {worldDay} 天"
-msgstr ""
+msgstr "第{worldDay}日"
 
 #: apps/app/src/features/world/world-page.tsx:348
 msgid "个人主页"
-msgstr ""
+msgstr "プロフィール"
 
 #: apps/app/src/features/world/world-page.tsx:369
 msgid "探索"
-msgstr ""
+msgstr "探索"
 
 #: apps/app/src/features/world/world-page.tsx:372
 msgid "相遇"
-msgstr ""
+msgstr "出会い"
 
 #: apps/app/src/features/world/world-page.tsx:448
 #: apps/app/src/features/world/world-page.tsx:449
 msgid "和我说点什么…"
-msgstr ""
+msgstr "何か話しかけてみて…"
 
 #: apps/app/src/features/world/world-page.tsx:521
 msgid "守护中"
-msgstr ""
+msgstr "守護中"
 
 #: apps/app/src/features/world/world-page.tsx:523
 msgid "成形中"
-msgstr ""
+msgstr "形成中"
 
 #: apps/app/src/features/world/world-page.tsx:525
 msgid "待唤醒"
-msgstr ""
+msgstr "覚醒待ち"
 
 #: apps/app/src/features/world/world-page.tsx:543
 msgid "你的分身"
-msgstr ""
+msgstr "あなたの分身"
 
 #: apps/app/src/features/world/world-page.tsx:548
 msgid "心情 {mood}"
-msgstr ""
+msgstr "気分 {mood}"
 
 #: apps/app/src/features/world/world-page.tsx:549
 msgid "能量 {energy}"
-msgstr ""
+msgstr "エネルギー {energy}"
 
 #: apps/app/src/features/world/world-page.tsx:574
 msgid "多在世界里互动，分身会越来越像你"
-msgstr ""
+msgstr "ワールドでたくさん交流すると、分身があなたにどんどん似てきます"
 
 #: apps/app/src/features/world/world-page.tsx:585
 msgid "已分析 {signalCount} 条信号"
-msgstr ""
+msgstr "{signalCount}件のシグナルを分析済み"
 
 #: apps/app/src/features/world/world-page.tsx:586
 msgid " · 待分析 {pendingCount} 条"
-msgstr ""
+msgstr " · {pendingCount}件分析待ち"
 
 #: apps/app/src/features/world/world-page.tsx:593
 msgid "当前关注"
-msgstr ""
+msgstr "現在の関心"
 
 #: apps/app/src/features/world/world-page.tsx:610
 msgid "去看看你的赛博分身"
-msgstr ""
+msgstr "サイバー分身を見てみよう"
 
 #: apps/app/src/features/world/world-page.tsx:610
 msgid "看完整画像与对话"
-msgstr ""
+msgstr "全プロフィールと会話を見る"
 
 #: apps/app/src/i18n/static-dom-seed.ts:12
 #: apps/app/src/routes/profile-settings-desktop.tsx:476
@@ -20442,7 +20443,7 @@ msgstr "おすすめコンテンツと動画更新"
 
 #: apps/app/src/i18n/static-dom-seed.ts:51
 #: apps/app/src/routes/channels-page.tsx:1644
-#: apps/app/src/routes/discover-page.tsx:130
+#: apps/app/src/routes/discover-page.tsx:135
 msgid "朋友"
 msgstr "友だち"
 
@@ -21278,7 +21279,7 @@ msgstr "内容方針"
 #: apps/app/src/i18n/static-dom-seed.ts:521
 #: apps/app/src/routes/desktop-feedback-page.tsx:75
 msgid "文案、频道定义、桌面端表达存在偏差。"
-msgstr ""
+msgstr "文案、チャンネル定義、デスクトップ表現に不一致があります。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:522
 #: apps/app/src/routes/desktop-feedback-page.tsx:80
@@ -21398,7 +21399,7 @@ msgstr "フィードバックパッケージ概要"
 #: apps/app/src/i18n/static-dom-seed.ts:546
 #: apps/app/src/routes/desktop-feedback-page.tsx:478
 msgid "一句话说明问题，例如：桌面应用切回聊天后导航状态错乱"
-msgstr ""
+msgstr "問題を一言で説明してください。例：デスクトップアプリでチャットに戻るとナビゲーションが乱れる"
 
 #: apps/app/src/i18n/static-dom-seed.ts:547
 #: apps/app/src/routes/desktop-feedback-page.tsx:515
@@ -21507,7 +21508,7 @@ msgstr "配信準備"
 #: apps/app/src/i18n/static-dom-seed.ts:585
 #: apps/app/src/routes/live-companion-page.tsx:487
 msgid "先把直播标题、主题、封面卖点和桌面准备做好，等真正开播时这一步不用重新做。"
-msgstr ""
+msgstr "配信タイトル・テーマ・カバーの見どころ・デスクトップを事前に準備しておけば、本番配信時にやり直す必要はありません。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:586
 #: apps/app/src/routes/live-companion-page.tsx:494
@@ -21610,12 +21611,12 @@ msgstr "ライブ記録"
 
 #: apps/app/src/i18n/static-dom-seed.ts:607
 msgid "当前先保留桌面本地历史，等接入真实直播后会继续沿用这里的时间线。"
-msgstr ""
+msgstr "現時点ではデスクトップのローカル履歴を保持します。実際の配信に接続すると、このタイムラインが引き続き使用されます。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:608
 #: apps/app/src/routes/live-companion-page.tsx:867
 msgid "提前生成内容"
-msgstr ""
+msgstr "コンテンツを事前生成"
 
 #: apps/app/src/i18n/static-dom-seed.ts:609
 msgid "还没有直播记录。先准备一场直播并切到“直播中”，这里就会开始积累桌面伴侣历史。"
@@ -21664,7 +21665,7 @@ msgstr "これらのデータの行き先"
 #: apps/app/src/i18n/static-dom-seed.ts:618
 #: apps/app/src/routes/legal-privacy-page.tsx:24
 msgid "远程模式下，数据会发送到所在世界的服务端；自托管或特定部署模式下，数据会保存在对应世界的运行目录和数据库里。"
-msgstr ""
+msgstr "リモートモードでは、データは所属ワールドのサーバーに送信されます。セルフホストまたは特定のデプロイモードでは、対応するワールドの実行ディレクトリとデータベースに保存されます。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:619
 #: apps/app/src/routes/legal-privacy-page.tsx:25
@@ -21674,7 +21675,7 @@ msgstr "プロフィール設定、安全通報、ブロック入口から利用
 #: apps/app/src/i18n/static-dom-seed.ts:622
 #: apps/app/src/routes/legal-terms-page.tsx:12
 msgid "你在隐界发布和互动的内容，需要遵守当前世界的服务规则、法律要求与基础安全边界。"
-msgstr ""
+msgstr "隠界で投稿・やり取りするコンテンツは、現在のワールドのサービスルール、法的要件、および基本的な安全基準に従う必要があります。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:623
 #: apps/app/src/routes/legal-terms-page.tsx:15
@@ -21689,7 +21690,7 @@ msgstr "送信したメッセージ、コメント、投稿、プロフィール
 #: apps/app/src/i18n/static-dom-seed.ts:625
 #: apps/app/src/routes/legal-terms-page.tsx:18
 msgid "如果你在世界里主动触发互动、加好友、创建群聊或使用 AI，这些行为都会按产品能力进入对应的记录、通知和审计。"
-msgstr ""
+msgstr "ワールド内でインタラクションの開始、友達追加、グループチャットの作成、AI の使用を行った場合、それらの行動は製品機能の一部として記録・通知・監査されます。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:626
 #: apps/app/src/routes/legal-terms-page.tsx:22
@@ -21724,7 +21725,7 @@ msgstr "嫌がらせ、不快、誤解を招く内容、越境した内容に遭
 #: apps/app/src/i18n/static-dom-seed.ts:632
 #: apps/app/src/routes/legal-community-page.tsx:18
 msgid "举报会进入当前世界的安全记录，用于后续审核、留档和必要处理；如果内容涉及持续性风险，系统可能同步做限制动作。"
-msgstr ""
+msgstr "通報は現在のワールドの安全記録に登録され、審査・保管・必要な対処に使用されます。コンテンツが継続的なリスクをもたらす場合、システムが制限措置を取ることがあります。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:633
 #: apps/app/src/routes/legal-community-page.tsx:22
@@ -21986,7 +21987,7 @@ msgstr "起業と執筆メンター写像"
 
 #: apps/app/src/i18n/static-dom-seed.ts:701
 msgid "一个人就能帮你长期学英语的老师型助手"
-msgstr ""
+msgstr "長期的な英語学習をサポートする、個人チューター型アシスタント"
 
 #: apps/app/src/i18n/static-dom-seed.ts:702
 msgid "专门替你记事、盯时间、到点提醒的人"
@@ -22006,7 +22007,7 @@ msgstr "X/Twitter運用フルスタックメンター"
 
 #: apps/app/src/i18n/static-dom-seed.ts:706
 msgid "一个人就能帮你把训练和恢复做下去的健身教练型助手"
-msgstr ""
+msgstr "トレーニングとリカバリーを継続させてくれる、パーソナルトレーナー型アシスタント"
 
 #: apps/app/src/i18n/static-dom-seed.ts:707
 msgid "历史产品领袖映射"
@@ -22206,7 +22207,7 @@ msgstr "フォローすると、メッセージからこの内容を確認でき
 #: apps/app/src/i18n/static-dom-seed.ts:797
 #: apps/app/src/routes/official-account-detail-page.tsx:604
 msgid "已关注，可直接进入服务消息。"
-msgstr ""
+msgstr "フォロー済み — サービスメッセージに直接移動できます。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:798
 #: apps/app/src/routes/official-account-detail-page.tsx:605
@@ -22479,7 +22480,7 @@ msgstr "タグは一時的に利用できません"
 #: apps/app/src/i18n/static-dom-seed.ts:1084
 #: apps/app/src/routes/tags-page.tsx:74
 msgid "标签页在桌面布局里并入了通讯录，这里会自动带你打开标签视图。"
-msgstr ""
+msgstr "デスクトップレイアウトではタグタブが連絡先に統合されています。タグビューが自動的に開きます。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:1086
 #: apps/app/src/routes/desktop-chat-history-page.tsx:341
@@ -22789,7 +22790,7 @@ msgstr "OpenAI のマルチモーダル主力モデル。動画・音声・画�
 
 #: apps/app/src/lib/character-i18n.ts:92
 msgid "OpenAI 轻量多模态模型，适合轻量对话和实时互动角色。"
-msgstr ""
+msgstr "OpenAI の軽量マルチモーダルモデル。カジュアルな会話やリアルタイムのインタラクティブキャラクターに最適です。"
 
 #: apps/app/src/lib/character-i18n.ts:93
 msgid "OpenAI 新一代旗舰推理模型，适合作为重规划、重分析角色。"
@@ -22889,7 +22890,7 @@ msgstr "テンセント混元の推論モデル。中国語の社交型キャラ
 
 #: apps/app/src/lib/character-i18n.ts:117
 msgid "MiniMax Token Plan 主力模型，适合作为日常对话和泛娱乐角色。"
-msgstr ""
+msgstr "MiniMax Token Plan のメインモデル。日常会話や汎用エンタメキャラクターに最適です。"
 
 #: apps/app/src/lib/character-i18n.ts:118
 msgid "Meta 开源轻量模型，适合作为边缘设备或实验型角色。"
@@ -22909,19 +22910,19 @@ msgstr "{senderLabel}:"
 
 #: apps/app/src/lib/conversation-preview.ts:151
 msgid "[群视频通话]"
-msgstr ""
+msgstr "[グループビデオ通話]"
 
 #: apps/app/src/lib/conversation-preview.ts:152
 msgid "[群语音通话]"
-msgstr ""
+msgstr "[グループ音声通話]"
 
 #: apps/app/src/lib/conversation-preview.ts:162
 msgid "[视频通话]"
-msgstr ""
+msgstr "[ビデオ通話]"
 
 #: apps/app/src/lib/conversation-preview.ts:163
 msgid "[语音通话]"
-msgstr ""
+msgstr "[音声通話]"
 
 #: apps/app/src/lib/conversation-preview.ts:174
 msgid "打开群聊查看最近消息。"
@@ -23055,7 +23056,7 @@ msgstr "モーメンツは現在、画像と動画のみ対応。"
 
 #: apps/app/src/lib/error-translate.ts:106
 msgid "朋友圈图片或视频必须通过上传入口添加。"
-msgstr ""
+msgstr "モーメントの写真や動画はアップロード入口から追加してください。"
 
 #: apps/app/src/lib/error-translate.ts:108
 msgid "朋友圈媒体不存在。"
@@ -23239,47 +23240,47 @@ msgstr "本日のシーン遭遇回数を使い切りました。明日また試
 
 #: apps/app/src/lib/error-translate.ts:226
 msgid "今日的分身相遇次数已用完，明天再来。"
-msgstr ""
+msgstr "本日の分身との出会い回数を使い切りました。また明日どうぞ。"
 
 #: apps/app/src/lib/error-translate.ts:228
 msgid "暂时没有合适的相遇对象，过会再试试。"
-msgstr ""
+msgstr "今は適切な相手が見つかりません。少し待ってからもう一度試してください。"
 
 #: apps/app/src/lib/error-translate.ts:231
 msgid "请先在「我 › 个人信息 › 联系方式」里填写联系方式。"
-msgstr ""
+msgstr "まず「マイページ › プロフィール › 連絡先」で連絡先情報を入力してください。"
 
 #: apps/app/src/lib/error-translate.ts:234
 msgid "请先在设置里开启「分身相遇」。"
-msgstr ""
+msgstr "まず設定で「分身との出会い」を有効にしてください。"
 
 #: apps/app/src/lib/error-translate.ts:236
 msgid "对方已退出社交相遇。"
-msgstr ""
+msgstr "相手はソーシャル出会いから退出しました。"
 
 #: apps/app/src/lib/error-translate.ts:238
 msgid "这次相遇没能生成，请再试一次。"
-msgstr ""
+msgstr "この出会いを生成できませんでした。もう一度お試しください。"
 
 #: apps/app/src/lib/error-translate.ts:240
 msgid "你的分身正在唤醒，请稍后重试。"
-msgstr ""
+msgstr "あなたの分身が起動中です。しばらくしてから再試行してください。"
 
 #: apps/app/src/lib/error-translate.ts:243
 msgid "你的分身还在生成画像，过一会儿再来发起相遇。"
-msgstr ""
+msgstr "あなたの分身はまだプロフィールを生成中です。少し待ってから出会いを始めてください。"
 
 #: apps/app/src/lib/error-translate.ts:246
 msgid "这次相遇不存在或已失效。"
-msgstr ""
+msgstr "この出会いは存在しないか、すでに期限切れです。"
 
 #: apps/app/src/lib/error-translate.ts:248
 msgid "你已经做过选择了。"
-msgstr ""
+msgstr "すでに選択済みです。"
 
 #: apps/app/src/lib/error-translate.ts:251
 msgid "已经聊到最后一轮了，请选择想要联系方式或略过。"
-msgstr ""
+msgstr "最終ラウンドに達しました。連絡先を交換するかスキップするか選んでください。"
 
 #: apps/app/src/lib/error-translate.ts:254
 msgid "用户名与密码不能为空。"
@@ -23299,7 +23300,7 @@ msgstr "このアカウントはメール認証コードで登録されました
 
 #: apps/app/src/lib/error-translate.ts:264
 msgid "服务器登录组件未配置，请联系管理员。"
-msgstr ""
+msgstr "サーバーのログインコンポーネントが設定されていません。管理者にお問い合わせください。"
 
 #: apps/app/src/lib/error-translate.ts:266
 msgid "验证码不能为空。"
@@ -23458,11 +23459,11 @@ msgstr "管理バックエンドのアクセスキーが無効です。"
 
 #: apps/app/src/lib/error-translate.ts:354
 msgid "内容列表不能为空。"
-msgstr ""
+msgstr "コンテンツリストは空にできません。"
 
 #: apps/app/src/lib/error-translate.ts:357
 msgid "角色 ID 和稳定版本 ID 不能为空。"
-msgstr ""
+msgstr "キャラクター ID と安定バージョン ID は必須です。"
 
 #. placeholder {0}: String(params.conversationId ?? "")
 #: apps/app/src/lib/error-translate.ts:361
@@ -23486,7 +23487,7 @@ msgstr "World オーナーが見つかりません。"
 
 #: apps/app/src/lib/error-translate.ts:374
 msgid "未知的自我角色面板文档名。"
-msgstr ""
+msgstr "不明なセルフキャラクターパネルのドキュメント名です。"
 
 #: apps/app/src/lib/error-translate.ts:376
 msgid "至少选择一个联系人。"
@@ -23664,7 +23665,7 @@ msgstr "キャラクターのプロファイルが見つかりません：{0}"
 
 #: apps/app/src/lib/error-translate.ts:480
 msgid "附件内容无效。"
-msgstr ""
+msgstr "添付コンテンツが無効です。"
 
 #: apps/app/src/lib/error-translate.ts:482
 msgid "消息文本不能为空。"
@@ -23769,7 +23770,7 @@ msgstr "この Eval 機能はまだ実装されていません。"
 
 #: apps/app/src/lib/error-translate.ts:548
 msgid "默认自我角色还没建好。"
-msgstr ""
+msgstr "デフォルトのセルフキャラクターがまだ作成されていません。"
 
 #: apps/app/src/lib/error-translate.ts:550
 msgid "世界主人不存在。"
@@ -23896,19 +23897,19 @@ msgstr "サイバーアバターの実行記録がありません：{0}"
 
 #: apps/app/src/lib/error-translate.ts:645
 msgid "请先输入内容。"
-msgstr ""
+msgstr "先に内容を入力してください。"
 
 #: apps/app/src/lib/error-translate.ts:647
 msgid "赛博分身暂时没法回应，请稍后再试。"
-msgstr ""
+msgstr "サイバー分身は今応答できません。後でもう一度お試しください。"
 
 #: apps/app/src/lib/error-translate.ts:649
 msgid "结论生成失败，请稍后再试。"
-msgstr ""
+msgstr "結論の生成に失敗しました。後でもう一度お試しください。"
 
 #: apps/app/src/lib/error-translate.ts:651
 msgid "赛博分身刚刚更新过，请稍后再试。"
-msgstr ""
+msgstr "サイバー分身が更新されたばかりです。少し待ってからもう一度お試しください。"
 
 #: apps/app/src/lib/error-translate.ts:653
 msgid "不支持的世界语言。"
@@ -23930,15 +23931,15 @@ msgstr "Action 実行記録がありません：{0}"
 
 #: apps/app/src/lib/error-translate.ts:665
 msgid "该动作没有保留执行计划，当前无法重试。"
-msgstr ""
+msgstr "このアクションに実行プランが保存されていないため、再試行できません。"
 
 #: apps/app/src/lib/error-translate.ts:667
 msgid "好友申请 ID 不能为空。"
-msgstr ""
+msgstr "友達申請 ID は必須です。"
 
 #: apps/app/src/lib/error-translate.ts:669
 msgid "回访记录不存在。"
-msgstr ""
+msgstr "フォローアップ記録が見つかりません。"
 
 #: apps/app/src/lib/error-translate.ts:671
 msgid "词条不存在。"
@@ -24042,15 +24043,15 @@ msgstr "ゲームの検証に失敗しました。"
 
 #: apps/app/src/lib/error-translate.ts:733
 msgid "余额不足，本次需 ¥{priceYuan}，请充值后再试。"
-msgstr ""
+msgstr "残高不足です。¥{priceYuan} が必要です。チャージしてから再試行してください。"
 
 #: apps/app/src/lib/error-translate.ts:734
 msgid "钱包余额不足，请充值后再试。"
-msgstr ""
+msgstr "ウォレットの残高が不足しています。チャージしてから再試行してください。"
 
 #: apps/app/src/lib/error-translate.ts:738
 msgid "计费服务暂时不可用，请稍后再试。"
-msgstr ""
+msgstr "課金サービスは一時的に利用できません。後でもう一度お試しください。"
 
 #: apps/app/src/lib/error-translate.ts:740
 msgid "提交的数据无效，请检查后重试。"
@@ -24062,24 +24063,24 @@ msgstr "サービスは一時的に利用できません。後ほどお試しく
 
 #: apps/app/src/lib/format.ts:101
 msgid "{diffMinutes} 分钟前"
-msgstr ""
+msgstr "{diffMinutes}分前"
 
 #: apps/app/src/lib/format.ts:107
 msgid "{diffHours} 小时前"
-msgstr ""
+msgstr "{diffHours}時間前"
 
 #. placeholder {0}: date.getMonth() + 1
 #. placeholder {1}: date.getDate()
 #: apps/app/src/lib/format.ts:117
 msgid "{0}月{1}日"
-msgstr ""
+msgstr "{0}月{1}日"
 
 #. placeholder {0}: date.getFullYear()
 #. placeholder {1}: date.getMonth() + 1
 #. placeholder {2}: date.getDate()
 #: apps/app/src/lib/format.ts:120
 msgid "{0}年{1}月{2}日"
-msgstr ""
+msgstr "{0}年{1}月{2}日"
 
 #: apps/app/src/lib/format.ts:248
 msgid "隐"
@@ -24110,11 +24111,11 @@ msgstr "{0} さんのチャンネル投稿"
 
 #: apps/app/src/lib/message-attachment-semantic.ts:252
 msgid "红包，{note}"
-msgstr ""
+msgstr "紅包、{note}"
 
 #: apps/app/src/lib/message-attachment-semantic.ts:259
 msgid "礼物，{name}"
-msgstr ""
+msgstr "ギフト、{name}"
 
 #: apps/app/src/lib/message-attachment-semantic.ts:300
 msgid "文档"
@@ -24122,7 +24123,7 @@ msgstr "ドキュメント"
 
 #: apps/app/src/lib/message-attachment-semantic.ts:333
 msgid "已超时 {durationStr}"
-msgstr ""
+msgstr "{durationStr}前にタイムアウト"
 
 #: apps/app/src/lib/request-error.ts:32
 msgid "请求失败，请稍后重试。"
@@ -24138,11 +24139,11 @@ msgstr "リクエストが中断されました。後でもう一度お試しく
 
 #: apps/app/src/lib/request-error.ts:72
 msgid "当前无法连接到隐界世界，请先检查世界地址和网络连接。"
-msgstr ""
+msgstr "隠界ワールドに接続できません。ワールドのアドレスとネットワーク接続を確認してください。"
 
 #: apps/app/src/lib/request-error.ts:78
 msgid "当前隐界世界暂时不可用，请确认世界服务已经启动后重试。"
-msgstr ""
+msgstr "隠界ワールドは一時的に利用できません。ワールドサービスが起動していることを確認してから再試行してください。"
 
 #: apps/app/src/lib/request-error.ts:91
 msgid "服务返回异常响应，请检查世界地址是否正确或稍后重试。"
@@ -24158,16 +24159,16 @@ msgstr "嫌がらせまたは不快なコンテンツ"
 
 #: apps/app/src/lib/world-entry.ts:43
 msgid "当前世界暂时不可用，请稍后再试。"
-msgstr ""
+msgstr "このワールドは一時的に利用できません。後でもう一度お試しください。"
 
 #: apps/app/src/lib/world-entry.ts:59
 msgid "世界入口可以打开，但后端服务还没准备好（502）。请确认后端服务已经启动，或检查代理转发设置。"
-msgstr ""
+msgstr "ワールド入口には接続できますが、バックエンドサービスがまだ準備できていません（502）。バックエンドが起動しているか、プロキシ転送設定を確認してください。"
 
 #. placeholder {0}: healthProbe.status
 #: apps/app/src/lib/world-entry.ts:67
 msgid "世界入口可以打开，但后端服务返回了 {0}。请确认后端服务已经启动，或检查代理转发设置。"
-msgstr ""
+msgstr "ワールド入口には接続できますが、バックエンドが {0} を返しました。バックエンドが起動しているか、プロキシ転送設定を確認してください。"
 
 #: apps/app/src/routes/channel-author-page.tsx:223
 #: apps/app/src/routes/channels-page.tsx:1215
@@ -24238,7 +24239,7 @@ msgstr "リプレイを表示"
 
 #: apps/app/src/routes/channel-author-page.tsx:730
 msgid "作者内容分栏"
-msgstr ""
+msgstr "作者コンテンツ分割ビュー"
 
 #. placeholder {0}: visiblePosts.length
 #: apps/app/src/routes/channel-author-page.tsx:767
@@ -24314,33 +24315,33 @@ msgstr "コンテンツ更新"
 #: apps/app/src/routes/channel-history-page.tsx:55
 #: apps/app/src/routes/channels-page.tsx:2534
 msgid "观看历史"
-msgstr ""
+msgstr "視聴履歴"
 
 #: apps/app/src/routes/channel-history-page.tsx:56
 msgid "你看过的视频号"
-msgstr ""
+msgstr "視聴したチャンネル"
 
 #: apps/app/src/routes/channel-history-page.tsx:79
 msgid "正在读取观看历史…"
-msgstr ""
+msgstr "視聴履歴を読み込み中…"
 
 #. placeholder {0}: describeRequestError(historyQuery.error)
 #: apps/app/src/routes/channel-history-page.tsx:84
 msgid "观看历史加载失败：{0}"
-msgstr ""
+msgstr "視聴履歴の読み込みに失敗しました：{0}"
 
 #: apps/app/src/routes/channel-history-page.tsx:99
 msgid "还没有观看记录"
-msgstr ""
+msgstr "まだ視聴履歴がありません"
 
 #: apps/app/src/routes/channel-history-page.tsx:100
 msgid "你在视频号看过的内容会出现在这里。"
-msgstr ""
+msgstr "チャンネルで視聴したコンテンツがここに表示されます。"
 
 #. placeholder {0}: formatWeChatCommentTime(lastViewedAt)
 #: apps/app/src/routes/channel-history-page.tsx:167
 msgid "{0} 看过"
-msgstr ""
+msgstr "{0} が視聴"
 
 #. placeholder {0}: describeRequestError(error)
 #. placeholder {0}: translateAppErrorCode(error) ?? describeRequestError(error)
@@ -24368,7 +24369,7 @@ msgstr "チャンネルのインタラクションを更新しました。"
 
 #: apps/app/src/routes/channels-page.tsx:486
 #: apps/app/src/routes/discover-feed-page.tsx:709
-#: apps/app/src/routes/discover-page.tsx:584
+#: apps/app/src/routes/discover-page.tsx:642
 #: apps/app/src/routes/friend-moments-page.tsx:536
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:421
 #: apps/app/src/routes/moments-page.tsx:840
@@ -24394,11 +24395,11 @@ msgstr "チャンネルズのコメント送信に失敗しました。しばら
 
 #: apps/app/src/routes/channels-page.tsx:741
 msgid "评论已删除。"
-msgstr ""
+msgstr "コメントを削除しました。"
 
 #: apps/app/src/routes/channels-page.tsx:768
 msgid "删除评论失败，请稍后重试。"
-msgstr ""
+msgstr "コメントの削除に失敗しました。後でもう一度お試しください。"
 
 #: apps/app/src/routes/channels-page.tsx:800
 msgid "现在没法生成新内容，稍后再试看看。"
@@ -24503,11 +24504,11 @@ msgstr "デスクトップのチャンネルを開いています"
 
 #: apps/app/src/routes/channels-page.tsx:2401
 msgid "正在打开桌面视频号，马上显示当前频道内容。"
-msgstr ""
+msgstr "デスクトップのチャンネルを開いています。現在のチャンネルコンテンツがまもなく表示されます。"
 
 #: apps/app/src/routes/channels-page.tsx:2403
 msgid "正在打开桌面视频号..."
-msgstr ""
+msgstr "デスクトップのチャンネルを開いています..."
 
 #: apps/app/src/routes/channels-page.tsx:2657
 msgid "正在刷新视频号内容"
@@ -24519,15 +24520,15 @@ msgstr "少しお待ちください。おすすめフィードとインタラク
 
 #: apps/app/src/routes/channels-page.tsx:2798
 msgid "已复制评论内容。"
-msgstr ""
+msgstr "コメントをコピーしました。"
 
 #: apps/app/src/routes/channels-page.tsx:2805
 msgid "确认删除这条评论？删除后不可恢复。"
-msgstr ""
+msgstr "このコメントを削除しますか？この操作は元に戻せません。"
 
 #: apps/app/src/routes/channels-page.tsx:2821
 msgid "已收到举报，我们将尽快核实。"
-msgstr ""
+msgstr "通報を受け付けました。できるだけ早く確認いたします。"
 
 #: apps/app/src/routes/channels-page.tsx:3789
 #: apps/app/src/routes/discover-feed-page.tsx:2318
@@ -24566,7 +24567,7 @@ msgstr "{0} · チャンネル投稿"
 #. placeholder {0}: post.authorName
 #: apps/app/src/routes/channels-page.tsx:4486
 msgid "已关注 {0}，点击取消关注"
-msgstr ""
+msgstr "{0} をフォロー中 — タップでフォロー解除"
 
 #: apps/app/src/routes/channels-page.tsx:4569
 msgid "最近评论"
@@ -24578,15 +24579,15 @@ msgstr "最近のコメントを読み込み中…"
 
 #: apps/app/src/routes/channels-page.tsx:4771
 msgid "作者"
-msgstr ""
+msgstr "作者"
 
 #: apps/app/src/routes/channels-page.tsx:5418
 msgid "—— 展开 {hiddenCount} 条回复 ∨"
-msgstr ""
+msgstr "—— 返信を{hiddenCount}件表示 ∨"
 
 #: apps/app/src/routes/channels-page.tsx:5426
 msgid "—— 收起 ∧"
-msgstr ""
+msgstr "—— 折りたたむ ∧"
 
 #: apps/app/src/routes/channels-page.tsx:5460
 #: apps/app/src/routes/channels-page.tsx:5512
@@ -24596,23 +24597,23 @@ msgstr "コメントパネルを閉じる"
 #. placeholder {0}: post.commentCount
 #: apps/app/src/routes/channels-page.tsx:5498
 msgid "{0} 条评论"
-msgstr ""
+msgstr "{0}件のコメント"
 
 #: apps/app/src/routes/channels-page.tsx:5578
 msgid "正在读取最近评论..."
-msgstr ""
+msgstr "最近のコメントを読み込み中..."
 
 #: apps/app/src/routes/channels-page.tsx:5588
 msgid "还没有评论，快来抢沙发"
-msgstr ""
+msgstr "まだコメントはありません。最初に投稿しましょう"
 
 #: apps/app/src/routes/channels-page.tsx:5689
 msgid "评论…"
-msgstr ""
+msgstr "コメント…"
 
 #: apps/app/src/routes/channels-page.tsx:5705
 msgid "评论操作"
-msgstr ""
+msgstr "コメントの操作"
 
 #: apps/app/src/routes/character-detail-page.tsx:368
 msgid "正在读取朋友资料..."
@@ -24757,7 +24758,7 @@ msgstr "連絡先に追加しました。"
 
 #: apps/app/src/routes/character-detail-page.tsx:776
 msgid "已开启默认语音回复。"
-msgstr ""
+msgstr "デフォルトの音声返信をオンにしました。"
 
 #: apps/app/src/routes/character-detail-page.tsx:777
 msgid "已关闭默认语音回复。"
@@ -24815,7 +24816,7 @@ msgstr "ビデオ通話に入る"
 
 #: apps/app/src/routes/character-detail-page.tsx:1246
 msgid "确定移出黑名单？"
-msgstr ""
+msgstr "ブロックリストから削除しますか？"
 
 #: apps/app/src/routes/character-detail-page.tsx:1249
 msgid "移出后将恢复正常联系与互动。"
@@ -24831,7 +24832,7 @@ msgstr "今後のやり取りはブロックされます"
 
 #: apps/app/src/routes/character-detail-page.tsx:1272
 msgid "确定删除联系人？"
-msgstr ""
+msgstr "この連絡先を削除しますか？"
 
 #: apps/app/src/routes/character-detail-page.tsx:1284
 msgid "对方不会收到通知"
@@ -24844,7 +24845,7 @@ msgstr "地域: {0}"
 
 #: apps/app/src/routes/character-detail-page.tsx:2008
 msgid "送礼物"
-msgstr ""
+msgstr "ギフトを贈る"
 
 #: apps/app/src/routes/character-detail-page.tsx:2192
 msgid "已不再看 TA 的朋友圈"
@@ -24976,7 +24977,7 @@ msgstr "現在のチャット設定を保存"
 
 #: apps/app/src/routes/chat-background-page.tsx:798
 msgid "桌面端预览会同步展示在聊天"
-msgstr ""
+msgstr "デスクトップのプレビューはチャットにも表示されます"
 
 #: apps/app/src/routes/chat-details-page.tsx:82
 msgid "正在打开桌面聊天信息"
@@ -24984,7 +24985,7 @@ msgstr "デスクトップのチャット情報を開いています"
 
 #: apps/app/src/routes/chat-details-page.tsx:83
 msgid "正在切换到桌面聊天中的聊天信息侧栏。"
-msgstr ""
+msgstr "デスクトップチャットの情報サイドバーに切り替えています。"
 
 #: apps/app/src/routes/chat-details-page.tsx:84
 msgid "打开桌面聊天信息..."
@@ -25088,7 +25089,7 @@ msgstr "ブロックに失敗しました。しばらくしてから再試行し
 
 #: apps/app/src/routes/chat-details-page.tsx:954
 msgid "该聊天会先从消息列表中隐藏，下次再写新内容时会重新出现。"
-msgstr ""
+msgstr "このチャットはメッセージリストから非表示になります。次にメッセージを送ると再表示されます。"
 
 #: apps/app/src/routes/chat-details-page.tsx:955
 msgid "该聊天会先从消息列表中隐藏，收到新消息后会再次出现。"
@@ -25100,7 +25101,7 @@ msgstr "既存のチャット履歴は削除しない"
 
 #: apps/app/src/routes/chat-details-page.tsx:966
 msgid "仅清空这段自我对话的历史消息，会话入口会继续保留。"
-msgstr ""
+msgstr "この独り言チャットの履歴のみ削除されます。会話の入口は残ります。"
 
 #: apps/app/src/routes/chat-details-page.tsx:967
 msgid "仅清空当前聊天历史消息，对方资料和会话入口会继续保留。"
@@ -25195,7 +25196,7 @@ msgstr "その他のチャット操作"
 
 #: apps/app/src/routes/chat-details-page.tsx:1414
 msgid "隐藏 / 清空"
-msgstr ""
+msgstr "非表示 / クリア"
 
 #: apps/app/src/routes/chat-details-page.tsx:1416
 msgid "隐藏 / 清空 / 投诉"
@@ -25208,7 +25209,7 @@ msgstr "非表示 / 消去 / 通報 / ブロック"
 #. placeholder {0}: targetCharacter?.name || displayedConversationTitle || t(msg`当前聊天`)
 #: apps/app/src/routes/chat-details-page.tsx:1541
 msgid "对 {0} 进行隐藏或清空操作。"
-msgstr ""
+msgstr "{0}を非表示またはクリアします。"
 
 #. placeholder {0}: targetCharacter?.name || displayedConversationTitle || t(msg`当前聊天`)
 #: apps/app/src/routes/chat-details-page.tsx:1544
@@ -25217,7 +25218,7 @@ msgstr "{0} を非表示・消去・安全操作できます。"
 
 #: apps/app/src/routes/chat-details-page.tsx:1553
 msgid "先从消息列表隐藏，下次写新内容时会重新出现"
-msgstr ""
+msgstr "メッセージリストから非表示 — 新しいメッセージを送ると再表示されます"
 
 #: apps/app/src/routes/chat-details-page.tsx:1554
 msgid "先从消息列表隐藏，后续有新消息时再次出现"
@@ -25225,7 +25226,7 @@ msgstr "先にメッセージ一覧から非表示にし、新しいメッセー
 
 #: apps/app/src/routes/chat-details-page.tsx:1565
 msgid "仅清空这段自我对话的历史，会话入口保留"
-msgstr ""
+msgstr "この独り言の履歴のみ削除 — 会話の入口は残ります"
 
 #: apps/app/src/routes/chat-details-page.tsx:1566
 msgid "仅清空这段聊天，不影响联系人关系"
@@ -25259,11 +25260,11 @@ msgstr "デスクトップメッセージを開いています"
 
 #: apps/app/src/routes/chat-list-page.tsx:215
 msgid "正在打开桌面消息，马上显示最近会话。"
-msgstr ""
+msgstr "デスクトップのメッセージを開いています — 最近の会話がまもなく表示されます。"
 
 #: apps/app/src/routes/chat-list-page.tsx:216
 msgid "正在打开桌面消息..."
-msgstr ""
+msgstr "デスクトップのメッセージを開いています..."
 
 #: apps/app/src/routes/chat-list-page.tsx:625
 msgid "标记已读失败，请稍后再试。"
@@ -25314,7 +25315,7 @@ msgstr "メッセージページは一時的に利用できません"
 
 #: apps/app/src/routes/chat-list-page.tsx:1518
 msgid "消息列表暂时无法刷新，显示的是最近一次同步的数据。"
-msgstr ""
+msgstr "メッセージリストを更新できません — 最後に同期したデータを表示しています。"
 
 #: apps/app/src/routes/chat-list-page.tsx:1853
 msgid "还没有新消息"
@@ -25354,7 +25355,7 @@ msgstr "デスクトップのチャット履歴を開いています"
 
 #: apps/app/src/routes/chat-message-search-page.tsx:31
 msgid "正在切换到桌面聊天中的聊天记录搜索侧栏。"
-msgstr ""
+msgstr "デスクトップチャットの検索サイドバーに切り替えています。"
 
 #: apps/app/src/routes/chat-message-search-page.tsx:32
 msgid "打开桌面聊天记录..."
@@ -25394,20 +25395,20 @@ msgstr "デスクトップの会話を開いています"
 
 #: apps/app/src/routes/chat-room-page.tsx:371
 msgid "正在打开桌面聊天，马上恢复当前会话。"
-msgstr ""
+msgstr "デスクトップチャットを開いています — 現在の会話をまもなく復元します。"
 
 #: apps/app/src/routes/chat-room-page.tsx:372
 msgid "正在打开桌面对话..."
-msgstr ""
+msgstr "デスクトップチャットを開いています..."
 
 #: apps/app/src/routes/chat-video-call-page.tsx:22
 #: apps/app/src/routes/chat-voice-call-page.tsx:21
 msgid "正在返回聊天"
-msgstr ""
+msgstr "チャットに戻っています"
 
 #: apps/app/src/routes/chat-video-call-page.tsx:23
 msgid "桌面端视频通话入口已经收口到聊天，正在恢复当前会话的视频通话动作。"
-msgstr ""
+msgstr "デスクトップのビデオ通話はチャット内に統合されました — 現在のセッションのビデオ通話を復元しています。"
 
 #: apps/app/src/routes/chat-video-call-page.tsx:24
 #: apps/app/src/routes/chat-voice-call-page.tsx:23
@@ -25416,11 +25417,11 @@ msgstr "デスクトップのチャットに切り替え中..."
 
 #: apps/app/src/routes/chat-video-call-page.tsx:58
 msgid "正在返回聊天..."
-msgstr ""
+msgstr "チャットに戻っています..."
 
 #: apps/app/src/routes/chat-voice-call-page.tsx:22
 msgid "桌面端语音通话入口已经收口到聊天，正在恢复当前会话的语音通话动作。"
-msgstr ""
+msgstr "デスクトップの音声通話はチャット内に統合されました — 現在のセッションの音声通話を復元しています。"
 
 #: apps/app/src/routes/contacts-page.tsx:951
 #: apps/app/src/routes/contacts-page.tsx:952
@@ -25535,11 +25536,11 @@ msgstr "デスクトップ連絡先を開いています"
 
 #: apps/app/src/routes/contacts-page.tsx:2044
 msgid "正在打开桌面通讯录，马上显示联系人和详情。"
-msgstr ""
+msgstr "デスクトップの連絡先を開いています — 連絡先と詳細がまもなく表示されます。"
 
 #: apps/app/src/routes/contacts-page.tsx:2046
 msgid "正在打开桌面通讯录..."
-msgstr ""
+msgstr "デスクトップの連絡先を開いています..."
 
 #. placeholder {0}: filteredWorldCharacterItems.length
 #: apps/app/src/routes/contacts-page.tsx:2053
@@ -25622,11 +25623,11 @@ msgstr "デスクトップのグループチャット作成を開いています
 
 #: apps/app/src/routes/create-group-page.tsx:442
 msgid "正在打开桌面发起群聊，马上恢复当前选择。"
-msgstr ""
+msgstr "デスクトップのグループ作成を開いています — 現在の選択を復元しています。"
 
 #: apps/app/src/routes/create-group-page.tsx:443
 msgid "正在打开桌面发起群聊..."
-msgstr ""
+msgstr "デスクトップのグループ作成を開いています..."
 
 #: apps/app/src/routes/create-group-page.tsx:517
 msgid "创建中"
@@ -25640,7 +25641,7 @@ msgstr "確定 ({0})"
 
 #: apps/app/src/routes/create-group-page.tsx:560
 msgid "移除已选联系人 {displayName}"
-msgstr ""
+msgstr "選択した連絡先 {displayName} を削除"
 
 #: apps/app/src/routes/create-group-page.tsx:606
 msgid "已按当前单聊默认勾选对方，你可以继续添加其他联系人。"
@@ -25676,7 +25677,7 @@ msgstr "デスクトップの発見ページに切り替え中"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:52
 msgid "赛博分身当前只在移动端开放，先回到主发现页。"
-msgstr ""
+msgstr "サイバーアバターは現在モバイル版のみ対応しています — メインの発見ページに戻ります。"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:53
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:59
@@ -25687,76 +25688,76 @@ msgstr "デスクトップの発見ページに切り替え中..."
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:109
 msgid "你的数字镜像，由你在世界里的全部互动塑造而成。"
-msgstr ""
+msgstr "あなたのデジタルミラー。世界でのすべての交流から生まれます。"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:140
 msgid "和你的数字镜像对话"
-msgstr ""
+msgstr "デジタルミラーと話す"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:141
-#: apps/app/src/routes/discover-page.tsx:171
+#: apps/app/src/routes/discover-page.tsx:176
 msgid "镜像"
-msgstr ""
+msgstr "ミラー"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:150
 msgid "正在加载你的赛博分身…"
-msgstr ""
+msgstr "サイバーアバターを読み込んでいます…"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:165
 msgid "你的赛博分身还在成形中"
-msgstr ""
+msgstr "サイバーアバターはまだ形成中です"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:167
 msgid "多去世界里互动吧——聊天、发动态、参与讨论，你的分身会越来越像你。"
-msgstr ""
+msgstr "チャット・投稿・ディスカッションなど、世界でどんどん交流しましょう。あなたの分身がより本物に近づいていきます。"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:183
 msgid "正在重建…"
-msgstr ""
+msgstr "再構築中…"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:186
 msgid "重建分身"
-msgstr ""
+msgstr "アバターを再構築"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:198
 msgid "还没有足够的互动数据，先去世界里聊聊、发发动态吧。"
-msgstr ""
+msgstr "まだ交流データが足りません — 世界でチャットや投稿をしてみましょう。"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:212
 msgid "重建失败，请稍后再试。"
-msgstr ""
+msgstr "再構築に失敗しました。後でもう一度お試しください。"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:220
 msgid "分身已更新，稍等片刻刷新查看。"
-msgstr ""
+msgstr "アバターが更新されました — しばらくしてから更新してご確認ください。"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:264
 msgid "正在生成你的专属立绘…"
-msgstr ""
+msgstr "専用のキャラクターアートを生成しています…"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:270
 msgid "重新生成立绘"
-msgstr ""
+msgstr "キャラクターアートを再生成"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:271
 msgid "生成我的专属立绘"
-msgstr ""
+msgstr "キャラクターアートを生成する"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:284
 msgid "立绘生成失败，请稍后再试。"
-msgstr ""
+msgstr "キャラクターアートの生成に失敗しました。後でもう一度お試しください。"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:288
 msgid "首张免费，重新生成将消耗少量钱包余额"
-msgstr ""
+msgstr "初回は無料 — 再生成にはウォレット残高が少し必要です"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:297
 msgid "分身画像"
-msgstr ""
+msgstr "アバターの肖像"
 
 #: apps/app/src/routes/cyber-avatar-page.tsx:298
 msgid "与分身对话"
-msgstr ""
+msgstr "分身と話す"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:516
 msgid "已打开图片。"
@@ -25780,7 +25781,7 @@ msgstr "チャットファイルは現在デスクトップ専用です"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:576
 msgid "聊天文件工作区目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到消息页继续查看会话附件。"
-msgstr ""
+msgstr "チャットファイルのワークスペースはウェブデスクトップレイアウトとデスクトップアプリのみ対応しています。モバイルではメッセージページに戻って添付ファイルをご確認ください。"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:602
 msgid "当前会话里的图片和文件会集中显示在这里。"
@@ -25797,15 +25798,15 @@ msgstr "{0} · {1} 件"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:631
 msgid "搜索聊天文件"
-msgstr ""
+msgstr "チャットファイルを検索"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:646
 msgid "附件类型"
-msgstr ""
+msgstr "添付ファイルの種類"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:692
 msgid "筛选会话"
-msgstr ""
+msgstr "会話を絞り込む"
 
 #: apps/app/src/routes/desktop-chat-files-page.tsx:715
 msgid "{visibleAttachmentRowCount} 项附件"
@@ -25849,7 +25850,7 @@ msgstr "{0} さんが共有したチャットの添付"
 #: apps/app/src/routes/desktop-chat-files-page.tsx:964
 #: apps/app/src/routes/desktop-mobile-page.tsx:1538
 #: apps/app/src/routes/desktop-mobile-page.tsx:1558
-#: apps/app/src/routes/discover-page.tsx:1047
+#: apps/app/src/routes/discover-page.tsx:1243
 msgid "{0} · {1}"
 msgstr "{0} · {1}"
 
@@ -25888,7 +25889,7 @@ msgstr "チャット履歴は現在デスクトップ専用です"
 
 #: apps/app/src/routes/desktop-chat-history-page.tsx:300
 msgid "聊天记录工作区目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到消息页继续查看会话。"
-msgstr ""
+msgstr "チャット履歴のワークスペースはウェブデスクトップレイアウトとデスクトップアプリのみ対応しています。モバイルではメッセージページに戻って会話をご確認ください。"
 
 #. placeholder {0}: getConversationDisplayTitle(selectedConversation.title)
 #. placeholder {1}: historyRows.length
@@ -25914,7 +25915,7 @@ msgstr "クリア中..."
 
 #: apps/app/src/routes/desktop-chat-history-page.tsx:402
 msgid "选择会话"
-msgstr ""
+msgstr "会話を選択"
 
 #: apps/app/src/routes/desktop-chat-history-page.tsx:481
 msgid "最近 {historyLimit} 条"
@@ -26048,7 +26049,7 @@ msgstr "フィードバックは現在デスクトップレイアウトのみ対
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:287
 msgid "反馈工作区目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到设置继续排查或记录问题。"
-msgstr ""
+msgstr "フィードバックのワークスペースはウェブデスクトップレイアウトとデスクトップアプリのみ対応しています。モバイルでは設定に戻って問題を報告または記録してください。"
 
 #: apps/app/src/routes/desktop-feedback-page.tsx:289
 msgid "前往设置"
@@ -26234,7 +26235,7 @@ msgstr "その他"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:145
 msgid "其它没归类的接力入口。"
-msgstr ""
+msgstr "その他の未分類のハンドオフ項目。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:156
 msgid "回到手机端消息列表，继续处理最近会话。"
@@ -26245,8 +26246,8 @@ msgid "在手机端继续查看联系人、星标朋友和公众号入口。"
 msgstr "モバイルで連絡先、星付きの友だち、公式アカウント入口の確認を続けます。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:169
-#: apps/app/src/routes/discover-page.tsx:738
-#: apps/app/src/routes/discover-page.tsx:1219
+#: apps/app/src/routes/discover-page.tsx:836
+#: apps/app/src/routes/discover-page.tsx:1415
 msgid "发现"
 msgstr "発見"
 
@@ -26296,7 +26297,7 @@ msgstr "スマホ引き継ぎは現在デスクトップレイアウトでのみ
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:802
 msgid "手机接力面板目前只在 Web 桌面布局和桌面应用内启用，移动布局先回到消息页继续处理会话。"
-msgstr ""
+msgstr "スマートフォン引き継ぎパネルはウェブデスクトップレイアウトとデスクトップアプリのみ対応しています。モバイルではメッセージページに戻って会話を処理してください。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:813
 #: apps/app/src/routes/desktop-mobile-page.tsx:825
@@ -26330,7 +26331,7 @@ msgstr "最近の引き継ぎ"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:858
 msgid "活跃接力"
-msgstr ""
+msgstr "アクティブな引き継ぎ"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:877
 msgid "还没有形成稳定的手机接力记录。"
@@ -26392,7 +26393,7 @@ msgstr "同期概要"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1127
 msgid "这里不另起一套设备检测，直接看当前世界的真实运行状态，判断手机接力是否值得继续。"
-msgstr ""
+msgstr "デバイス検出は別途行いません — 世界のリアルタイム状態を表示して、スマートフォン引き継ぎを続けるべきか判断できます。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1133
 msgid "正在检查同步状态..."
@@ -26408,7 +26409,7 @@ msgstr "データベース"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1154
 msgid "AI 服务"
-msgstr ""
+msgstr "AIサービス"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1166
 #: apps/app/src/routes/live-companion-page.tsx:740
@@ -26493,7 +26494,7 @@ msgstr "現在のワークスペースをスマホに送る"
 #: apps/app/src/routes/desktop-mobile-page.tsx:1418
 #: apps/app/src/routes/desktop-mobile-page.tsx:1483
 msgid "{0} 的当前工作台，带上最近使用和本地待办。"
-msgstr ""
+msgstr "{0}の現在のワークスペース — 最近の使用履歴とローカルのタスクを表示。"
 
 #. placeholder {0}: activeMiniProgram.name
 #. placeholder {0}: miniProgram.name
@@ -26648,7 +26649,7 @@ msgstr "最近スマホに送った項目"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1665
 msgid "当前把手机接力记录按内容类型拆开，方便区分消息、公众号、小程序和直播。"
-msgstr ""
+msgstr "スマートフォンの引き継ぎ記録をコンテンツタイプ別に分類 — メッセージ・公式アカウント・ミニプログラム・ライブ配信を区別しやすくします。"
 
 #: apps/app/src/routes/desktop-mobile-page.tsx:1718
 msgid "再发一次"
@@ -26740,7 +26741,7 @@ msgstr "ノートの独立ウィンドウ"
 
 #: apps/app/src/routes/desktop-note-window-page.tsx:104
 msgid "这个笔记窗口已失效"
-msgstr ""
+msgstr "このメモウィンドウは無効になりました"
 
 #: apps/app/src/routes/desktop-note-window-page.tsx:105
 msgid "主窗口重新打开一次新建笔记，或者回到收藏页选择已保存笔记。"
@@ -26760,7 +26761,7 @@ msgstr "ブラウザーを開けませんでした。"
 
 #: apps/app/src/routes/desktop-official-article-window-page.tsx:307
 msgid "文章窗口已失效"
-msgstr ""
+msgstr "この記事ウィンドウは無効になりました"
 
 #: apps/app/src/routes/desktop-official-article-window-page.tsx:308
 msgid "这篇公众号文章的窗口参数已经失效，请回到公众号页重新打开。"
@@ -26772,12 +26773,12 @@ msgstr "既定のブラウザーで開く"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:58
 msgid "分身相遇当前只在移动端开放，先回到主发现页。"
-msgstr ""
+msgstr "アバターの出会いは現在モバイル版のみ対応しています — メインの発見ページに戻ります。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:75
 #: apps/app/src/routes/profile-info-contact-page.tsx:36
 msgid "微信"
-msgstr ""
+msgstr "WeChat"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:80
 #: apps/app/src/routes/profile-info-contact-page.tsx:136
@@ -26787,153 +26788,154 @@ msgstr "連絡先"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:125
 msgid "让你的分身替你去认识新的人。"
-msgstr ""
+msgstr "あなたの分身が代わりに新しい人と出会います。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:126
 msgid "今日剩余 {remainingCredits} 次。"
-msgstr ""
+msgstr "本日残り{remainingCredits}回。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:155
 msgid "让你的分身替你去认识新的人"
-msgstr ""
+msgstr "あなたの分身が代わりに新しい人と出会います"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:169
 msgid "分身相遇需要登录云账号后使用。"
-msgstr ""
+msgstr "アバターの出会いを使用するには、クラウドアカウントにログインしてください。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:177
 msgid "发现相遇"
-msgstr ""
+msgstr "出会いを探す"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:178
 msgid "我的相遇"
-msgstr ""
+msgstr "私の出会い"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:226
 msgid "你的分身出门了，去找聊得来的人…"
-msgstr ""
+msgstr "あなたの分身が気の合う人を探しに出かけました…"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:227
 msgid "遇到一个有点意思的，正在打招呼…"
-msgstr ""
+msgstr "ちょっと気になる人を見つけて、挨拶しています…"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:228
 msgid "聊开了，发现你们有不少共同话题…"
-msgstr ""
+msgstr "話が盛り上がって、共通の話題がたくさんあるようです…"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:229
 msgid "越聊越投机，正在替你多说几句…"
-msgstr ""
+msgstr "どんどん話が合ってきて、あなたの代わりにもう少し話しています…"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:351
 msgid "你的分身正在替你相遇…"
-msgstr ""
+msgstr "あなたの分身が代わりに出会い中です…"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:356
 msgid "开始相遇"
-msgstr ""
+msgstr "出会いを始める"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:374
 msgid "今天还能再认识 {remainingCredits} 个人。"
-msgstr ""
+msgstr "今日はあと {remainingCredits} 人と出会えます。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:375
 msgid "让分身替你去认识聊得来的人。"
-msgstr ""
+msgstr "気の合う人との出会いを分身に任せましょう。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:388
 msgid "今天的相遇都用完啦，明天分身再替你出门。"
-msgstr ""
+msgstr "今日の出会い回数をすべて使い切りました。明日また分身が出かけます。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:395
 msgid "升级会员可获得更多每日分身相遇次数。"
-msgstr ""
+msgstr "メンバーにアップグレードして毎日の出会い回数を増やしましょう。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:401
 msgid "了解会员"
-msgstr ""
+msgstr "メンバーシップを見る"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:445
 msgid "等 TA 也想继续，你们就会接着聊下去。回「我的相遇」就能看到后来。"
-msgstr ""
+msgstr "相手も続けたいと思ったら、また話が続きます。「私の出会い」でその後を確認できます。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:448
 msgid "你的心意收到啦，就等 TA 决定。有结果会出现在「我的相遇」里。"
-msgstr ""
+msgstr "あなたの気持ちは届きました。相手の返事を待ちましょう。結果は「私の出会い」に表示されます。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:481
 msgid "回到发现"
-msgstr ""
+msgstr "発見に戻る"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:481
 msgid "再相遇一次"
-msgstr ""
+msgstr "もう一度出会う"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:572
 msgid "正在翻看你的相遇…"
-msgstr ""
+msgstr "出会い履歴を読み込んでいます…"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:588
 msgid "还没有相遇记录"
-msgstr ""
+msgstr "まだ出会い記録がありません"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:591
 msgid "你发起的、以及别人和你分身的相遇都会出现在这里。"
-msgstr ""
+msgstr "あなたが始めた出会い、または他のユーザーがあなたの分身と行った出会いがここに表示されます。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:679
 msgid "‹ 返回我的相遇"
-msgstr ""
+msgstr "‹ 私の出会いに戻る"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:685
 msgid "正在翻开这次相遇…"
-msgstr ""
+msgstr "この出会いを開いています…"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:725
 msgid "你们还在继续聊，稍等一下…"
-msgstr ""
+msgstr "まだ話が続いています。少々お待ちください…"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:758
 msgid "第 {currentRound} / {maxRounds} 轮对话"
-msgstr ""
+msgstr "第 {currentRound} / {maxRounds} ラウンド"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:785
 msgid "想要对方联系方式，需先填写你自己的。这次相遇已存到「我的相遇」，填好后回到那里继续即可。"
-msgstr ""
+msgstr "相手の連絡先を知るには、先に自分の連絡先を入力してください。この出会いは「私の出会い」に保存されています。入力後にそちらに戻って続けてください。"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:791
 msgid "去填写"
-msgstr ""
+msgstr "今すぐ入力する"
 
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:827
 msgid "对方的联系方式"
-msgstr ""
+msgstr "相手の連絡先"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:53
 msgid "桌面端的发现入口已经收口到桌面发现，先回到主发现页。"
-msgstr ""
+msgstr "デスクトップの発見エントリはデスクトップ発見に統合されました。まずメインの発見ページに戻ってください。"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:145
-#: apps/app/src/routes/discover-page.tsx:370
+#: apps/app/src/routes/discover-page.tsx:393
 msgid "摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。"
-msgstr ""
+msgstr "シェイクがタイムアウトしました。ネットワークまたはサーバーが混雑している可能性があります。後でもう一度お試しください。"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:174
-#: apps/app/src/routes/discover-page.tsx:391
+#: apps/app/src/routes/discover-page.tsx:415
 msgid "附近暂时没有新的相遇。"
 msgstr "近くにはまだ新しい出会いがありません。"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:202
-#: apps/app/src/routes/discover-page.tsx:397
+#: apps/app/src/routes/discover-page.tsx:444
 msgid "刚刚和你打了招呼。"
 msgstr "今あなたに挨拶しました。"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:204
-#: apps/app/src/routes/discover-page.tsx:398
+#: apps/app/src/routes/discover-page.tsx:445
 msgid "{characterName} 已加入通讯录：{greeting}"
 msgstr "{characterName} を連絡先に追加しました：{greeting}"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:217
+#: apps/app/src/routes/discover-page.tsx:456
 msgid "已跳过这次相遇。"
 msgstr "この出会いをスキップしました。"
 
@@ -26954,34 +26956,40 @@ msgid "当前设备不支持晃动触发，点下方按钮手动触发相遇，�
 msgstr "このデバイスは振っての起動に対応していません。下のボタンを押して手動で出会いを始めてください。出会った相手を友だちに追加するかは、あなたが決められます。"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:271
-#: apps/app/src/routes/discover-page.tsx:843
+#: apps/app/src/routes/discover-page.tsx:941
 msgid "正在寻找..."
 msgstr "探しています..."
 
 #: apps/app/src/routes/discover-encounter-page.tsx:275
+#: apps/app/src/routes/discover-page.tsx:943
 msgid "换一个"
-msgstr ""
+msgstr "別の人を探す"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:278
 msgid "开启摇一摇"
 msgstr "シェイクを有効化"
 
 #. placeholder {0}: preview.matchReason
+#. placeholder {0}: shakePreview.matchReason
 #: apps/app/src/routes/discover-encounter-page.tsx:462
+#: apps/app/src/routes/discover-page.tsx:999
 msgid "相遇理由：{0}"
 msgstr "出会った理由：{0}"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:475
+#: apps/app/src/routes/discover-page.tsx:1013
 msgid "跳过"
 msgstr "スキップ"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
+#: apps/app/src/routes/discover-page.tsx:1031
 msgid "添加中..."
 msgstr "追加中..."
 
 #: apps/app/src/routes/discover-encounter-page.tsx:491
+#: apps/app/src/routes/discover-page.tsx:1032
 msgid "加为好友"
-msgstr ""
+msgstr "友達に追加"
 
 #: apps/app/src/routes/discover-encounter-page.tsx:540
 msgid "重试摇一摇"
@@ -26993,7 +27001,7 @@ msgid "回发现页"
 msgstr "発見ページに戻る"
 
 #: apps/app/src/routes/discover-feed-page.tsx:514
-#: apps/app/src/routes/discover-page.tsx:318
+#: apps/app/src/routes/discover-page.tsx:337
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:245
 msgid "广场动态已发布，世界居民公开可见。"
 msgstr "広場投稿を公開しました。世界の住民に表示されます。"
@@ -27002,18 +27010,18 @@ msgstr "広場投稿を公開しました。世界の住民に表示されます
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:194
 #: apps/app/src/routes/moments-page.tsx:980
 msgid "已提交举报，我们会尽快处理。"
-msgstr ""
+msgstr "通報を受け付けました。できるだけ早く対応します。"
 
 #: apps/app/src/routes/discover-feed-page.tsx:541
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:200
 #: apps/app/src/routes/moments-page.tsx:984
 msgid "举报提交失败，请稍后再试。"
-msgstr ""
+msgstr "通報の送信に失敗しました。後でもう一度お試しください。"
 
 #: apps/app/src/routes/discover-feed-page.tsx:690
 #: apps/app/src/routes/discover-feed-page.tsx:865
-#: apps/app/src/routes/discover-page.tsx:512
-#: apps/app/src/routes/discover-page.tsx:601
+#: apps/app/src/routes/discover-page.tsx:570
+#: apps/app/src/routes/discover-page.tsx:659
 msgid "广场互动已更新。"
 msgstr "広場のリアクションを更新しました。"
 
@@ -27040,7 +27048,7 @@ msgid "读取全部评论失败，请稍后重试。"
 msgstr "全コメントの読み込みに失敗しました。後ほど再度お試しください。"
 
 #: apps/app/src/routes/discover-feed-page.tsx:1608
-#: apps/app/src/routes/discover-page.tsx:718
+#: apps/app/src/routes/discover-page.tsx:816
 #: apps/app/src/routes/friend-moments-page.tsx:781
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:475
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:634
@@ -27050,7 +27058,7 @@ msgid "图片选择失败，请稍后重试。"
 msgstr "画像の選択に失敗しました。しばらくしてからもう一度お試しください。"
 
 #: apps/app/src/routes/discover-feed-page.tsx:1620
-#: apps/app/src/routes/discover-page.tsx:730
+#: apps/app/src/routes/discover-page.tsx:828
 #: apps/app/src/routes/friend-moments-page.tsx:791
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:514
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:666
@@ -27095,20 +27103,20 @@ msgstr "デスクトップの発見を開いています"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2058
 msgid "正在打开桌面看一看，马上显示当前动态内容。"
-msgstr ""
+msgstr "デスクトップのフィードを開いています。現在の投稿がすぐに表示されます。"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2060
 msgid "正在打开桌面发现..."
-msgstr ""
+msgstr "デスクトップ発見を開いています…"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2303
 #: apps/app/src/routes/discover-feed-page.tsx:2997
-#: apps/app/src/routes/discover-page.tsx:887
+#: apps/app/src/routes/discover-page.tsx:1083
 msgid "发一条广场动态"
 msgstr "広場に投稿"
 
 #: apps/app/src/routes/discover-feed-page.tsx:2341
-#: apps/app/src/routes/discover-page.tsx:1009
+#: apps/app/src/routes/discover-page.tsx:1205
 msgid "这里不只看朋友，也能看到世界里的居民正在说什么。"
 msgstr "ここでは友だちだけでなく、世界の住民が何を話しているかも見られます。"
 
@@ -27131,12 +27139,12 @@ msgstr "全コメントを読み込み中…"
 #. placeholder {0}: feedPosts.length
 #: apps/app/src/routes/discover-feed-page.tsx:2933
 msgid "当前 {0} 条动态作者都在你的屏蔽名单里，翻下一页找未屏蔽的居民动态时出错了。"
-msgstr ""
+msgstr "現在の {0} 件の投稿はすべてブロック中のユーザーのものです。ブロックしていない投稿を次のページから取得中にエラーが発生しました。"
 
 #. placeholder {0}: feedPosts.length
 #: apps/app/src/routes/discover-feed-page.tsx:2957
 msgid "当前共 {0} 条动态作者都在你的屏蔽名单里，正在自动翻下一页找未屏蔽的居民动态。"
-msgstr ""
+msgstr "現在の {0} 件の投稿はすべてブロック中のユーザーのものです。ブロックしていない投稿を自動で次のページから読み込んでいます。"
 
 #. placeholder {0}: feedPosts.length
 #: apps/app/src/routes/discover-feed-page.tsx:2966
@@ -27149,170 +27157,170 @@ msgstr "まだ新しい投稿はありません"
 
 #: apps/app/src/routes/discover-feed-page.tsx:3068
 msgid "确定举报这条动态吗？"
-msgstr ""
+msgstr "この投稿を通報しますか？"
 
-#: apps/app/src/routes/discover-page.tsx:144
+#: apps/app/src/routes/discover-page.tsx:149
 msgid "随机"
 msgstr "ランダム"
 
-#: apps/app/src/routes/discover-page.tsx:158
+#: apps/app/src/routes/discover-page.tsx:163
 msgid "分身"
-msgstr ""
+msgstr "分身"
 
-#: apps/app/src/routes/discover-page.tsx:185
-#: apps/app/src/routes/discover-page.tsx:818
+#: apps/app/src/routes/discover-page.tsx:190
+#: apps/app/src/routes/discover-page.tsx:916
 msgid "场景"
 msgstr "シーン"
 
-#: apps/app/src/routes/discover-page.tsx:198
+#: apps/app/src/routes/discover-page.tsx:203
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:961
 msgid "公开"
 msgstr "公開"
 
-#: apps/app/src/routes/discover-page.tsx:395
+#: apps/app/src/routes/discover-page.tsx:441
 msgid "随机相遇已写入通讯录。"
 msgstr "ランダムな出会いを連絡先に追加しました。"
 
-#: apps/app/src/routes/discover-page.tsx:428
+#: apps/app/src/routes/discover-page.tsx:486
 msgid "{translatedSceneLabel}里和别处都暂时没有新的相遇了。"
 msgstr "{translatedSceneLabel}でも他の場所でも、今は新しい出会いがありません。"
 
-#: apps/app/src/routes/discover-page.tsx:433
+#: apps/app/src/routes/discover-page.tsx:491
 msgid "场景相遇已写入好友申请列表。"
 msgstr "シーンでの出会いを友だち申請リストに追加しました。"
 
-#: apps/app/src/routes/discover-page.tsx:434
+#: apps/app/src/routes/discover-page.tsx:492
 #: apps/app/src/routes/discover-scene-page.tsx:280
 msgid "对你产生了兴趣。"
 msgstr "あなたに興味を持ちました。"
 
 #. placeholder {0}: request.characterName
-#: apps/app/src/routes/discover-page.tsx:438
+#: apps/app/src/routes/discover-page.tsx:496
 msgid "{0} 不在{translatedSceneLabel}，但顺路碰到了你：{greeting}"
 msgstr "{0}は{translatedSceneLabel}にはいませんでしたが、たまたまあなたに会いました：{greeting}"
 
 #. placeholder {0}: request.characterName
-#: apps/app/src/routes/discover-page.tsx:444
+#: apps/app/src/routes/discover-page.tsx:502
 msgid "{0} 在{translatedSceneLabel}里注意到了你：{greeting}"
 msgstr "{0} が{translatedSceneLabel}であなたに気づきました：{greeting}"
 
-#: apps/app/src/routes/discover-page.tsx:739
+#: apps/app/src/routes/discover-page.tsx:837
 msgid "朋友圈给世界角色，广场给居民"
 msgstr "モーメンツは世界キャラクターへ、広場は住民へ"
 
-#: apps/app/src/routes/discover-page.tsx:741
+#: apps/app/src/routes/discover-page.tsx:839
 msgid "发现页把随机相遇、场景相遇和居民公开动态拆开排布，让桌面上的探索节奏更清晰，也把角色近况流和居民公开流分得更明白。"
 msgstr "発見ページではランダムな出会い、シーンでの出会い、住民の公開投稿を分け、デスクトップでの探索をわかりやすくします。"
 
-#: apps/app/src/routes/discover-page.tsx:751
+#: apps/app/src/routes/discover-page.tsx:849
 msgid "内容视角"
 msgstr "コンテンツ視点"
 
-#: apps/app/src/routes/discover-page.tsx:754
+#: apps/app/src/routes/discover-page.tsx:852
 msgid "先决定发给好友，还是发给居民"
 msgstr "友だちに出すか住民に出すかを先に決める"
 
-#: apps/app/src/routes/discover-page.tsx:758
+#: apps/app/src/routes/discover-page.tsx:856
 msgid "朋友圈和广场动态共用同一套发现入口，但可见范围完全不同。"
 msgstr "モーメンツと広場の投稿は同じ発見入口を共有していますが、公開範囲は全く違います。"
 
-#: apps/app/src/routes/discover-page.tsx:777
+#: apps/app/src/routes/discover-page.tsx:875
 msgid "世界里的角色会自然更新近况，你也可以随时把这一刻发进去。"
 msgstr "世界のキャラクターは自然に近況を更新します。あなたもいつでも今の瞬間を投稿できます。"
 
-#: apps/app/src/routes/discover-page.tsx:790
+#: apps/app/src/routes/discover-page.tsx:888
 msgid "把这一刻发到居民广场，让世界里的居民也能看见并回应。"
 msgstr "この瞬間を住民広場に投稿し、世界の住民にも見えて反応できるようにします。"
 
-#: apps/app/src/routes/discover-page.tsx:805
+#: apps/app/src/routes/discover-page.tsx:903
 msgid "今日相遇"
 msgstr "今日の出会い"
 
-#: apps/app/src/routes/discover-page.tsx:808
+#: apps/app/src/routes/discover-page.tsx:906
 msgid "轻轻试一次，就可能遇到一段新的关系线索。"
 msgstr "軽く試すだけで、新しい関係の手がかりに出会えるかもしれません。"
 
-#: apps/app/src/routes/discover-page.tsx:812
+#: apps/app/src/routes/discover-page.tsx:910
 msgid "探索区"
 msgstr "探索エリア"
 
-#: apps/app/src/routes/discover-page.tsx:826
+#: apps/app/src/routes/discover-page.tsx:924
 msgid "反馈状态"
 msgstr "フィードバック状態"
 
-#: apps/app/src/routes/discover-page.tsx:829
+#: apps/app/src/routes/discover-page.tsx:927
 msgid "已过滤"
 msgstr "フィルター済み"
 
-#: apps/app/src/routes/discover-page.tsx:830
+#: apps/app/src/routes/discover-page.tsx:928
 msgid "开放"
 msgstr "オープン"
 
-#: apps/app/src/routes/discover-page.tsx:847
+#: apps/app/src/routes/discover-page.tsx:947
 msgid "先生成临时候选，你决定要不要把他留下。"
 msgstr "まず一時候補を生成し、残すかどうかを決めます。"
 
 #. placeholder {0}: t(scene.label)
-#: apps/app/src/routes/discover-page.tsx:862
+#: apps/app/src/routes/discover-page.tsx:1058
 #: apps/app/src/routes/discover-scene-page.tsx:513
 msgid "正在前往{0}..."
 msgstr "{0}へ移動中..."
 
-#: apps/app/src/routes/discover-page.tsx:884
+#: apps/app/src/routes/discover-page.tsx:1080
 msgid "广场发布"
 msgstr "広場への投稿"
 
-#: apps/app/src/routes/discover-page.tsx:891
+#: apps/app/src/routes/discover-page.tsx:1087
 msgid "把你的想法发到居民广场，让世界里的居民都可能看到并回应。"
 msgstr "あなたの考えを住民広場に投稿し、世界の住民が見て反応できるようにします。"
 
-#: apps/app/src/routes/discover-page.tsx:896
+#: apps/app/src/routes/discover-page.tsx:1092
 msgid "发帖区"
 msgstr "投稿エリア"
 
-#: apps/app/src/routes/discover-page.tsx:902
-#: apps/app/src/routes/discover-page.tsx:1022
+#: apps/app/src/routes/discover-page.tsx:1098
+#: apps/app/src/routes/discover-page.tsx:1218
 msgid "范围"
 msgstr "範囲"
 
-#: apps/app/src/routes/discover-page.tsx:903
-#: apps/app/src/routes/discover-page.tsx:1022
+#: apps/app/src/routes/discover-page.tsx:1099
+#: apps/app/src/routes/discover-page.tsx:1218
 msgid "居民公开"
 msgstr "住民公開"
 
-#: apps/app/src/routes/discover-page.tsx:906
+#: apps/app/src/routes/discover-page.tsx:1102
 msgid "发布状态"
 msgstr "公開状態"
 
-#: apps/app/src/routes/discover-page.tsx:909
+#: apps/app/src/routes/discover-page.tsx:1105
 msgid "发布中"
 msgstr "公開中"
 
-#: apps/app/src/routes/discover-page.tsx:910
+#: apps/app/src/routes/discover-page.tsx:1106
 msgid "待发送"
 msgstr "送信待ち"
 
-#: apps/app/src/routes/discover-page.tsx:977
+#: apps/app/src/routes/discover-page.tsx:1173
 msgid "正在发布..."
 msgstr "公開中..."
 
-#: apps/app/src/routes/discover-page.tsx:981
+#: apps/app/src/routes/discover-page.tsx:1177
 msgid "发布后会直接进入右侧公开流，世界居民公开可见。"
 msgstr "公開後は右側の公開フィードに入り、世界の住民に表示されます。"
 
-#: apps/app/src/routes/discover-page.tsx:1013
+#: apps/app/src/routes/discover-page.tsx:1209
 msgid "公开流"
 msgstr "公開フィード"
 
-#: apps/app/src/routes/discover-page.tsx:1019
+#: apps/app/src/routes/discover-page.tsx:1215
 msgid "可见动态"
 msgstr "表示中の投稿"
 
-#: apps/app/src/routes/discover-page.tsx:1223
+#: apps/app/src/routes/discover-page.tsx:1419
 msgid "社交与动态"
 msgstr "ソーシャルと更新"
 
-#: apps/app/src/routes/discover-page.tsx:1229
+#: apps/app/src/routes/discover-page.tsx:1425
 msgid "内容与服务"
 msgstr "コンテンツとサービス"
 
@@ -27366,7 +27374,7 @@ msgstr "家"
 
 #: apps/app/src/routes/discover-scene-page.tsx:158
 msgid "桌面端的场景相遇入口已经收口到桌面发现，先回到主发现页。"
-msgstr ""
+msgstr "デスクトップのシーン出会いエントリはデスクトップ発見に統合されました。まずメインの発見ページに戻ってください。"
 
 #: apps/app/src/routes/discover-scene-page.tsx:275
 msgid "{sceneLabel}里和别处都暂时没有新的相遇了。"
@@ -27478,11 +27486,11 @@ msgstr "デスクトップのノートを開いています"
 
 #: apps/app/src/routes/favorites-page.tsx:814
 msgid "正在打开桌面笔记，马上恢复当前笔记内容。"
-msgstr ""
+msgstr "デスクトップのノートを開いています。現在のノートの内容がすぐに復元されます。"
 
 #: apps/app/src/routes/favorites-page.tsx:815
 msgid "正在打开桌面笔记..."
-msgstr ""
+msgstr "デスクトップのノートを開いています…"
 
 #: apps/app/src/routes/favorites-page.tsx:868
 #: apps/app/src/routes/mobile-favorites-page.tsx:441
@@ -27531,11 +27539,11 @@ msgstr "添付 {0}"
 
 #: apps/app/src/routes/friend-moments-page.tsx:308
 msgid "朋友圈已发布，已直接发到主朋友圈。"
-msgstr ""
+msgstr "投稿を公開しました。メインのフィードに直接シェアされました。"
 
 #: apps/app/src/routes/friend-moments-page.tsx:309
 msgid "前往查看"
-msgstr ""
+msgstr "確認する"
 
 #. placeholder {0}: describeRequestError(err)
 #. placeholder {0}: describeRequestError(error)
@@ -27581,11 +27589,11 @@ msgstr "デスクトップの友だちモーメンツを開いています"
 
 #: apps/app/src/routes/friend-moments-page.tsx:986
 msgid "正在打开桌面好友朋友圈，马上显示角色动态详情。"
-msgstr ""
+msgstr "デスクトップの友達フィードを開いています。キャラクターの投稿詳細がすぐに表示されます。"
 
 #: apps/app/src/routes/friend-moments-page.tsx:987
 msgid "正在打开桌面好友朋友圈..."
-msgstr ""
+msgstr "デスクトップの友達フィードを開いています…"
 
 #: apps/app/src/routes/friend-requests-page.tsx:47
 msgid "正在切换到桌面新的朋友"
@@ -27593,7 +27601,7 @@ msgstr "デスクトップの新しい友だちに切り替え中"
 
 #: apps/app/src/routes/friend-requests-page.tsx:48
 msgid "正在跳转到桌面通讯录中的好友请求视图。"
-msgstr ""
+msgstr "デスクトップの連絡先にある友達リクエスト画面に切り替えています。"
 
 #: apps/app/src/routes/friend-requests-page.tsx:49
 msgid "切换桌面好友请求..."
@@ -27625,7 +27633,7 @@ msgstr "発見ページに行ってシェイクするか、シーンが新しい
 
 #: apps/app/src/routes/game-play-page.tsx:34
 msgid "社区游戏"
-msgstr ""
+msgstr "コミュニティゲーム"
 
 #: apps/app/src/routes/games-page.tsx:199
 #: apps/app/src/routes/games-page.tsx:418
@@ -27704,11 +27712,11 @@ msgstr "ゲームセンターを開いています"
 
 #: apps/app/src/routes/games-page.tsx:589
 msgid "正在打开桌面端游戏中心。"
-msgstr ""
+msgstr "デスクトップのゲームセンターを開いています。"
 
 #: apps/app/src/routes/games-page.tsx:590
 msgid "正在打开桌面游戏中心..."
-msgstr ""
+msgstr "デスクトップのゲームセンターを開いています…"
 
 #: apps/app/src/routes/games-page.tsx:716
 msgid "正在准备游戏…"
@@ -27722,31 +27730,31 @@ msgstr "開始"
 #: apps/app/src/routes/gift-cabinet-page.tsx:79
 #: apps/app/src/routes/shop-orders-page.tsx:78
 msgid "我的订单"
-msgstr ""
+msgstr "注文履歴"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:96
 msgid "礼物柜需要登录隐界云账号。"
-msgstr ""
+msgstr "ギフトキャビネットには隠界クラウドアカウントが必要です。"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:126
 msgid "我的收藏"
-msgstr ""
+msgstr "コレクション"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:145
 msgid "正在加载礼物柜…"
-msgstr ""
+msgstr "ギフトキャビネットを読み込んでいます…"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:167
 msgid "来自好友"
-msgstr ""
+msgstr "友達から"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:175
 msgid "还没有收到礼物。"
-msgstr ""
+msgstr "まだギフトを受け取っていません。"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:196
 msgid "收藏柜空空如也，去商城逛逛吧。"
-msgstr ""
+msgstr "コレクションが空です。ショップを見てみましょう。"
 
 #: apps/app/src/routes/group-announcement-page.tsx:36
 msgid "正在打开桌面群公告"
@@ -27754,7 +27762,7 @@ msgstr "デスクトップのグループ告知を開いています"
 
 #: apps/app/src/routes/group-announcement-page.tsx:37
 msgid "正在切换到桌面聊天中的群公告编辑视图。"
-msgstr ""
+msgstr "デスクトップチャットのグループアナウンス編集画面に切り替えています。"
 
 #: apps/app/src/routes/group-announcement-page.tsx:38
 msgid "打开桌面群公告..."
@@ -27893,7 +27901,7 @@ msgstr "グループチャット背景"
 
 #: apps/app/src/routes/group-chat-background-page.tsx:762
 msgid "桌面端预览会同步展示在群聊"
-msgstr ""
+msgstr "デスクトップのプレビューはグループチャットに同期されます"
 
 #: apps/app/src/routes/group-chat-background-page.tsx:776
 msgid "默认背景和群聊专属背景"
@@ -27905,7 +27913,7 @@ msgstr "デスクトップのグループチャット情報を開いています
 
 #: apps/app/src/routes/group-chat-details-page.tsx:54
 msgid "正在切换到桌面聊天中的群聊信息侧栏。"
-msgstr ""
+msgstr "デスクトップチャットのグループ情報サイドバーに切り替えています。"
 
 #: apps/app/src/routes/group-chat-details-page.tsx:55
 msgid "打开桌面群聊信息..."
@@ -28031,11 +28039,11 @@ msgstr "デスクトップのグループニックネームを開いています
 
 #: apps/app/src/routes/group-chat-edit-page.tsx:58
 msgid "正在切换到桌面聊天中的群聊名称编辑视图。"
-msgstr ""
+msgstr "デスクトップチャットのグループ名編集画面に切り替えています。"
 
 #: apps/app/src/routes/group-chat-edit-page.tsx:59
 msgid "正在切换到桌面聊天中的群昵称编辑视图。"
-msgstr ""
+msgstr "デスクトップチャットのグループニックネーム編集画面に切り替えています。"
 
 #: apps/app/src/routes/group-chat-edit-page.tsx:62
 msgid "打开桌面群聊名称..."
@@ -28088,11 +28096,11 @@ msgstr "デスクトップのグループチャットを開いています"
 
 #: apps/app/src/routes/group-chat-page.tsx:224
 msgid "正在打开桌面聊天，马上恢复当前群聊。"
-msgstr ""
+msgstr "デスクトップチャットを開いています。現在のグループチャットがすぐに復元されます。"
 
 #: apps/app/src/routes/group-chat-page.tsx:225
 msgid "正在打开桌面群聊..."
-msgstr ""
+msgstr "デスクトップのグループチャットを開いています…"
 
 #: apps/app/src/routes/group-contacts-page.tsx:55
 msgid "正在切换到桌面群聊"
@@ -28100,7 +28108,7 @@ msgstr "デスクトップのグループチャットに切り替え中"
 
 #: apps/app/src/routes/group-contacts-page.tsx:56
 msgid "正在跳转到桌面通讯录中的群聊视图。"
-msgstr ""
+msgstr "デスクトップの連絡先にあるグループチャット画面に切り替えています。"
 
 #: apps/app/src/routes/group-contacts-page.tsx:57
 msgid "切换桌面群聊视图..."
@@ -28140,11 +28148,11 @@ msgstr "デスクトップのメンバー削除を開いています"
 
 #: apps/app/src/routes/group-member-picker-page.tsx:86
 msgid "正在切换到桌面聊天中的添加成员弹层。"
-msgstr ""
+msgstr "デスクトップチャットのメンバー追加パネルに切り替えています。"
 
 #: apps/app/src/routes/group-member-picker-page.tsx:87
 msgid "正在切换到桌面聊天中的移除成员弹层。"
-msgstr ""
+msgstr "デスクトップチャットのメンバー削除パネルに切り替えています。"
 
 #: apps/app/src/routes/group-member-picker-page.tsx:91
 msgid "打开桌面添加成员..."
@@ -28221,7 +28229,7 @@ msgstr "デスクトップのグループ履歴を開いています"
 
 #: apps/app/src/routes/group-message-search-page.tsx:34
 msgid "正在切换到桌面聊天中的群聊记录搜索侧栏。"
-msgstr ""
+msgstr "デスクトップチャットのメッセージ検索サイドバーに切り替えています。"
 
 #: apps/app/src/routes/group-message-search-page.tsx:35
 msgid "打开桌面群聊记录..."
@@ -28238,11 +28246,11 @@ msgstr "一致するグループ履歴が見つかりません"
 #: apps/app/src/routes/group-video-call-page.tsx:22
 #: apps/app/src/routes/group-voice-call-page.tsx:21
 msgid "正在返回群聊"
-msgstr ""
+msgstr "グループチャットに戻っています"
 
 #: apps/app/src/routes/group-video-call-page.tsx:23
 msgid "桌面端群视频通话入口已经收口到聊天，正在恢复当前群聊的视频通话动作。"
-msgstr ""
+msgstr "デスクトップのグループビデオ通話はチャットに統合されました。現在のグループビデオ通話を復元しています。"
 
 #: apps/app/src/routes/group-video-call-page.tsx:24
 #: apps/app/src/routes/group-voice-call-page.tsx:23
@@ -28251,56 +28259,56 @@ msgstr "デスクトップのグループチャットに切り替え中..."
 
 #: apps/app/src/routes/group-video-call-page.tsx:57
 msgid "正在返回群聊..."
-msgstr ""
+msgstr "グループチャットに戻っています…"
 
 #: apps/app/src/routes/group-voice-call-page.tsx:22
 msgid "桌面端群语音通话入口已经收口到聊天，正在恢复当前群聊的语音通话动作。"
-msgstr ""
+msgstr "デスクトップのグループ音声通話はチャットに統合されました。現在のグループ音声通話を復元しています。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:58
 msgid "网址"
-msgstr ""
+msgstr "URL"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:60
 msgid "世界记忆"
-msgstr ""
+msgstr "世界の記憶"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:62
 msgid "角色资料"
-msgstr ""
+msgstr "キャラクタープロフィール"
 
 #. placeholder {0}: doc.title
 #: apps/app/src/routes/knowledge-base-page.tsx:126
 #: apps/app/src/routes/knowledge-base-page.tsx:144
 #: apps/app/src/routes/knowledge-base-page.tsx:162
 msgid "已添加《{0}》"
-msgstr ""
+msgstr "「{0}」を追加しました"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:130
 msgid "上传失败，请稍后重试。"
-msgstr ""
+msgstr "アップロードに失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:148
 msgid "保存失败，请稍后重试。"
-msgstr ""
+msgstr "保存に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:166
 msgid "添加网址失败，请稍后重试。"
-msgstr ""
+msgstr "URLの追加に失敗しました。しばらくしてから再試行してください。"
 
 #. placeholder {0}: result.ingested
 #. placeholder {1}: result.skipped
 #: apps/app/src/routes/knowledge-base-page.tsx:178
 msgid "已导入 {0} 条，跳过 {1} 条。"
-msgstr ""
+msgstr "{0} 件をインポートし、{1} 件をスキップしました。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:183
 msgid "导入世界记忆失败，请稍后重试。"
-msgstr ""
+msgstr "ワールドの記憶のインポートに失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:193
 msgid "已删除"
-msgstr ""
+msgstr "削除しました"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:197
 #: apps/app/src/routes/moments-page.tsx:1103
@@ -28311,97 +28319,97 @@ msgstr "削除に失敗しました。しばらくしてからもう一度お試
 
 #: apps/app/src/routes/knowledge-base-page.tsx:212
 msgid "文件超过 16MB 上限，请换一份更小的文件。"
-msgstr ""
+msgstr "ファイルが16MBの上限を超えています。小さいファイルを選択してください。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:270
 msgid "上传文件"
-msgstr ""
+msgstr "ファイルをアップロード"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:271
 msgid "粘贴文本"
-msgstr ""
+msgstr "テキストを貼り付け"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:272
 #: apps/app/src/routes/knowledge-base-page.tsx:400
 msgid "添加网址"
-msgstr ""
+msgstr "URLを追加"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:303
 msgid "添加个人知识"
-msgstr ""
+msgstr "個人の知識を追加"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:306
 msgid "上传文件、粘贴文本或添加网址，作为你的专属上下文，帮助世界里的角色更懂你。"
-msgstr ""
+msgstr "ファイルのアップロード、テキストの貼り付け、またはURLの追加で、あなた専用のコンテキストを作成し、ワールドのキャラクターがあなたをより深く理解できるようにします。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:343
 msgid "正在上传…"
-msgstr ""
+msgstr "アップロード中…"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:344
 msgid "点击选择文件"
-msgstr ""
+msgstr "タップしてファイルを選択"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:348
 msgid "支持 txt / md / pdf / docx / doc，单个文件最大 16MB。"
-msgstr ""
+msgstr "txt / md / pdf / docx / doc に対応。1ファイル最大16MBまで。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:359
 #: apps/app/src/routes/knowledge-base-page.tsx:392
 msgid "标题（可选）"
-msgstr ""
+msgstr "タイトル（任意）"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:365
 msgid "粘贴或输入你想让角色记住的内容…"
-msgstr ""
+msgstr "キャラクターに覚えてほしい内容を貼り付けるか入力してください…"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:374
 msgid "保存中…"
-msgstr ""
+msgstr "保存中…"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:374
 msgid "保存文本"
-msgstr ""
+msgstr "テキストを保存"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:385
 msgid "https://…"
-msgstr ""
+msgstr "https://…"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:400
 msgid "添加中…"
-msgstr ""
+msgstr "追加中…"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:419
 msgid "正在导入世界记忆…"
-msgstr ""
+msgstr "ワールドの記憶をインポート中…"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:420
 msgid "导入世界记忆"
-msgstr ""
+msgstr "ワールドの記憶をインポート"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:423
 msgid "把世界里已发生的重要经历整理进你的知识库。"
-msgstr ""
+msgstr "ワールドで起きた重要な出来事を知識ベースに整理します。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:431
 msgid "我的知识库"
-msgstr ""
+msgstr "マイ知識ベース"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:435
 msgid "正在加载知识库…"
-msgstr ""
+msgstr "知識ベースを読み込み中…"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:443
 msgid "还没有任何内容，先上传一个文件或粘贴一段文字吧。"
-msgstr ""
+msgstr "まだ何もありません。ファイルをアップロードするか、テキストを貼り付けてみましょう。"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:453
 msgid "已向量化"
-msgstr ""
+msgstr "ベクトル化済み"
 
 #: apps/app/src/routes/knowledge-base-page.tsx:453
 msgid "词法检索"
-msgstr ""
+msgstr "全文検索"
 
 #: apps/app/src/routes/legacy-friend-moments-redirect-page.tsx:56
 msgid "正在打开角色朋友圈..."
@@ -28435,7 +28443,7 @@ msgstr "ライブコンパニオンは現在デスクトップレイアウトの
 
 #: apps/app/src/routes/live-companion-page.tsx:327
 msgid "直播伴侣目前只在 Web 桌面布局和桌面应用里启用，移动布局先回到视频号继续查看内容。"
-msgstr ""
+msgstr "ライブコンパニオンはWebデスクトップレイアウトとデスクトップアプリでのみ利用できます。モバイルではビデオチャンネルに戻ってください。"
 
 #: apps/app/src/routes/live-companion-page.tsx:328
 msgid "前往视频号"
@@ -28486,7 +28494,7 @@ msgstr "状態を読み込み中..."
 
 #: apps/app/src/routes/live-companion-page.tsx:720
 msgid "核心服务"
-msgstr ""
+msgstr "コアサービス"
 
 #: apps/app/src/routes/live-companion-page.tsx:728
 msgid "推理网关"
@@ -28551,7 +28559,7 @@ msgstr "ライブ記録はまだありません。配信を準備して\"ライ�
 
 #: apps/app/src/routes/live-companion-page.tsx:1178
 msgid "（无标题 / 无正文）"
-msgstr ""
+msgstr "（タイトルなし／本文なし）"
 
 #. placeholder {0}: post.commentCount
 #. placeholder {1}: post.likeCount
@@ -28610,7 +28618,7 @@ msgstr "を"
 
 #: apps/app/src/routes/mini-programs-page.tsx:500
 msgid "的当前工作台发到手机继续，保留最近使用和本地待办。"
-msgstr ""
+msgstr "の現在のワークスペースをスマホに送って続きを。最近使ったアイテムとローカルのタスクも保持されます。"
 
 #: apps/app/src/routes/mini-programs-page.tsx:507
 msgid "已复制到手机接力链接。"
@@ -28634,11 +28642,11 @@ msgstr "デスクトップのミニプログラムを開いています"
 
 #: apps/app/src/routes/mini-programs-page.tsx:608
 msgid "正在打开桌面小程序，马上恢复当前小程序。"
-msgstr ""
+msgstr "デスクトップミニプログラムを開いています。現在のミニプログラムをすぐに復元します。"
 
 #: apps/app/src/routes/mini-programs-page.tsx:609
 msgid "正在打开桌面小程序..."
-msgstr ""
+msgstr "デスクトップミニプログラムを開いています..."
 
 #: apps/app/src/routes/mobile-add-friend-page.tsx:94
 msgid "正在打开桌面添加朋友"
@@ -28646,7 +28654,7 @@ msgstr "デスクトップで友達追加を開いています…"
 
 #: apps/app/src/routes/mobile-add-friend-page.tsx:95
 msgid "正在跳转到桌面添加朋友。"
-msgstr ""
+msgstr "デスクトップでフレンド追加に切り替えています。"
 
 #: apps/app/src/routes/mobile-add-friend-page.tsx:96
 msgid "切换桌面添加朋友..."
@@ -28659,7 +28667,7 @@ msgstr "現在会話を開けません。相手がブロックされているか
 #. placeholder {0}: pendingRequestCount > 99 ? "99+" : pendingRequestCount
 #: apps/app/src/routes/mobile-add-friend-page.tsx:600
 msgid "新的朋友，{0} 条待处理"
-msgstr ""
+msgstr "新しいフレンド、{0} 件保留中"
 
 #: apps/app/src/routes/mobile-add-friend-page.tsx:631
 msgid "隐界号 / 角色名"
@@ -28728,7 +28736,7 @@ msgstr "広場に投稿すると、世界の住民が見たり、いいねした
 
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:671
 msgid "广场动态正文"
-msgstr ""
+msgstr "投稿本文"
 
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:763
 msgid "当前发布到广场"
@@ -28794,7 +28802,7 @@ msgstr "とりあえずこのページを残しておき、次回更新があっ
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:1327
 #: apps/app/src/routes/moments-page.tsx:2328
 msgid "确定举报这条朋友圈吗？"
-msgstr ""
+msgstr "この投稿を通報しますか？"
 
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:678
 msgid "正在回到桌面朋友圈"
@@ -28810,7 +28818,7 @@ msgstr "モーメンツを開いています..."
 
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:800
 msgid "朋友圈正文"
-msgstr ""
+msgstr "モーメント本文"
 
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:851
 msgid "移除图片"
@@ -28839,17 +28847,17 @@ msgstr "通知する相手"
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:1017
 #: apps/app/src/routes/moments-page.tsx:2133
 msgid "退出编辑"
-msgstr ""
+msgstr "編集を終了"
 
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:1032
 #: apps/app/src/routes/moments-page.tsx:2162
 msgid "保留"
-msgstr ""
+msgstr "保持する"
 
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:1039
 #: apps/app/src/routes/moments-page.tsx:2169
 msgid "不保留"
-msgstr ""
+msgstr "破棄する"
 
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:1110
 msgid "选择媒体"
@@ -28898,7 +28906,7 @@ msgstr "保存中…"
 
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1618
 msgid "AI"
-msgstr ""
+msgstr "AI"
 
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1633
 msgid "附件上传中..."
@@ -28918,7 +28926,7 @@ msgstr "確認ダイアログを閉じる"
 
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1841
 msgid "附件还在上传，完成后再保存或者直接放弃。"
-msgstr ""
+msgstr "添付ファイルはまだアップロード中です。完了を待つか、直接破棄してください。"
 
 #: apps/app/src/routes/mobile-notes-page.tsx:306
 msgid "我的笔记"
@@ -28934,7 +28942,7 @@ msgstr "保存済みメモ"
 
 #: apps/app/src/routes/mobile-notes-page.tsx:417
 msgid "这个标签下还没有笔记。"
-msgstr ""
+msgstr "このタグにはまだメモがありません。"
 
 #: apps/app/src/routes/mobile-notes-page.tsx:430
 msgid "记下灵感、待办、链接和图片，发到聊天里也很方便。"
@@ -28942,19 +28950,19 @@ msgstr "アイデア、ToDoリスト、リンク、画像を記録。チャッ�
 
 #: apps/app/src/routes/mobile-notes-page.tsx:463
 msgid "正在听… 再点一次停止"
-msgstr ""
+msgstr "聴いています… もう一度タップして停止"
 
 #: apps/app/src/routes/mobile-notes-page.tsx:464
 msgid "随手记一条… 用 #标签 归类"
-msgstr ""
+msgstr "メモを残そう… #タグ で整理できます"
 
 #: apps/app/src/routes/mobile-notes-page.tsx:476
 msgid "语音速记"
-msgstr ""
+msgstr "音声メモ"
 
 #: apps/app/src/routes/mobile-notes-page.tsx:497
 msgid "记下"
-msgstr ""
+msgstr "記録する"
 
 #: apps/app/src/routes/mobile-notes-page.tsx:579
 msgid "仅含附件的草稿"
@@ -28989,7 +28997,7 @@ msgstr "友だちのモーメンツを開いています"
 
 #: apps/app/src/routes/moments-page.tsx:1696
 msgid "正在切换到桌面好友朋友圈，马上显示对应居民的动态。"
-msgstr ""
+msgstr "デスクトップのフレンドのフィードに切り替えています。対応する居住者の投稿をすぐに表示します。"
 
 #: apps/app/src/routes/moments-page.tsx:1697
 msgid "正在切换到桌面朋友圈..."
@@ -28997,7 +29005,7 @@ msgstr "デスクトップのモーメンツに切り替え中..."
 
 #: apps/app/src/routes/moments-page.tsx:1738
 msgid "部分朋友圈加载失败，请点击刷新重试：{localized}"
-msgstr ""
+msgstr "一部のモーメントの読み込みに失敗しました。タップして再読み込み：{localized}"
 
 #: apps/app/src/routes/moments-page.tsx:1755
 msgid "正在打开桌面朋友圈"
@@ -29005,11 +29013,11 @@ msgstr "デスクトップのモーメンツを開いています"
 
 #: apps/app/src/routes/moments-page.tsx:1756
 msgid "正在打开桌面朋友圈，马上显示动态和详情。"
-msgstr ""
+msgstr "デスクトップのフィードを開いています。投稿と詳細をすぐに表示します。"
 
 #: apps/app/src/routes/moments-page.tsx:1757
 msgid "正在打开桌面朋友圈..."
-msgstr ""
+msgstr "デスクトップフィードを開いています..."
 
 #: apps/app/src/routes/moments-page.tsx:2084
 #: apps/app/src/routes/moments-page.tsx:2493
@@ -29018,11 +29026,11 @@ msgstr "更新に失敗しました。しばらくしてから再試行してく
 
 #: apps/app/src/routes/moments-page.tsx:2150
 msgid "退出编辑？"
-msgstr ""
+msgstr "編集を終了しますか？"
 
 #: apps/app/src/routes/moments-page.tsx:2153
 msgid "保留后下次继续编辑这条草稿。"
-msgstr ""
+msgstr "保持すると次回もこの下書きの編集を続けられます。"
 
 #: apps/app/src/routes/moments-page.tsx:2353
 #: apps/app/src/routes/profile-moments-page.tsx:1430
@@ -29031,7 +29039,7 @@ msgstr "この投稿を削除しますか？"
 
 #: apps/app/src/routes/moments-page.tsx:2785
 msgid "继续编辑朋友圈草稿"
-msgstr ""
+msgstr "モーメントの下書きを編集再開"
 
 #: apps/app/src/routes/moments-page.tsx:2871
 msgid "正在刷新朋友圈"
@@ -29064,11 +29072,11 @@ msgstr "保存済みのノートを開いています..."
 
 #: apps/app/src/routes/official-account-article-page.tsx:63
 msgid "正在打开桌面文章阅读，马上显示当前内容。"
-msgstr ""
+msgstr "デスクトップの記事リーダーを開いています。現在のコンテンツをすぐに表示します。"
 
 #: apps/app/src/routes/official-account-article-page.tsx:64
 msgid "正在打开桌面公众号文章..."
-msgstr ""
+msgstr "デスクトップの記事を開いています..."
 
 #: apps/app/src/routes/official-account-article-page.tsx:210
 msgid "返回公众号主页"
@@ -29104,7 +29112,7 @@ msgstr "デスクトップの公式アカウント詳細に切り替え中"
 
 #: apps/app/src/routes/official-account-detail-page.tsx:71
 msgid "正在跳转到桌面通讯录中的公众号详情。"
-msgstr ""
+msgstr "デスクトップの連絡先にある公式アカウントの詳細に切り替えています。"
 
 #: apps/app/src/routes/official-account-detail-page.tsx:72
 msgid "切换桌面公众号详情..."
@@ -29131,11 +29139,11 @@ msgstr "デスクトップのサービスアカウント会話を開いていま
 
 #: apps/app/src/routes/official-account-service-page.tsx:37
 msgid "正在打开桌面服务号消息。"
-msgstr ""
+msgstr "デスクトップのサービスアカウントメッセージを開いています。"
 
 #: apps/app/src/routes/official-account-service-page.tsx:38
 msgid "正在打开桌面服务号会话..."
-msgstr ""
+msgstr "デスクトップのサービスアカウントチャットを開いています..."
 
 #: apps/app/src/routes/official-accounts-page.tsx:45
 msgid "正在切换到桌面公众号"
@@ -29143,7 +29151,7 @@ msgstr "デスクトップの公式アカウントに切り替え中"
 
 #: apps/app/src/routes/official-accounts-page.tsx:46
 msgid "正在跳转到桌面通讯录中的公众号视图。"
-msgstr ""
+msgstr "デスクトップの連絡先にある公式アカウントビューに切り替えています。"
 
 #: apps/app/src/routes/official-accounts-page.tsx:47
 msgid "切换桌面公众号视图..."
@@ -29315,7 +29323,7 @@ msgstr "你在广场发布的动态会出现在这里，可随时删除管理。
 
 #: apps/app/src/routes/profile-feed-page.tsx:335
 msgid "重新加载中…"
-msgstr ""
+msgstr "再読み込み中…"
 
 #: apps/app/src/routes/profile-feed-page.tsx:354
 msgid "删除这条广场动态"
@@ -29368,19 +29376,19 @@ msgstr "フィードバックはエンクレーブのクラウドコンソール
 
 #: apps/app/src/routes/profile-info-contact-page.tsx:38
 msgid "其它"
-msgstr ""
+msgstr "その他"
 
 #: apps/app/src/routes/profile-info-contact-page.tsx:203
 msgid "微信号 / 手机号，仅在双方都想要时对对方可见"
-msgstr ""
+msgstr "WeChat ID / 電話番号（お互いが「希望する」を選んだときのみ相手に表示されます）"
 
 #: apps/app/src/routes/profile-info-contact-page.tsx:240
 msgid "联系方式只用于「分身相遇」：只有你和对方都选择「想要」后，才会互相披露。在此之前任何人都看不到。"
-msgstr ""
+msgstr "連絡先は「分身の出会い」にのみ使用されます。お互いが「つながりたい」を選んだ後にのみ互いに開示されます。それまでは誰にも見えません。"
 
 #: apps/app/src/routes/profile-info-contact-page.tsx:246
 msgid "联系方式太长啦，最多 {CONTACT_MAX_LENGTH} 个字符，请删掉一些。"
-msgstr ""
+msgstr "連絡先が長すぎます。最大 {CONTACT_MAX_LENGTH} 文字まで。短くしてください。"
 
 #: apps/app/src/routes/profile-info-field-page.tsx:44
 #: apps/app/src/routes/profile-info-page.tsx:209
@@ -29591,11 +29599,11 @@ msgstr "デスクトップのマイモーメントを開いています…"
 
 #: apps/app/src/routes/profile-moments-page.tsx:973
 msgid "正在打开桌面端我的朋友圈。"
-msgstr ""
+msgstr "デスクトップでマイモーメントを開いています。"
 
 #: apps/app/src/routes/profile-moments-page.tsx:974
 msgid "正在打开桌面我的朋友圈..."
-msgstr ""
+msgstr "デスクトップのマイモーメントを開いています..."
 
 #: apps/app/src/routes/profile-moments-page.tsx:1348
 msgid "重新加载中..."
@@ -29824,7 +29832,7 @@ msgstr "クラウドアカウントのログインパスワードを変更しま
 
 #: apps/app/src/routes/profile-settings-desktop.tsx:919
 msgid "注销云账号并删除数据，需要邮箱验证码确认；操作不可恢复。"
-msgstr ""
+msgstr "クラウドアカウントとすべてのデータを削除します。メール認証が必要です。この操作は取り消せません。"
 
 #: apps/app/src/routes/profile-settings-desktop.tsx:941
 msgid "资料与设置"
@@ -29865,15 +29873,15 @@ msgstr "言語を切り替え中…"
 
 #: apps/app/src/routes/profile-settings-page.tsx:81
 msgid "浅色"
-msgstr ""
+msgstr "ライト"
 
 #: apps/app/src/routes/profile-settings-page.tsx:82
 msgid "深色"
-msgstr ""
+msgstr "ダーク"
 
 #: apps/app/src/routes/profile-settings-page.tsx:83
 msgid "跟随系统"
-msgstr ""
+msgstr "システムに合わせる"
 
 #: apps/app/src/routes/profile-settings-page.tsx:153
 msgid "返回资料页"
@@ -29881,16 +29889,16 @@ msgstr "プロフィールページへ戻る"
 
 #: apps/app/src/routes/profile-settings-page.tsx:212
 msgid "外观"
-msgstr ""
+msgstr "外観"
 
 #: apps/app/src/routes/profile-settings-page.tsx:250
 #: apps/app/src/routes/profile-settings-page.tsx:260
 msgid "允许我的分身参与社交相遇"
-msgstr ""
+msgstr "分身がソーシャルな出会いに参加するのを許可する"
 
 #: apps/app/src/routes/profile-settings-page.tsx:253
 msgid "关闭后别人无法和你的分身相遇，你也收不到新的相遇。"
-msgstr ""
+msgstr "オフにすると、他のユーザーがあなたの分身と出会えなくなり、新しい出会いも届かなくなります。"
 
 #: apps/app/src/routes/profile-subscription-page.tsx:513
 msgid "会员中心需要登录隐界云账号。当前只登录了本地世界，无法查看订阅与邀请信息。"
@@ -29901,170 +29909,170 @@ msgstr "メンバーシップセンターを利用するには隠界クラウド
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:301
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:322
 msgid "发小红书赢会员"
-msgstr ""
+msgstr "小紅書に投稿してメンバーシップをゲット"
 
 #: apps/app/src/routes/profile-subscription-page.tsx:755
 msgid "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
-msgstr ""
+msgstr "小紅書に隠界の体験を投稿し、審査通過でメンバーシップ獲得。ここをタップして文章を生成し、証拠を提出 →"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:125
 msgid "文案生成失败，请稍后重试。"
-msgstr ""
+msgstr "文章の生成に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:137
 msgid "今日配图额度已用完，可直接用文案发布。"
-msgstr ""
+msgstr "本日の画像生成枠を使い切りました。文章のみで投稿できます。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:150
 msgid "配图生成失败，请稍后重试。"
-msgstr ""
+msgstr "画像の生成に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:164
 msgid "已提交，请等待运营审核。"
-msgstr ""
+msgstr "提出しました。審査をお待ちください。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:175
 msgid "提交失败，请稍后重试。"
-msgstr ""
+msgstr "提出に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:193
 msgid "已复制文案。"
-msgstr ""
+msgstr "文章をコピーしました。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:200
 msgid "请填写小红书帖子链接。"
-msgstr ""
+msgstr "小紅書の投稿リンクを入力してください。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:204
 msgid "请上传发帖截图。"
-msgstr ""
+msgstr "投稿のスクリーンショットをアップロードしてください。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:253
 msgid "此功能需要登录隐界云账号。"
-msgstr ""
+msgstr "この機能を使うには隠界クラウドアカウントへのログインが必要です。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:268
 msgid "正在加载…"
-msgstr ""
+msgstr "読み込み中…"
 
 #. placeholder {0}: summary.rewardDays
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:330
 msgid "每条审核通过 = {0} 天会员"
-msgstr ""
+msgstr "審査通過1件 = {0}日間のメンバーシップ"
 
 #. placeholder {0}: summary.remainingQuota
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:333
 msgid "还可提交 {0} 次"
-msgstr ""
+msgstr "あと{0}回提出できます"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:338
 msgid "活动暂未开放。"
-msgstr ""
+msgstr "キャンペーンはまだ開始されていません。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:349
 msgid "第一步 · 准备文案"
-msgstr ""
+msgstr "ステップ1 · 文章を用意する"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:357
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:414
 msgid "生成中…"
-msgstr ""
+msgstr "生成中…"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:357
 msgid "帮我生成文案"
-msgstr ""
+msgstr "文章を生成する"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:361
 msgid "可以自己写，也可以点上面按钮让我们帮你生成（每次都不一样）。"
-msgstr ""
+msgstr "自分で書いても、上のボタンをタップして自動生成してもOK（毎回異なる文章が生成されます）。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:377
 msgid "点一条放入下方编辑框，可再修改。"
-msgstr ""
+msgstr "候補をタップすると下の編集欄に入力されます。自由に編集できます。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:386
 msgid "在这里写你的小红书文案，或点「帮我生成文案」。"
-msgstr ""
+msgstr "ここに小紅書の文章を書くか、「文章を生成する」をタップしてください。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:396
 msgid "复制文案"
-msgstr ""
+msgstr "文章をコピー"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:405
 msgid "第二步 · 生成配图（可选）"
-msgstr ""
+msgstr "ステップ2 · 画像を生成する（任意）"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:414
 msgid "生成配图"
-msgstr ""
+msgstr "画像を生成"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:418
 msgid "本次将消耗 {imagePriceLabel}"
-msgstr ""
+msgstr "今回は{imagePriceLabel}を消費します"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:424
 msgid "这是给你下载后发到小红书的素材，和下方「发帖截图」不是一回事。"
-msgstr ""
+msgstr "この画像はダウンロードして小紅書に投稿するための素材です。下の「投稿スクリーンショット」とは別物です。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:430
 msgid "生成的配图"
-msgstr ""
+msgstr "生成された画像"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:440
 msgid "下载配图（或长按保存）"
-msgstr ""
+msgstr "画像をダウンロード（または長押しで保存）"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:449
 msgid "第三步 · 提交发帖凭证"
-msgstr ""
+msgstr "ステップ3 · 投稿証拠を提出する"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:456
 msgid "小红书帖子链接"
-msgstr ""
+msgstr "小紅書の投稿リンク"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:461
 msgid "粘贴你发布的小红书帖子链接"
-msgstr ""
+msgstr "投稿した小紅書のリンクを貼り付けてください"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:466
 msgid "发帖截图"
-msgstr ""
+msgstr "投稿スクリーンショット"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:474
 msgid "重新选择"
-msgstr ""
+msgstr "選び直す"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:474
 msgid "选择截图"
-msgstr ""
+msgstr "スクリーンショットを選ぶ"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:487
 msgid "你的发帖奖励名额已用完，暂时无法继续提交。"
-msgstr ""
+msgstr "提出枠をすべて使い切りました。現在これ以上提出できません。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:497
 msgid "提交审核"
-msgstr ""
+msgstr "審査に提出する"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:516
 msgid "我的提交记录"
-msgstr ""
+msgstr "提出履歴"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:529
 msgid "审核中"
-msgstr ""
+msgstr "審査中"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:530
 msgid "已通过"
-msgstr ""
+msgstr "承認済み"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:538
 msgid "还没有提交记录。"
-msgstr ""
+msgstr "まだ提出履歴がありません。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:563
 msgid "提交时间"
-msgstr ""
+msgstr "提出日時"
 
 #: apps/app/src/routes/search-page.tsx:502
 msgid "正在打开桌面搜索"
@@ -30072,168 +30080,168 @@ msgstr "デスクトップの検索を開いています"
 
 #: apps/app/src/routes/search-page.tsx:503
 msgid "正在打开桌面搜索，马上同步当前搜索条件。"
-msgstr ""
+msgstr "デスクトップ検索を開いて、現在の検索条件を同期しています。"
 
 #: apps/app/src/routes/search-page.tsx:504
 msgid "正在打开桌面搜索..."
-msgstr ""
+msgstr "デスクトップ検索を開いています..."
 
 #: apps/app/src/routes/shop-checkout-page.tsx:54
 msgid "请填写完整的收货人、手机号和地址。"
-msgstr ""
+msgstr "受取人名、電話番号、住所をすべて入力してください。"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:70
 msgid "下单失败，请稍后重试。"
-msgstr ""
+msgstr "注文に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:86
 msgid "填写收货信息"
-msgstr ""
+msgstr "配送情報を入力"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:102
 #: apps/app/src/routes/shop-page.tsx:238
 msgid "正在加载商品…"
-msgstr ""
+msgstr "商品を読み込んでいます…"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:104
 msgid "商品不存在或已下架。"
-msgstr ""
+msgstr "この商品は存在しないか、販売終了しています。"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:114
 msgid "实物商品"
-msgstr ""
+msgstr "物理商品"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:123
 msgid "收货人"
-msgstr ""
+msgstr "受取人"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:127
 msgid "姓名"
-msgstr ""
+msgstr "氏名"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:137
 msgid "联系电话"
-msgstr ""
+msgstr "連絡先電話番号"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:142
 msgid "收货地址"
-msgstr ""
+msgstr "配送先住所"
 
 #: apps/app/src/routes/shop-checkout-page.tsx:147
 msgid "省 / 市 / 区 / 详细地址"
-msgstr ""
+msgstr "省 / 市 / 区 / 詳細住所"
 
 #. placeholder {0}: formatCents(goods.priceCents, goods.currency)
 #: apps/app/src/routes/shop-checkout-page.tsx:163
 msgid "确认下单 {0}"
-msgstr ""
+msgstr "注文を確定する {0}"
 
 #: apps/app/src/routes/shop-orders-page.tsx:28
 msgid "待发货"
-msgstr ""
+msgstr "発送待ち"
 
 #: apps/app/src/routes/shop-orders-page.tsx:30
 msgid "已发货"
-msgstr ""
+msgstr "発送済み"
 
 #: apps/app/src/routes/shop-orders-page.tsx:32
 msgid "已送达"
-msgstr ""
+msgstr "配達済み"
 
 #: apps/app/src/routes/shop-orders-page.tsx:34
 msgid "已取消"
-msgstr ""
+msgstr "キャンセル済み"
 
 #: apps/app/src/routes/shop-orders-page.tsx:36
 msgid "已退款"
-msgstr ""
+msgstr "返金済み"
 
 #: apps/app/src/routes/shop-orders-page.tsx:104
 msgid "订单需要登录隐界云账号。"
-msgstr ""
+msgstr "注文を確認するには隠界クラウドアカウントへのログインが必要です。"
 
 #: apps/app/src/routes/shop-orders-page.tsx:125
 msgid "正在加载订单…"
-msgstr ""
+msgstr "注文を読み込んでいます…"
 
 #: apps/app/src/routes/shop-orders-page.tsx:131
 msgid "还没有订单。"
-msgstr ""
+msgstr "まだ注文がありません。"
 
 #. placeholder {0}: order.shipping.name
 #. placeholder {1}: order.shipping.phone
 #: apps/app/src/routes/shop-orders-page.tsx:158
 msgid "收货：{0} · {1}"
-msgstr ""
+msgstr "配送先：{0} · {1}"
 
 #. placeholder {0}: order.trackingNo
 #: apps/app/src/routes/shop-orders-page.tsx:162
 msgid "物流单号：{0}"
-msgstr ""
+msgstr "追跡番号：{0}"
 
 #: apps/app/src/routes/shop-orders-page.tsx:179
 msgid "上一页"
-msgstr ""
+msgstr "前のページ"
 
 #: apps/app/src/routes/shop-orders-page.tsx:191
 msgid "下一页"
-msgstr ""
+msgstr "次のページ"
 
 #. placeholder {0}: goods.stock
 #: apps/app/src/routes/shop-page.tsx:58
 msgid "库存 {0}"
-msgstr ""
+msgstr "在庫：{0}"
 
 #. placeholder {0}: picked.name
 #. placeholder {1}: formatCents(res.balanceCents)
 #: apps/app/src/routes/shop-page.tsx:136
 msgid "已购买「{0}」，余额 {1}"
-msgstr ""
+msgstr "「{0}」を購入しました。残高 {1}"
 
 #: apps/app/src/routes/shop-page.tsx:143
 msgid "购买失败，请稍后重试。"
-msgstr ""
+msgstr "購入に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/shop-page.tsx:203
 msgid "商城需要登录隐界云账号，才能用钱包购买。"
-msgstr ""
+msgstr "ウォレットで購入するには隠界クラウドアカウントへのログインが必要です。"
 
 #: apps/app/src/routes/shop-page.tsx:228
 msgid "钱包余额"
-msgstr ""
+msgstr "ウォレット残高"
 
 #: apps/app/src/routes/shop-page.tsx:246
 msgid "虚拟好物"
-msgstr ""
+msgstr "バーチャルグッズ"
 
 #: apps/app/src/routes/shop-page.tsx:259
 msgid "实物周边"
-msgstr ""
+msgstr "フィジカルグッズ"
 
 #: apps/app/src/routes/shop-page.tsx:270
 msgid "商城暂无在售商品。"
-msgstr ""
+msgstr "現在販売中の商品はありません。"
 
 #: apps/app/src/routes/shop-page.tsx:311
 msgid "数量"
-msgstr ""
+msgstr "数量"
 
 #: apps/app/src/routes/shop-page.tsx:334
 msgid "实物商品下一步填写收货地址。"
-msgstr ""
+msgstr "次のステップで物理商品の配送先住所を入力してください。"
 
 #: apps/app/src/routes/shop-page.tsx:356
 msgid "去结算"
-msgstr ""
+msgstr "購入手続きへ"
 
 #: apps/app/src/routes/shop-page.tsx:358
 msgid "购买中…"
-msgstr ""
+msgstr "購入中…"
 
 #. placeholder {0}: formatCents(picked.priceCents * quantity, picked.currency)
 #: apps/app/src/routes/shop-page.tsx:359
 msgid "确认购买 {0}"
-msgstr ""
+msgstr "{0}を購入しますか？"
 
 #: apps/app/src/routes/splash-page.tsx:225
 msgid "加载中..."
@@ -30245,7 +30253,7 @@ msgstr "デスクトップの星付き友だちに切り替え中"
 
 #: apps/app/src/routes/starred-friends-page.tsx:73
 msgid "星标朋友在桌面布局里并入了通讯录，这里会自动带你打开对应视图。"
-msgstr ""
+msgstr "スター付きの友達はデスクトップレイアウトの連絡先に統合されています。該当ビューに自動で移動します。"
 
 #: apps/app/src/routes/starred-friends-page.tsx:74
 msgid "正在打开桌面星标朋友..."
@@ -30269,11 +30277,11 @@ msgstr "デスクトップの購読アカウントメッセージを開いてい
 
 #: apps/app/src/routes/subscription-inbox-page.tsx:45
 msgid "正在打开桌面订阅号消息。"
-msgstr ""
+msgstr "デスクトップでサブスクリプションメッセージを開いています。"
 
 #: apps/app/src/routes/subscription-inbox-page.tsx:46
 msgid "正在打开桌面订阅号消息..."
-msgstr ""
+msgstr "デスクトップでサブスクリプションメッセージを開いています..."
 
 #: apps/app/src/routes/subscription-inbox-page.tsx:117
 msgid "{groupCount}个号"
@@ -30309,61 +30317,61 @@ msgstr "まず連絡先のプロフィールにタグを追加すると、連絡
 
 #: apps/app/src/routes/wallet-page.tsx:94
 msgid "提交充值申请失败，请稍后重试。"
-msgstr ""
+msgstr "チャージ申請の送信に失敗しました。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/wallet-page.tsx:129
 msgid "钱包需要登录隐界云账号。当前只登录了本地世界，无法查看余额。"
-msgstr ""
+msgstr "ウォレットの利用には隠界クラウドアカウントが必要です。現在ローカルワールドにのみサインインしているため、残高を確認できません。"
 
 #: apps/app/src/routes/wallet-page.tsx:144
 msgid "正在加载钱包信息…"
-msgstr ""
+msgstr "ウォレットを読み込み中…"
 
 #: apps/app/src/routes/wallet-page.tsx:178
 msgid "我的零钱"
-msgstr ""
+msgstr "残高"
 
 #: apps/app/src/routes/wallet-page.tsx:186
 msgid "钱包已被冻结，暂时无法变动余额，请联系运营。"
-msgstr ""
+msgstr "ウォレットが凍結されています。残高の変更は一時的にできません。サポートにお問い合わせください。"
 
 #: apps/app/src/routes/wallet-page.tsx:207
 msgid "提现"
-msgstr ""
+msgstr "出金"
 
 #: apps/app/src/routes/wallet-page.tsx:211
 msgid "提现功能即将开放"
-msgstr ""
+msgstr "出金機能は近日公開予定"
 
 #: apps/app/src/routes/wallet-page.tsx:225
 #: apps/app/src/routes/wallet-transactions-page.tsx:72
 msgid "零钱明细"
-msgstr ""
+msgstr "取引明細"
 
 #: apps/app/src/routes/wallet-page.tsx:234
 msgid "最近交易"
-msgstr ""
+msgstr "最近の取引"
 
 #: apps/app/src/routes/wallet-page.tsx:258
 #: apps/app/src/routes/wallet-transactions-page.tsx:149
 msgid "暂无交易记录。"
-msgstr ""
+msgstr "取引履歴はありません。"
 
 #: apps/app/src/routes/wallet-transactions-page.tsx:101
 msgid "零钱明细需要登录隐界云账号。"
-msgstr ""
+msgstr "取引明細の確認には隠界クラウドアカウントが必要です。"
 
 #: apps/app/src/routes/wallet-transactions-page.tsx:106
 msgid "正在加载明细…"
-msgstr ""
+msgstr "明細を読み込み中…"
 
 #: apps/app/src/routes/wallet-transactions-page.tsx:141
 msgid "余额"
-msgstr ""
+msgstr "残高"
 
 #: apps/app/src/routes/wallet-transactions-page.tsx:163
 msgid "加载更多"
-msgstr ""
+msgstr "もっと見る"
 
 #: apps/app/src/routes/welcome-page.tsx:67
 msgid "世界缺少可用的 API 地址。"
@@ -30471,7 +30479,7 @@ msgstr "ワールドは準備完了ですが、まだアクセスできません
 
 #: apps/app/src/routes/welcome-page.tsx:830
 msgid "世界还在创建中，请稍后重试进入。"
-msgstr ""
+msgstr "ワールドはまだ作成中です。しばらくしてから再試行してください。"
 
 #: apps/app/src/routes/welcome-page.tsx:922
 msgid "验证码已发送。"
@@ -30508,7 +30516,7 @@ msgstr "メールアドレスを入力してください。"
 
 #: apps/app/src/routes/welcome-page.tsx:1189
 msgid "邮箱格式不正确，请检查后重试。"
-msgstr ""
+msgstr "メールアドレスの形式が正しくありません。確認して再試行してください。"
 
 #: apps/app/src/routes/welcome-page.tsx:1195
 msgid "请输入验证码。"
@@ -30520,11 +30528,11 @@ msgstr "パスワードを入力してください。"
 
 #: apps/app/src/routes/welcome-page.tsx:1213
 msgid "密码长度需在 8-32 位之间。"
-msgstr ""
+msgstr "パスワードは8〜32文字で入力してください。"
 
 #: apps/app/src/routes/welcome-page.tsx:1217
 msgid "密码不能包含空格。"
-msgstr ""
+msgstr "パスワードにスペースは使用できません。"
 
 #: apps/app/src/routes/welcome-page.tsx:1406
 msgid "解析云世界访问失败。"
@@ -30548,7 +30556,7 @@ msgstr "ワールドオーナー情報の保存に失敗しました。"
 
 #: apps/app/src/routes/welcome-page.tsx:1567
 msgid "登录或注册"
-msgstr ""
+msgstr "ログイン / 新規登録"
 
 #: apps/app/src/routes/welcome-page.tsx:1586
 msgid "登录"
@@ -30568,7 +30576,7 @@ msgstr "you@example.com"
 
 #: apps/app/src/routes/welcome-page.tsx:1704
 msgid "登录方式"
-msgstr ""
+msgstr "ログイン方法"
 
 #: apps/app/src/routes/welcome-page.tsx:1722
 msgid "使用验证码登录"
@@ -30580,15 +30588,15 @@ msgstr "パスワードでログイン"
 
 #: apps/app/src/routes/welcome-page.tsx:1788
 msgid "6 位短信验证码"
-msgstr ""
+msgstr "6桁のSMS認証コード"
 
 #: apps/app/src/routes/welcome-page.tsx:1789
 msgid "6 位邮箱验证码"
-msgstr ""
+msgstr "6桁のメール認証コード"
 
 #: apps/app/src/routes/welcome-page.tsx:1816
 msgid "{effectiveCooldownSeconds}s 后重发"
-msgstr ""
+msgstr "{effectiveCooldownSeconds}秒後に再送"
 
 #: apps/app/src/routes/welcome-page.tsx:1823
 msgid "设置登录密码（选填）"
@@ -30601,12 +30609,12 @@ msgstr "8〜32 文字、空白不可"
 #: apps/app/src/routes/welcome-page.tsx:1843
 #: apps/app/src/routes/welcome-page.tsx:1871
 msgid "显示密码"
-msgstr ""
+msgstr "パスワードを表示"
 
 #: apps/app/src/routes/welcome-page.tsx:1844
 #: apps/app/src/routes/welcome-page.tsx:1872
 msgid "隐藏密码"
-msgstr ""
+msgstr "パスワードを隠す"
 
 #: apps/app/src/routes/welcome-page.tsx:1852
 #: apps/app/src/routes/welcome-page.tsx:1857
@@ -30675,7 +30683,7 @@ msgstr "/api パスを検出したため、対応するワールド入口アド�
 
 #: apps/app/src/routes/welcome-page.tsx:2083
 msgid "检测到你输入的是本机应用地址，已自动换算为对应的世界地址：{normalizedLocalApiBaseUrl}"
-msgstr ""
+msgstr "ローカルアプリのアドレスが入力されています。対応するワールドアドレスに自動変換しました：{normalizedLocalApiBaseUrl}"
 
 #: apps/app/src/routes/welcome-page.tsx:2095
 msgid "连接本地世界"
@@ -30683,11 +30691,11 @@ msgstr "ローカルワールドに接続"
 
 #: apps/app/src/routes/welcome-page.tsx:2113
 msgid "世界主人名字"
-msgstr ""
+msgstr "ワールドオーナーの名前"
 
 #: apps/app/src/routes/welcome-page.tsx:2130
 msgid "你希望被怎么称呼？"
-msgstr ""
+msgstr "なんとお呼びすればよいですか？"
 
 #: apps/app/src/routes/welcome-page.tsx:2136
 msgid "这是世界里所有 AI 朋友对你的称呼，名字至少 {MIN_OWNER_NAME_LENGTH} 个字。"
@@ -30752,7 +30760,7 @@ msgstr "デスクトップの世界キャラクターに切り替え中"
 
 #: apps/app/src/routes/world-characters-page.tsx:70
 msgid "正在跳转到桌面通讯录中的世界角色视图。"
-msgstr ""
+msgstr "デスクトップの連絡先にあるワールドキャラクタービューに移動しています。"
 
 #: apps/app/src/routes/world-characters-page.tsx:71
 msgid "切换桌面世界角色..."
