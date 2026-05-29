@@ -51,7 +51,7 @@ import { useConversationBackground } from "./backgrounds/use-conversation-backgr
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useConversationThread } from "./use-conversation-thread";
 import { useThreadEntryScrollToBottom } from "./use-thread-entry-scroll-to-bottom";
-import { REMINDER_CHARACTER_ID } from "@yinjie/contracts";
+import { REMINDER_CHARACTER_ID, SELF_CHARACTER_ID } from "@yinjie/contracts";
 import {
   buildMobileChatRouteHash,
   parseMobileChatRouteState,
@@ -78,6 +78,8 @@ type ConversationThreadPanelProps = {
   routeContextNotice?: ChatRouteContextNotice;
   routeMobileShortcutAction?: ChatComposeShortcutAction | null;
   onRouteMobileShortcutHandled?: () => void;
+  routeComposeText?: string | null;
+  onRouteComposeTextHandled?: () => void;
 };
 
 export type ChatRouteContextNotice = {
@@ -105,6 +107,8 @@ export function ConversationThreadPanel({
   routeContextNotice,
   routeMobileShortcutAction = null,
   onRouteMobileShortcutHandled,
+  routeComposeText = null,
+  onRouteComposeTextHandled,
 }: ConversationThreadPanelProps) {
   const navigate = useNavigate();
   const hash = useRouterState({ select: (state) => state.location.hash });
@@ -156,6 +160,18 @@ export function ConversationThreadPanel({
   const runtimeConfig = useAppRuntimeConfig();
   const backgroundQuery = useConversationBackground(conversationId);
   const isDesktop = variant === "desktop";
+
+  // 世界 tab「和我快聊」带进来的预填文字：仅预填 composer（不自动发），真正的
+  // 发送交给下方成熟的发送钮/socket 链路。ref 守卫确保只灌一次，灌完通知父级清掉。
+  const composeTextSeededRef = useRef(false);
+  useEffect(() => {
+    if (!routeComposeText || composeTextSeededRef.current) {
+      return;
+    }
+    composeTextSeededRef.current = true;
+    setText(routeComposeText);
+    onRouteComposeTextHandled?.();
+  }, [routeComposeText, onRouteComposeTextHandled, setText]);
   const renderStatusBackAction = () =>
     !isDesktop && onBack ? (
       <Button
@@ -222,6 +238,9 @@ export function ConversationThreadPanel({
   );
   const isReminderConversation =
     conversationType === "direct" && participants[0] === REMINDER_CHARACTER_ID;
+  // 给「我自己」发红包只会白扣真钱（自聊 AI 领走、无到账），不开放该入口。
+  const isSelfConversation =
+    conversationType === "direct" && participants[0] === SELF_CHARACTER_ID;
   const subtitle =
     conversationType === "group"
       ? t(msg`${participants.length} 人群聊`)
@@ -1156,7 +1175,9 @@ export function ConversationThreadPanel({
             onStartVoiceCall={() => startDirectCall("voice")}
             onStartVideoCall={() => startDirectCall("video")}
             onSendRedPacket={
-              conversationType === "direct" && !isReminderConversation
+              conversationType === "direct" &&
+              !isReminderConversation &&
+              !isSelfConversation
                 ? () => setRedPacketOpen(true)
                 : undefined
             }

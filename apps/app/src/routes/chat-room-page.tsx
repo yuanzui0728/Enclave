@@ -8,8 +8,10 @@ import { AppPage } from "@yinjie/ui";
 import {
   buildChatCallReturnSearch,
   buildChatComposeShortcutSearch,
+  buildChatComposeTextSearch,
   parseChatCallReturnKind,
   parseChatComposeShortcutAction,
+  parseChatComposeText,
   type ChatCallReturnKind,
   type ChatComposeShortcutAction,
 } from "../features/chat/chat-compose-shortcut-route";
@@ -49,6 +51,7 @@ export function ChatRoomPage() {
     useState<ChatComposeShortcutAction | null>(null);
   const [routeCallReturnKind, setRouteCallReturnKind] =
     useState<ChatCallReturnKind | null>(null);
+  const [routeComposeText, setRouteComposeText] = useState<string | null>(null);
   // 移动端走查 R2：本组件只用 conversationsQuery 判定「这是不是群聊会话」并
   // redirect 到 /group/$groupId（mobile）或 /tabs/chat#... (desktop)。chat-list-page
   // 进入前刚拉过 app-conversations（15s staleTime）；这条 observer 没 staleTime
@@ -91,6 +94,7 @@ export function ChatRoomPage() {
   useEffect(() => {
     setRouteMobileShortcutAction(null);
     setRouteCallReturnKind(null);
+    setRouteComposeText(null);
   }, [conversationId]);
 
   useEffect(() => {
@@ -144,6 +148,33 @@ export function ChatRoomPage() {
     const nextSearch = buildChatComposeShortcutSearch({
       search,
       action: null,
+    });
+    void navigate({
+      to: "/chat/$conversationId",
+      params: { conversationId },
+      search: nextSearch || undefined,
+      hash,
+      replace: true,
+    });
+  }, [conversationId, hash, isDesktopLayout, navigate, search]);
+
+  // 世界 tab「和我快聊」带来的预填文字：解析一次 → 存 state → navigate replace
+  // 抹掉 URL 上的 composeText（防刷新/返回重复预填），再作为 prop 下发给 panel。
+  useEffect(() => {
+    if (isDesktopLayout) {
+      return;
+    }
+
+    const nextText = parseChatComposeText(search);
+    if (!nextText) {
+      return;
+    }
+
+    setRouteComposeText(nextText);
+
+    const nextSearch = buildChatComposeTextSearch({
+      search,
+      text: null,
     });
     void navigate({
       to: "/chat/$conversationId",
@@ -365,6 +396,8 @@ export function ChatRoomPage() {
           highlightedMessageId={highlightedMessageId}
           routeMobileShortcutAction={routeMobileShortcutAction}
           onRouteMobileShortcutHandled={handleRouteMobileShortcutHandled}
+          routeComposeText={routeComposeText}
+          onRouteComposeTextHandled={() => setRouteComposeText(null)}
           routeContextNotice={
             callReturnNotice ??
             (safeRouteContext

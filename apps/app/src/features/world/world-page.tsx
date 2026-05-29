@@ -1,4 +1,4 @@
-import { useEffect, useMemo, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -6,6 +6,7 @@ import {
   getConversations,
   getCyberAvatarSelfProfile,
   getFriends,
+  SELF_CHARACTER_ID,
   type ConversationListItem,
   type FriendListItem,
 } from "@yinjie/contracts";
@@ -20,6 +21,7 @@ import {
   Newspaper,
   Plus,
   PlaySquare,
+  Send,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
@@ -30,6 +32,7 @@ import {
 import { AvatarChip } from "../../components/avatar-chip";
 import { MonoIconTile } from "../../components/mono-icon-tile";
 import { TabPageTopBar } from "../../components/tab-page-top-bar";
+import { buildChatComposeTextSearch } from "../chat/chat-compose-shortcut-route";
 import { buildDesktopChannelsRouteHash } from "../channels/channels-route-state";
 import { buildMobileDiscoverToolRouteHash } from "../discover/mobile-discover-tool-route-state";
 import { buildFeedRouteHash } from "../feed/feed-route-state";
@@ -290,7 +293,7 @@ function MobileWorldPage() {
         }
       />
 
-      <div className="space-y-6 px-4 pb-10">
+      <div className="space-y-6 px-4 pb-24">
         {/* 双核 header：你 ⟷ 你的分身 */}
         <section className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[image:var(--surface-card-gradient)] p-4 shadow-[var(--shadow-card)]">
           <div className="flex items-stretch gap-2">
@@ -433,7 +436,66 @@ function MobileWorldPage() {
           </section>
         ) : null}
       </div>
+
+      {/* 底部常驻「和我快聊」：敲字发送 → 跳到「我」会话(direct_char-default-self)
+          并预填 composer，由聊天页成熟的发送链路真正发消息（世界页不直接发）。 */}
+      <SelfQuickChatBar conversations={conversationList} />
     </AppPage>
+  );
+}
+
+function SelfQuickChatBar({
+  conversations,
+}: {
+  conversations: ConversationListItem[];
+}) {
+  const t = useRuntimeTranslator();
+  const navigate = useNavigate();
+  const [draft, setDraft] = useState("");
+
+  function go() {
+    const text = draft.trim();
+    // 找恒置顶的「我」会话；找不到回退到 canonical 字面量（后端同款拼法）。
+    const selfConversationId =
+      conversations.find(
+        (c) => c.type === "direct" && c.participants[0] === SELF_CHARACTER_ID,
+      )?.id ?? `direct_${SELF_CHARACTER_ID}`;
+    void navigate({
+      to: "/chat/$conversationId",
+      params: { conversationId: selfConversationId },
+      search: buildChatComposeTextSearch({ text: text || null }),
+    });
+    setDraft("");
+  }
+
+  return (
+    <div
+      className="sticky bottom-0 z-10 flex items-end gap-2 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 py-2.5 backdrop-blur-xl"
+      style={{ bottom: "var(--keyboard-inset, 0px)" }}
+    >
+      <textarea
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            go();
+          }
+        }}
+        rows={1}
+        placeholder={t(msg`和我说点什么…`)}
+        aria-label={t(msg`和我说点什么…`)}
+        className="max-h-28 min-h-[40px] min-w-0 flex-1 resize-none rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-[14px] leading-6 text-[color:var(--text-primary)] outline-none focus:border-[color:var(--brand-primary)]"
+      />
+      <button
+        type="button"
+        onClick={go}
+        aria-label={t(msg`发送`)}
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white transition-opacity active:opacity-90"
+      >
+        <Send size={17} />
+      </button>
+    </div>
   );
 }
 

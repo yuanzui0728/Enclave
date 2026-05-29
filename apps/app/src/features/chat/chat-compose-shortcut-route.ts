@@ -4,6 +4,7 @@ export type ChatCallReturnKind = "voice" | "video";
 
 const CHAT_COMPOSE_SHORTCUT_QUERY_KEY = "composeShortcut";
 const CHAT_CALL_RETURN_QUERY_KEY = "callReturn";
+const CHAT_COMPOSE_TEXT_QUERY_KEY = "composeText";
 
 type ChatComposeShortcutSearchInput =
   | string
@@ -38,6 +39,33 @@ export function buildChatComposeShortcutSearch(input?: {
   // 走查 Round 1：原版返回 `?<qs>` 字符串，调用方 `navigate({ search: nextSearch || undefined })`
   // 把字符串直接交给 tanstack-router 的 search 字段——router 用 Object.entries 迭代会拆字符
   // 为 `?0=?&1=c&2=a&3=l&...` 类的脏 URL。返回 Record 对象，调用方语法 (|| undefined) 行为不变。
+  return searchParamsToRecord(params);
+}
+
+// 世界 tab 底部「和我快聊」快捷栏：把用户在世界页敲的文字经 search 参数带到
+// /chat/$conversationId，聊天页解析后预填 composer（用完即被 navigate replace 抹掉）。
+export function parseChatComposeText(
+  search: ChatComposeShortcutSearchInput,
+): string | null {
+  const text = toSearchParams(search).get(CHAT_COMPOSE_TEXT_QUERY_KEY)?.trim();
+  return text ? text : null;
+}
+
+export function buildChatComposeTextSearch(input?: {
+  search?: ChatComposeShortcutSearchInput;
+  text?: string | null;
+}): Record<string, string> | undefined {
+  const params = toSearchParams(input?.search);
+
+  const text = input?.text?.trim();
+  if (text) {
+    params.set(CHAT_COMPOSE_TEXT_QUERY_KEY, text);
+  } else {
+    params.delete(CHAT_COMPOSE_TEXT_QUERY_KEY);
+  }
+
+  // 同 buildChatComposeShortcutSearch：返回 Record 而非 `?<qs>` 字符串，否则
+  // navigate({ search }) 会把字符串按字符序列化成脏 URL。
   return searchParamsToRecord(params);
 }
 
