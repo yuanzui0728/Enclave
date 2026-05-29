@@ -235,7 +235,7 @@ msgstr "转发到聊天"
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:727
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:1046
 #: apps/app/src/routes/mobile-moments-publish-page.tsx:1143
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1666
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1701
 #: apps/app/src/routes/moments-page.tsx:2176
 #: apps/app/src/routes/profile-feed-page.tsx:526
 #: apps/app/src/routes/profile-info-page.tsx:695
@@ -460,7 +460,7 @@ msgstr "图片发送失败，请稍后再试。"
 #: apps/app/src/features/chat/conversation-thread-panel.tsx:568
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:406
 #: apps/app/src/i18n/static-dom-seed.ts:1071
-#: apps/app/src/routes/mobile-note-editor-page.tsx:506
+#: apps/app/src/routes/mobile-note-editor-page.tsx:509
 msgid "发送失败，请稍后再试。"
 msgstr "发送失败，请稍后再试。"
 
@@ -666,7 +666,7 @@ msgstr "Enter 发送"
 #: apps/app/src/routes/channels-page.tsx:5677
 #: apps/app/src/routes/discover-page.tsx:1121
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1333
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1352
 msgid "发送"
 msgstr "发送"
 
@@ -1120,7 +1120,7 @@ msgstr "已删除这条消息。"
 #: apps/app/src/components/chat-message-list.tsx:1285
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:336
 #: apps/app/src/i18n/static-dom-seed.ts:947
-#: apps/app/src/routes/mobile-note-editor-page.tsx:443
+#: apps/app/src/routes/mobile-note-editor-page.tsx:446
 msgid "删除失败，请稍后再试。"
 msgstr "删除失败，请稍后再试。"
 
@@ -1210,6 +1210,7 @@ msgstr "生成语音失败，请稍后再试。"
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1194
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:709
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:810
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:119
 #: apps/app/src/routes/channel-history-page.tsx:93
 #: apps/app/src/routes/chat-list-page.tsx:1528
 #: apps/app/src/routes/contacts-page.tsx:2868
@@ -1678,7 +1679,7 @@ msgstr "撤回"
 
 #: apps/app/src/components/chat-message-list.tsx:3676
 #: apps/app/src/features/desktop/moments/desktop-moment-row.tsx:265
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1525
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1560
 msgid "删除中..."
 msgstr "删除中..."
 
@@ -1702,7 +1703,7 @@ msgstr "删除中..."
 #: apps/app/src/routes/chat-list-page.tsx:2417
 #: apps/app/src/routes/knowledge-base-page.tsx:461
 #: apps/app/src/routes/mobile-add-friend-page.tsx:907
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1524
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1559
 #: apps/app/src/routes/profile-feed-page.tsx:533
 msgid "删除"
 msgstr "删除"
@@ -2098,7 +2099,7 @@ msgstr "位置"
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1087
 #: apps/app/src/features/desktop/chat/desktop-create-group-dialog.tsx:1348
 #: apps/app/src/features/desktop/chat/desktop-note-window-route-state.ts:77
-#: apps/app/src/features/favorites/note-editor-helpers.ts:300
+#: apps/app/src/features/favorites/note-editor-helpers.ts:302
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:201
 #: apps/app/src/features/search/search-quick-links.ts:45
 #: apps/app/src/lib/message-attachment-semantic.ts:319
@@ -2620,6 +2621,8 @@ msgstr "笔记查看器"
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:226
 #: apps/app/src/features/mini-programs/mobile-mini-programs-workspace.tsx:513
 #: apps/app/src/features/mini-programs/mobile-mini-programs-workspace.tsx:532
+#: apps/app/src/features/notes/note-ai-sheet.tsx:321
+#: apps/app/src/features/notes/note-ai-sheet.tsx:348
 #: apps/app/src/features/search/mobile-search-workspace.tsx:219
 #: apps/app/src/routes/channel-author-page.tsx:485
 #: apps/app/src/routes/channel-history-page.tsx:70
@@ -2637,7 +2640,7 @@ msgstr "笔记查看器"
 #: apps/app/src/routes/mobile-favorites-page.tsx:352
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:907
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:964
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1301
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1320
 #: apps/app/src/routes/mobile-notes-page.tsx:162
 #: apps/app/src/routes/moments-page.tsx:2769
 #: apps/app/src/routes/official-accounts-page.tsx:222
@@ -2808,6 +2811,7 @@ msgstr "关闭弹窗"
 #: apps/app/src/features/games/parking-war/parking-war-game.tsx:1408
 #: apps/app/src/features/mini-programs/mini-program-open-panel.tsx:150
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:124
+#: apps/app/src/features/notes/note-ai-sheet.tsx:213
 #: apps/app/src/features/shop/gift-to-friend-sheet.tsx:81
 #: apps/app/src/i18n/static-dom-seed.ts:854
 #: apps/app/src/routes/desktop-chat-files-page.tsx:1321
@@ -5562,6 +5566,8 @@ msgstr "多选"
 
 #: apps/app/src/features/chat/group-message-context-menu.tsx:246
 #: apps/app/src/features/chat/mobile-message-action-sheet.tsx:275
+#: apps/app/src/features/notes/note-ai-sheet.tsx:317
+#: apps/app/src/features/notes/note-ai-sheet.tsx:369
 #: apps/app/src/features/subscription/checkout-contact-dialog.tsx:236
 #: apps/app/src/i18n/static-dom-seed.ts:936
 #: apps/app/src/routes/discover-avatar-encounter-page.tsx:811
@@ -6537,7 +6543,7 @@ msgstr "支持继续添加图片和 GIF，常用表情会更好找。"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1319
 #: apps/app/src/routes/group-chat-details-page.tsx:473
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1120
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1419
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1438
 msgid "添加"
 msgstr "添加"
 
@@ -7418,7 +7424,7 @@ msgstr "本人"
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:201
 #: apps/app/src/routes/character-detail-page.tsx:405
 #: apps/app/src/routes/contacts-page.tsx:1884
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1507
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1533
 #: apps/app/src/routes/tags-page.tsx:229
 #: apps/app/src/routes/tags-page.tsx:351
 msgid "标签"
@@ -7691,7 +7697,7 @@ msgstr "隐界号：{identifier}"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1201
 #: apps/app/src/routes/character-detail-page.tsx:409
 #: apps/app/src/routes/group-chat-edit-page.tsx:523
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1357
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1376
 msgid "保存"
 msgstr "保存"
 
@@ -9637,7 +9643,7 @@ msgstr "添加朋友"
 #: apps/app/src/routes/chat-list-page.tsx:139
 #: apps/app/src/routes/favorites-page.tsx:596
 #: apps/app/src/routes/mobile-favorites-page.tsx:365
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1370
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1389
 #: apps/app/src/routes/mobile-notes-page.tsx:174
 #: apps/app/src/routes/mobile-notes-page.tsx:244
 msgid "新建笔记"
@@ -10226,13 +10232,13 @@ msgid "成功后会同步到当前聊天消息里。"
 msgstr "成功后会同步到当前聊天消息里。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
+msgid "解除麦克风静音"
+msgstr "解除麦克风静音"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:460
 msgid "静音麦克风"
 msgstr "静音麦克风"
-
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
-msgid "解除麦克风静音"
-msgstr "解除麦克风静音"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:562
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:466
@@ -10880,39 +10886,39 @@ msgstr "纯文本笔记"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:239
 #: apps/app/src/i18n/static-dom-seed.ts:1066
-#: apps/app/src/routes/mobile-note-editor-page.tsx:314
+#: apps/app/src/routes/mobile-note-editor-page.tsx:317
 msgid "笔记已保存到收藏。"
 msgstr "笔记已保存到收藏。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:284
 #: apps/app/src/i18n/static-dom-seed.ts:1067
-#: apps/app/src/routes/mobile-note-editor-page.tsx:374
+#: apps/app/src/routes/mobile-note-editor-page.tsx:377
 msgid "保存失败，请稍后再试。"
 msgstr "保存失败，请稍后再试。"
 
 #. placeholder {0}: attachment.title
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:349
-#: apps/app/src/routes/mobile-note-editor-page.tsx:457
+#: apps/app/src/routes/mobile-note-editor-page.tsx:460
 msgid "[笔记] {0}"
 msgstr "[笔记] {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:385
-#: apps/app/src/routes/mobile-note-editor-page.tsx:490
+#: apps/app/src/routes/mobile-note-editor-page.tsx:493
 msgid "笔记已发送到 {conversationTitle}。"
 msgstr "笔记已发送到 {conversationTitle}。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:402
-#: apps/app/src/routes/mobile-note-editor-page.tsx:502
+#: apps/app/src/routes/mobile-note-editor-page.tsx:505
 msgid "当前没有可发送的笔记。"
 msgstr "当前没有可发送的笔记。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:404
-#: apps/app/src/routes/mobile-note-editor-page.tsx:504
+#: apps/app/src/routes/mobile-note-editor-page.tsx:507
 msgid "当前会话没有可用的接收目标。"
 msgstr "当前会话没有可用的接收目标。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:472
-#: apps/app/src/routes/mobile-note-editor-page.tsx:586
+#: apps/app/src/routes/mobile-note-editor-page.tsx:589
 msgid "原笔记已不存在，当前草稿会按新笔记保存。"
 msgstr "原笔记已不存在，当前草稿会按新笔记保存。"
 
@@ -10922,13 +10928,13 @@ msgstr "{noteTitle} · 未保存"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:761
 #: apps/app/src/i18n/static-dom-seed.ts:1069
-#: apps/app/src/routes/mobile-note-editor-page.tsx:920
+#: apps/app/src/routes/mobile-note-editor-page.tsx:939
 msgid "附件上传失败，请稍后再试。"
 msgstr "附件上传失败，请稍后再试。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:791
 #: apps/app/src/i18n/static-dom-seed.ts:1070
-#: apps/app/src/routes/mobile-note-editor-page.tsx:896
+#: apps/app/src/routes/mobile-note-editor-page.tsx:915
 msgid "附件已插入到笔记。"
 msgstr "附件已插入到笔记。"
 
@@ -10937,23 +10943,23 @@ msgid "先写点内容或加个附件再保存。"
 msgstr "先写点内容或加个附件再保存。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1028
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1161
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1180
 msgid "先写一点内容，再把这条笔记发送出去。"
 msgstr "先写一点内容，再把这条笔记发送出去。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1053
 #: apps/app/src/i18n/static-dom-seed.ts:1068
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1198
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1217
 msgid "笔记还没有保存成功，请稍后再试。"
 msgstr "笔记还没有保存成功，请稍后再试。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1068
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1219
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1238
 msgid "正在读取笔记..."
 msgstr "正在读取笔记..."
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1089
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1236
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1255
 #: apps/app/src/routes/mobile-notes-page.tsx:191
 msgid "读取笔记失败，请稍后再试。"
 msgstr "读取笔记失败，请稍后再试。"
@@ -10961,7 +10967,7 @@ msgstr "读取笔记失败，请稍后再试。"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1098
 #: apps/app/src/i18n/static-dom-seed.ts:1100
 #: apps/app/src/routes/desktop-official-article-window-page.tsx:330
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1245
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1264
 msgid "回到来源"
 msgstr "回到来源"
 
@@ -10971,29 +10977,29 @@ msgid "返回收藏"
 msgstr "返回收藏"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1144
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1286
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1305
 msgid "笔记标题"
 msgstr "笔记标题"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1151
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1365
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1384
 msgid "正在保存到收藏..."
 msgstr "正在保存到收藏..."
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1153
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1367
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1386
 msgid "存在未保存修改"
 msgstr "存在未保存修改"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1155
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1369
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1388
 msgid "已保存到收藏"
 msgstr "已保存到收藏"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1201
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1556
 #: apps/app/src/routes/character-detail-page.tsx:408
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1723
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1758
 #: apps/app/src/routes/profile-settings-desktop.tsx:498
 #: apps/app/src/routes/profile-settings-desktop.tsx:652
 #: apps/app/src/routes/profile-settings-desktop.tsx:785
@@ -11008,35 +11014,35 @@ msgstr "关闭笔记窗口"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1218
 #: apps/app/src/i18n/static-dom-seed.ts:1076
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1467
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1486
 msgid "附件"
 msgstr "附件"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1224
 #: apps/app/src/i18n/static-dom-seed.ts:1075
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1480
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1499
 msgid "粗体"
 msgstr "粗体"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1230
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1486
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1505
 msgid "斜体"
 msgstr "斜体"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1236
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1492
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1511
 msgid "下划线"
 msgstr "下划线"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1242
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1498
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1517
 msgid "列表"
 msgstr "列表"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1247
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:129
 #: apps/app/src/i18n/static-dom-seed.ts:156
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1503
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1522
 msgid "待办"
 msgstr "待办"
 
@@ -11045,12 +11051,12 @@ msgid "正在上传附件..."
 msgstr "正在上传附件..."
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1276
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1392
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1411
 msgid "移除标签 {tag}"
 msgstr "移除标签 {tag}"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1305
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1410
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1429
 msgid "输入标签后回车"
 msgstr "输入标签后回车"
 
@@ -11072,12 +11078,12 @@ msgid "加载笔记中…"
 msgstr "加载笔记中…"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1360
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1438
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1457
 msgid "写点什么。支持富文本、待办、图片和文件。"
 msgstr "写点什么。支持富文本、待办、图片和文件。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1383
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1316
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1335
 msgid "删除笔记"
 msgstr "删除笔记"
 
@@ -11087,27 +11093,27 @@ msgstr "删除后，这条收藏笔记会从收藏列表中移除。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1489
 #: apps/app/src/i18n/static-dom-seed.ts:1074
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1698
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1733
 msgid "关闭未保存提示"
 msgstr "关闭未保存提示"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1524
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1705
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1740
 msgid "这条笔记还没有保存"
 msgstr "这条笔记还没有保存"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1530
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1708
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1743
 msgid "保存后会进入收藏；如果直接关闭，当前草稿改动会被丢弃。"
 msgstr "保存后会进入收藏；如果直接关闭，当前草稿改动会被丢弃。"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1548
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1731
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1766
 msgid "不保存"
 msgstr "不保存"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1556
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1723
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1758
 msgid "保存并关闭"
 msgstr "保存并关闭"
 
@@ -13015,7 +13021,7 @@ msgstr "来自 {0}"
 msgid "无标题笔记"
 msgstr "无标题笔记"
 
-#: apps/app/src/features/favorites/note-editor-helpers.ts:370
+#: apps/app/src/features/favorites/note-editor-helpers.ts:372
 msgid "{month}月{day}日 {hours}:{minutes}"
 msgstr "{month}月{day}日 {hours}:{minutes}"
 
@@ -15306,17 +15312,17 @@ msgid "守住基地，消灭 20 辆敌方坦克。"
 msgstr "守住基地，消灭 20 辆敌方坦克。"
 
 #: apps/app/src/features/games/game-center-data.ts:307
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
+msgid "双人"
+msgstr "双人"
+
+#: apps/app/src/features/games/game-center-data.ts:307
 msgid "像素"
 msgstr "像素"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "动作"
 msgstr "动作"
-
-#: apps/app/src/features/games/game-center-data.ts:307
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
-msgid "双人"
-msgstr "双人"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "怀旧"
@@ -18633,6 +18639,97 @@ msgstr "先去消息列表里建立一些聊天，再回来发送笔记。"
 msgid "会以笔记卡片形式出现在对话里。"
 msgstr "会以笔记卡片形式出现在对话里。"
 
+#: apps/app/src/features/notes/note-ai-sheet.tsx:78
+msgid "总结全文"
+msgstr "总结全文"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:84
+msgid "润色全文"
+msgstr "润色全文"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:90
+msgid "续写"
+msgstr "续写"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:96
+msgid "生成大纲"
+msgstr "生成大纲"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:102
+msgid "提取待办"
+msgstr "提取待办"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:108
+msgid "翻译成英文"
+msgstr "翻译成英文"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:114
+msgid "起个标题"
+msgstr "起个标题"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:157
+msgid "AI 处理失败，请稍后再试。"
+msgstr "AI 处理失败，请稍后再试。"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:166
+msgid "问题太短了，请写清楚一点再问。"
+msgstr "问题太短了，请写清楚一点再问。"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:176
+msgid "提问失败，请稍后再试。"
+msgstr "提问失败，请稍后再试。"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:194
+msgid "问我的笔记"
+msgstr "问我的笔记"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:195
+msgid "AI 助手"
+msgstr "AI 助手"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:201
+msgid "关闭 AI 助手"
+msgstr "关闭 AI 助手"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:256
+msgid "先写点内容，就能让 AI 帮你总结、润色、续写。"
+msgstr "先写点内容，就能让 AI 帮你总结、润色、续写。"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:269
+msgid "问我的笔记（基于你所有笔记回答）"
+msgstr "问我的笔记（基于你所有笔记回答）"
+
+#. placeholder {0}: stage.title
+#: apps/app/src/features/notes/note-ai-sheet.tsx:282
+msgid "AI 正在处理「{0}」..."
+msgstr "AI 正在处理「{0}」..."
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:283
+msgid "正在从你的笔记里找答案..."
+msgstr "正在从你的笔记里找答案..."
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:304
+msgid "插入到笔记"
+msgstr "插入到笔记"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:317
+#: apps/app/src/features/notes/note-ai-sheet.tsx:369
+#: apps/app/src/routes/discover-avatar-encounter-page.tsx:811
+msgid "已复制"
+msgstr "已复制"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:334
+msgid "比如：我上周记了哪些待办？项目 X 的进展？"
+msgstr "比如：我上周记了哪些待办？项目 X 的进展？"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:344
+msgid "提问"
+msgstr "提问"
+
+#: apps/app/src/features/notes/note-ai-sheet.tsx:381
+msgid "再问一个"
+msgstr "再问一个"
+
 #: apps/app/src/features/official-accounts/official-article-route-shell.tsx:54
 #: apps/app/src/i18n/static-dom-seed.ts:1019
 #: apps/app/src/routes/official-account-article-page.tsx:62
@@ -19609,21 +19706,21 @@ msgstr "看看我最近发了什么"
 msgid "和\"我\"对话"
 msgstr "和\"我\"对话"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:82
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:96
 msgid "世界状态"
 msgstr "世界状态"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:88
-msgid "世界暂时离线"
-msgstr "世界暂时离线"
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:102
+msgid "连接暂时中断"
+msgstr "连接暂时中断"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:94
-msgid "你的世界正在启动或已自动休眠。重新登录会立即唤醒它，几秒内即可继续使用——你的账号和数据都已安全保存在云端。"
-msgstr "你的世界正在启动或已自动休眠。重新登录会立即唤醒它，几秒内即可继续使用——你的账号和数据都已安全保存在云端。"
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:108
+msgid "服务器正忙或正在恢复，通常几秒内就会自动恢复。你的账号和数据都安全保存在云端，点「重试」即可继续。"
+msgstr "服务器正忙或正在恢复，通常几秒内就会自动恢复。你的账号和数据都安全保存在云端，点「重试」即可继续。"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:105
-msgid "重新登录"
-msgstr "重新登录"
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:126
+msgid "仍无法恢复？重新登录"
+msgstr "仍无法恢复？重新登录"
 
 #: apps/app/src/features/shop/gift-to-friend-sheet.tsx:54
 msgid "已把「{name}」送给 {characterName}"
@@ -26682,10 +26779,6 @@ msgstr "去填写"
 msgid "对方的联系方式"
 msgstr "对方的联系方式"
 
-#: apps/app/src/routes/discover-avatar-encounter-page.tsx:811
-msgid "已复制"
-msgstr "已复制"
-
 #: apps/app/src/routes/discover-encounter-page.tsx:46
 msgid "桌面端的发现入口已经收口到桌面发现，先回到主发现页。"
 msgstr "桌面端的发现入口已经收口到桌面发现，先回到主发现页。"
@@ -27219,7 +27312,7 @@ msgid "移除中..."
 msgstr "移除中..."
 
 #: apps/app/src/routes/favorites-page.tsx:813
-#: apps/app/src/routes/mobile-note-editor-page.tsx:127
+#: apps/app/src/routes/mobile-note-editor-page.tsx:129
 msgid "正在打开桌面笔记"
 msgstr "正在打开桌面笔记"
 
@@ -28509,7 +28602,7 @@ msgid "返回会丢失已编辑的文字与媒体，确定不发布吗？"
 msgstr "返回会丢失已编辑的文字与媒体，确定不发布吗？"
 
 #: apps/app/src/routes/mobile-feed-publish-page.tsx:832
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1739
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1774
 msgid "继续编辑"
 msgstr "继续编辑"
 
@@ -28625,31 +28718,31 @@ msgstr "从相册选择图片"
 msgid "选择视频"
 msgstr "选择视频"
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:128
+#: apps/app/src/routes/mobile-note-editor-page.tsx:130
 msgid "正在跳转到桌面笔记编辑器。"
 msgstr "正在跳转到桌面笔记编辑器。"
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:129
+#: apps/app/src/routes/mobile-note-editor-page.tsx:131
 msgid "切换桌面笔记..."
 msgstr "切换桌面笔记..."
 
 #. placeholder {0}: failedFiles.join("、")
-#: apps/app/src/routes/mobile-note-editor-page.tsx:901
+#: apps/app/src/routes/mobile-note-editor-page.tsx:920
 msgid "附件上传失败：{0}"
 msgstr "附件上传失败：{0}"
 
 #. placeholder {0}: createdAssets.length
 #. placeholder {1}: failedFiles.length
 #. placeholder {2}: failedFiles.join("、")
-#: apps/app/src/routes/mobile-note-editor-page.tsx:907
+#: apps/app/src/routes/mobile-note-editor-page.tsx:926
 msgid "已插入 {0} 个附件，{1} 个失败：{2}"
 msgstr "已插入 {0} 个附件，{1} 个失败：{2}"
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:964
+#: apps/app/src/routes/mobile-note-editor-page.tsx:983
 msgid "最多只能添加 8 个标签，先移除一个再来。"
 msgstr "最多只能添加 8 个标签，先移除一个再来。"
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1357
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1376
 #: apps/app/src/routes/profile-info-contact-page.tsx:160
 #: apps/app/src/routes/profile-info-field-page.tsx:273
 #: apps/app/src/routes/profile-info-name-page.tsx:181
@@ -28658,23 +28751,27 @@ msgstr "最多只能添加 8 个标签，先移除一个再来。"
 msgid "保存中"
 msgstr "保存中"
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1515
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1526
+msgid "AI"
+msgstr "AI"
+
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1541
 msgid "附件上传中..."
 msgstr "附件上传中..."
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1522
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1557
 msgid "删除这条笔记？"
 msgstr "删除这条笔记？"
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1523
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1558
 msgid "删除后会从收藏的笔记列表中移除，无法恢复。"
 msgstr "删除后会从收藏的笔记列表中移除，无法恢复。"
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1638
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1673
 msgid "关闭确认弹层"
 msgstr "关闭确认弹层"
 
-#: apps/app/src/routes/mobile-note-editor-page.tsx:1714
+#: apps/app/src/routes/mobile-note-editor-page.tsx:1749
 msgid "附件还在上传，完成后再保存或者直接放弃。"
 msgstr "附件还在上传，完成后再保存或者直接放弃。"
 
