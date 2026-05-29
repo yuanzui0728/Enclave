@@ -3823,7 +3823,7 @@ function MobileChannelsStatusCard({
       className={cn(
         "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
@@ -4546,7 +4546,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
             <div className="mt-2 text-[9px] text-[color:var(--text-on-brand)]/65">
               {formatChannelMeta(post, t)}
             </div>
-            <div className="mt-2 rounded-[var(--radius-md)] bg-[color:var(--surface-card)] px-2.5 py-2 text-[10px] leading-4 text-[color:var(--text-on-brand)]/86 backdrop-blur">
+            <div className="mt-2 rounded-[var(--radius-md)] bg-black/30 px-2.5 py-2 text-[10px] leading-4 text-[color:var(--text-on-brand)]/86 backdrop-blur">
               {(() => {
                 // 走查 2026-05-18 R2（本轮）：commentsPreview 里偶尔混入纯
                 // AI thinking-prose 评论（库里至少 eb9c88ce 等帖各有 1 条
