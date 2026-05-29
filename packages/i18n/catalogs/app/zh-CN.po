@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "音乐"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/i18n/static-dom-seed.ts:349
-#: apps/app/src/routes/channels-page.tsx:3454
-#: apps/app/src/routes/channels-page.tsx:3723
-msgid "播放"
-msgstr "播放"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
 #: apps/app/src/routes/channels-page.tsx:3454
 #: apps/app/src/routes/channels-page.tsx:3723
 msgid "暂停"
 msgstr "暂停"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/i18n/static-dom-seed.ts:349
+#: apps/app/src/routes/channels-page.tsx:3454
+#: apps/app/src/routes/channels-page.tsx:3723
+msgid "播放"
+msgstr "播放"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -1210,7 +1210,7 @@ msgstr "生成语音失败，请稍后再试。"
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1194
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:709
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:810
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:119
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:115
 #: apps/app/src/routes/channel-history-page.tsx:93
 #: apps/app/src/routes/chat-list-page.tsx:1528
 #: apps/app/src/routes/contacts-page.tsx:2868
@@ -2641,7 +2641,7 @@ msgstr "笔记查看器"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:907
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:964
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1320
-#: apps/app/src/routes/mobile-notes-page.tsx:162
+#: apps/app/src/routes/mobile-notes-page.tsx:193
 #: apps/app/src/routes/moments-page.tsx:2769
 #: apps/app/src/routes/official-accounts-page.tsx:222
 #: apps/app/src/routes/official-accounts-page.tsx:393
@@ -5776,14 +5776,14 @@ msgstr "切换到语音"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-#: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
-msgid "挂断"
-msgstr "挂断"
+msgid "挂断中..."
+msgstr "挂断中..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "挂断中..."
+#: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
+msgid "挂断"
+msgstr "挂断"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -9644,8 +9644,8 @@ msgstr "添加朋友"
 #: apps/app/src/routes/favorites-page.tsx:596
 #: apps/app/src/routes/mobile-favorites-page.tsx:365
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1389
-#: apps/app/src/routes/mobile-notes-page.tsx:174
-#: apps/app/src/routes/mobile-notes-page.tsx:244
+#: apps/app/src/routes/mobile-notes-page.tsx:205
+#: apps/app/src/routes/mobile-notes-page.tsx:275
 msgid "新建笔记"
 msgstr "新建笔记"
 
@@ -10232,13 +10232,13 @@ msgid "成功后会同步到当前聊天消息里。"
 msgstr "成功后会同步到当前聊天消息里。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
-msgid "解除麦克风静音"
-msgstr "解除麦克风静音"
-
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:460
 msgid "静音麦克风"
 msgstr "静音麦克风"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
+msgid "解除麦克风静音"
+msgstr "解除麦克风静音"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:562
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:466
@@ -10867,7 +10867,7 @@ msgstr "更新于 {0}"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:400
 #: apps/app/src/routes/favorites-page.tsx:976
-#: apps/app/src/routes/mobile-notes-page.tsx:291
+#: apps/app/src/routes/mobile-notes-page.tsx:322
 msgid "这条笔记还没有正文摘要。"
 msgstr "这条笔记还没有正文摘要。"
 
@@ -10960,7 +10960,7 @@ msgstr "正在读取笔记..."
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1089
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1255
-#: apps/app/src/routes/mobile-notes-page.tsx:191
+#: apps/app/src/routes/mobile-notes-page.tsx:222
 msgid "读取笔记失败，请稍后再试。"
 msgstr "读取笔记失败，请稍后再试。"
 
@@ -11065,7 +11065,7 @@ msgid "添加标签"
 msgstr "添加标签"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1348
-#: apps/app/src/routes/mobile-notes-page.tsx:199
+#: apps/app/src/routes/mobile-notes-page.tsx:230
 msgid "未保存草稿"
 msgstr "未保存草稿"
 
@@ -13017,7 +13017,7 @@ msgid "来自 {0}"
 msgstr "来自 {0}"
 
 #: apps/app/src/features/favorites/note-editor-helpers.ts:203
-#: apps/app/src/routes/mobile-notes-page.tsx:288
+#: apps/app/src/routes/mobile-notes-page.tsx:319
 msgid "无标题笔记"
 msgstr "无标题笔记"
 
@@ -13844,13 +13844,13 @@ msgid "忽略"
 msgstr "忽略"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
+msgid "给"
+msgstr "给"
+
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:141
 msgid "送礼"
 msgstr "送礼"
-
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
-msgid "给"
-msgstr "给"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:116
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:17
@@ -19706,19 +19706,19 @@ msgstr "看看我最近发了什么"
 msgid "和\"我\"对话"
 msgstr "和\"我\"对话"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:96
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:92
 msgid "世界状态"
 msgstr "世界状态"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:102
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:98
 msgid "连接暂时中断"
 msgstr "连接暂时中断"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:108
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:104
 msgid "服务器正忙或正在恢复，通常几秒内就会自动恢复。你的账号和数据都安全保存在云端，点「重试」即可继续。"
 msgstr "服务器正忙或正在恢复，通常几秒内就会自动恢复。你的账号和数据都安全保存在云端，点「重试」即可继续。"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:126
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:122
 msgid "仍无法恢复？重新登录"
 msgstr "仍无法恢复？重新登录"
 
@@ -27331,7 +27331,7 @@ msgstr "没有匹配的收藏"
 
 #: apps/app/src/routes/favorites-page.tsx:872
 #: apps/app/src/routes/mobile-favorites-page.tsx:447
-#: apps/app/src/routes/mobile-notes-page.tsx:235
+#: apps/app/src/routes/mobile-notes-page.tsx:266
 msgid "还没有笔记"
 msgstr "还没有笔记"
 
@@ -28775,28 +28775,28 @@ msgstr "关闭确认弹层"
 msgid "附件还在上传，完成后再保存或者直接放弃。"
 msgstr "附件还在上传，完成后再保存或者直接放弃。"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:152
+#: apps/app/src/routes/mobile-notes-page.tsx:183
 msgid "我的笔记"
 msgstr "我的笔记"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:183
+#: apps/app/src/routes/mobile-notes-page.tsx:214
 msgid "正在读取我的笔记..."
 msgstr "正在读取我的笔记..."
 
-#: apps/app/src/routes/mobile-notes-page.tsx:216
+#: apps/app/src/routes/mobile-notes-page.tsx:247
 msgid "已收藏笔记"
 msgstr "已收藏笔记"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:236
+#: apps/app/src/routes/mobile-notes-page.tsx:267
 msgid "记下灵感、待办、链接和图片，发到聊天里也很方便。"
 msgstr "记下灵感、待办、链接和图片，发到聊天里也很方便。"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:325
+#: apps/app/src/routes/mobile-notes-page.tsx:356
 msgid "仅含附件的草稿"
 msgstr "仅含附件的草稿"
 
 #. placeholder {0}: formatMessageTimestamp(draft.updatedAt)
-#: apps/app/src/routes/mobile-notes-page.tsx:328
+#: apps/app/src/routes/mobile-notes-page.tsx:359
 msgid "草稿 · 更新于 {0}"
 msgstr "草稿 · 更新于 {0}"
 

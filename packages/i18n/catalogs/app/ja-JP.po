@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "音楽"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/i18n/static-dom-seed.ts:349
-#: apps/app/src/routes/channels-page.tsx:3454
-#: apps/app/src/routes/channels-page.tsx:3723
-msgid "播放"
-msgstr "再生"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
 #: apps/app/src/routes/channels-page.tsx:3454
 #: apps/app/src/routes/channels-page.tsx:3723
 msgid "暂停"
 msgstr "一時停止"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/i18n/static-dom-seed.ts:349
+#: apps/app/src/routes/channels-page.tsx:3454
+#: apps/app/src/routes/channels-page.tsx:3723
+msgid "播放"
+msgstr "再生"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -125,7 +125,7 @@ msgstr "会話を続ける"
 #: apps/app/src/components/bootstrap-screen.tsx:43
 #: apps/app/src/routes/splash-page.tsx:222
 msgid "隐界"
-msgstr "Yinjie"
+msgstr "Enclave"
 
 #: apps/app/src/components/bootstrap-screen.tsx:46
 msgid "欢迎回到你的世界"
@@ -992,7 +992,7 @@ msgstr "現在は画像の添付のみ対応しています。"
 
 #: apps/app/src/components/chat-composer.tsx:6493
 msgid "相机权限未开启，请到系统设置里允许隐界访问相机后再试。"
-msgstr "カメラの権限がオンになっていません。システム設定で Yinjie のカメラへのアクセスを許可してから再試行してください。"
+msgstr "カメラの権限がオンになっていません。システム設定で Enclave のカメラへのアクセスを許可してから再試行してください。"
 
 #: apps/app/src/components/chat-composer.tsx:6494
 msgid "相机权限未开启，请检查当前设备的相机权限后再试。"
@@ -1210,7 +1210,7 @@ msgstr "音声の生成に失敗しました。しばらくしてからもう一
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1194
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:709
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:810
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:119
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:115
 #: apps/app/src/routes/channel-history-page.tsx:93
 #: apps/app/src/routes/chat-list-page.tsx:1528
 #: apps/app/src/routes/contacts-page.tsx:2868
@@ -1329,7 +1329,7 @@ msgstr "名刺の概要をコピーしました。"
 #. placeholder {0}: attachment.name
 #: apps/app/src/components/chat-message-list.tsx:1626
 msgid "{0} 的隐界名片"
-msgstr "{0} の Yinjie 連絡先カード"
+msgstr "{0} の Enclave 連絡先カード"
 
 #: apps/app/src/components/chat-message-list.tsx:1660
 #: apps/app/src/i18n/static-dom-seed.ts:952
@@ -2338,7 +2338,7 @@ msgstr "あなたへのプレゼント"
 
 #: apps/app/src/components/chat-message-list.tsx:6780
 msgid "隐界礼物"
-msgstr "Yinjie ギフト"
+msgstr "Enclave ギフト"
 
 #: apps/app/src/components/chat-message-list.tsx:6805
 #: apps/app/src/features/games/farm/components/quest-sheet.tsx:134
@@ -2372,7 +2372,7 @@ msgstr "金運も運気も上々でありますように"
 
 #: apps/app/src/components/chat-message-list.tsx:6848
 msgid "隐界红包"
-msgstr "Yinjie 紅包"
+msgstr "Enclave 紅包"
 
 #: apps/app/src/components/chat-message-list.tsx:6863
 msgid "查看红包"
@@ -2641,7 +2641,7 @@ msgstr "ノートビューア"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:907
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:964
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1320
-#: apps/app/src/routes/mobile-notes-page.tsx:162
+#: apps/app/src/routes/mobile-notes-page.tsx:193
 #: apps/app/src/routes/moments-page.tsx:2769
 #: apps/app/src/routes/official-accounts-page.tsx:222
 #: apps/app/src/routes/official-accounts-page.tsx:393
@@ -2713,11 +2713,11 @@ msgstr "ノートを編集"
 
 #: apps/app/src/components/chat-message-list.tsx:8719
 msgid " 的隐界名片"
-msgstr "の隠界カード"
+msgstr "のEnclaveカード"
 
 #: apps/app/src/components/chat-message-list.tsx:8721
 msgid "隐界号："
-msgstr "隠界ID："
+msgstr "Enclave ID："
 
 #: apps/app/src/components/chat-message-list.tsx:8738
 msgid "这是一条来自聊天中的收藏笔记。"
@@ -5776,14 +5776,14 @@ msgstr "音声に切替"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-#: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
-msgid "挂断"
-msgstr "切断"
+msgid "挂断中..."
+msgstr "切断中..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "切断中..."
+#: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
+msgid "挂断"
+msgstr "切断"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -7190,7 +7190,7 @@ msgstr "プロフィールのキーワードが一致"
 #: apps/app/src/features/contacts/add-friend-search.ts:155
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:1036
 msgid "隐界号精确匹配"
-msgstr "Yinjie ID が完全一致"
+msgstr "Enclave ID が完全一致"
 
 #: apps/app/src/features/contacts/add-friend-search.ts:163
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:1044
@@ -7392,7 +7392,7 @@ msgstr "ニックネーム"
 #: apps/app/src/routes/profile-info-page.tsx:302
 #: apps/app/src/routes/profile-info-page.tsx:330
 msgid "隐界号"
-msgstr "Yinjie ID"
+msgstr "Enclave ID"
 
 #: apps/app/src/features/contacts/contact-detail-pane.tsx:306
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:856
@@ -7690,7 +7690,7 @@ msgstr "左側の連絡先から友だちを選ぶと、ここに連絡先情報
 
 #: apps/app/src/features/contacts/desktop-contact-profile-blocks.tsx:135
 msgid "隐界号：{identifier}"
-msgstr "Yinjie ID: {identifier}"
+msgstr "Enclave ID: {identifier}"
 
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:123
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:155
@@ -9644,8 +9644,8 @@ msgstr "友だちを追加"
 #: apps/app/src/routes/favorites-page.tsx:596
 #: apps/app/src/routes/mobile-favorites-page.tsx:365
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1389
-#: apps/app/src/routes/mobile-notes-page.tsx:174
-#: apps/app/src/routes/mobile-notes-page.tsx:244
+#: apps/app/src/routes/mobile-notes-page.tsx:205
+#: apps/app/src/routes/mobile-notes-page.tsx:275
 msgid "新建笔记"
 msgstr "新規ノート"
 
@@ -10232,13 +10232,13 @@ msgid "成功后会同步到当前聊天消息里。"
 msgstr "成功すると、現在のチャットメッセージに同期されます。"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
-msgid "解除麦克风静音"
-msgstr "マイクのミュートを解除"
-
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:460
 msgid "静音麦克风"
 msgstr "マイクをミュート"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
+msgid "解除麦克风静音"
+msgstr "マイクのミュートを解除"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:562
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:466
@@ -10867,7 +10867,7 @@ msgstr "{0} に更新"
 
 #: apps/app/src/features/desktop/chat/desktop-note-send-dialog.tsx:400
 #: apps/app/src/routes/favorites-page.tsx:976
-#: apps/app/src/routes/mobile-notes-page.tsx:291
+#: apps/app/src/routes/mobile-notes-page.tsx:322
 msgid "这条笔记还没有正文摘要。"
 msgstr "このノートにはまだ本文要約がありません。"
 
@@ -10960,7 +10960,7 @@ msgstr "ノートを読み込み中..."
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1089
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1255
-#: apps/app/src/routes/mobile-notes-page.tsx:191
+#: apps/app/src/routes/mobile-notes-page.tsx:222
 msgid "读取笔记失败，请稍后再试。"
 msgstr "ノートの読み込みに失敗しました。後ほど再試行してください。"
 
@@ -11065,7 +11065,7 @@ msgid "添加标签"
 msgstr "タグを追加"
 
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1348
-#: apps/app/src/routes/mobile-notes-page.tsx:199
+#: apps/app/src/routes/mobile-notes-page.tsx:230
 msgid "未保存草稿"
 msgstr "未保存の下書き"
 
@@ -11249,7 +11249,7 @@ msgstr "「{0}」を表示"
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:443
 #: apps/app/src/i18n/static-dom-seed.ts:560
 msgid "通过隐界号、角色名或资料关键词查找世界角色"
-msgstr "隠界ID、キャラクター名、プロフィールキーワードで世界キャラクターを探す"
+msgstr "Enclave ID、キャラクター名、プロフィールキーワードで世界キャラクターを探す"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:457
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:484
@@ -11269,7 +11269,7 @@ msgstr "友だち機能"
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:479
 #: apps/app/src/i18n/static-dom-seed.ts:551
 msgid "通过隐界号或角色名搜索"
-msgstr "隠界IDまたはキャラクター名で検索"
+msgstr "Enclave IDまたはキャラクター名で検索"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:485
 #: apps/app/src/i18n/static-dom-seed.ts:552
@@ -11309,12 +11309,12 @@ msgstr "備考、タグ、署名、関係説明に対応"
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:542
 #: apps/app/src/i18n/static-dom-seed.ts:573
 msgid "输入隐界号、角色名或资料关键词"
-msgstr "隠界ID、キャラクター名、プロフィールキーワードを入力"
+msgstr "Enclave ID、キャラクター名、プロフィールキーワードを入力"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:564
 #: apps/app/src/i18n/static-dom-seed.ts:561
 msgid "可通过隐界号、角色名、关系描述、签名或角色简介搜索。"
-msgstr "隠界ID、キャラクター名、関係説明、署名、キャラクター紹介で検索できます。"
+msgstr "Enclave ID、キャラクター名、関係説明、署名、キャラクター紹介で検索できます。"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:589
 #: apps/app/src/routes/mobile-add-friend-page.tsx:721
@@ -11346,12 +11346,12 @@ msgstr "プロフィールを確認してから友だち申請を送るか判断
 #: apps/app/src/i18n/static-dom-seed.ts:562
 #: apps/app/src/routes/mobile-add-friend-page.tsx:860
 msgid "搜索隐界号或角色名"
-msgstr "隠界IDまたはキャラクター名を検索"
+msgstr "Enclave IDまたはキャラクター名を検索"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:750
 #: apps/app/src/i18n/static-dom-seed.ts:563
 msgid "输入更完整的隐界号能更快命中目标角色，也可以通过角色名和资料关键词查找。"
-msgstr "より完全な隠界IDを入力すると対象キャラクターに早くヒットします。キャラクター名やプロフィールキーワードでも検索できます。"
+msgstr "より完全なEnclave IDを入力すると対象キャラクターに早くヒットします。キャラクター名やプロフィールキーワードでも検索できます。"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:759
 #: apps/app/src/i18n/static-dom-seed.ts:566
@@ -11373,7 +11373,7 @@ msgstr "このキャラクターは削除されたか、現在のワールドに
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:793
 msgid "请检查隐界号是否完整，或者尝试使用角色名、签名和资料关键词重新搜索。"
-msgstr "Yinjie ID が完全か確認するか、キャラクター名・自己紹介・プロフィールキーワードで再検索してみてください。"
+msgstr "Enclave ID が完全か確認するか、キャラクター名・自己紹介・プロフィールキーワードで再検索してみてください。"
 
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-workspace.tsx:802
 msgid "重新输入"
@@ -13017,7 +13017,7 @@ msgid "来自 {0}"
 msgstr "{0}から"
 
 #: apps/app/src/features/favorites/note-editor-helpers.ts:203
-#: apps/app/src/routes/mobile-notes-page.tsx:288
+#: apps/app/src/routes/mobile-notes-page.tsx:319
 msgid "无标题笔记"
 msgstr "無題のノート"
 
@@ -13844,13 +13844,13 @@ msgid "忽略"
 msgstr "閉じる"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
+msgid "给"
+msgstr "送る相手"
+
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:141
 msgid "送礼"
 msgstr "贈り物"
-
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
-msgid "给"
-msgstr "送る相手"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:116
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:17
@@ -14244,7 +14244,7 @@ msgstr "時間"
 
 #: apps/app/src/features/games/farm/farm-page.tsx:111
 msgid "正在准备隐界农场……"
-msgstr "Yinjie ファームを準備中……"
+msgstr "Enclave ファームを準備中……"
 
 #: apps/app/src/features/games/farm/farm-page.tsx:119
 msgid "农场加载失败"
@@ -14253,7 +14253,7 @@ msgstr "ファームの読み込みに失敗しました"
 #: apps/app/src/features/games/farm/farm-page.tsx:180
 #: apps/app/src/features/games/game-center-data.ts:250
 msgid "隐界农场"
-msgstr "Yinjie ファーム"
+msgstr "Enclave ファーム"
 
 #: apps/app/src/features/games/farm/farm-page.tsx:189
 msgid "点开音效"
@@ -14674,14 +14674,14 @@ msgstr "世界の知り合いと駐車できるスペースを争います。"
 
 #: apps/app/src/features/games/game-center-data.ts:119
 msgid "经典停车场玩法在隐界重做：自家车位每分钟自动收钱，停到 NPC 的车场可以蹭收益，被人占了车位就贴条把对方钱吃下来。对手不是真人，是世界里的熟面孔。"
-msgstr "クラシックな駐車場の遊び方を Yinjie でリメイク：自分の駐車スペースは毎分自動で集金、NPC の駐車場に駐車すると収益をシェアでき、自分のスペースを占領されたら違反切符でお金を奪い取ります。相手は人間ではなく、世界の馴染みの顔ぶれです。"
+msgstr "クラシックな駐車場の遊び方を Enclave でリメイク：自分の駐車スペースは毎分自動で集金、NPC の駐車場に駐車すると収益をシェアでき、自分のスペースを占領されたら違反切符でお金を奪い取ります。相手は人間ではなく、世界の馴染みの顔ぶれです。"
 
 #: apps/app/src/features/games/game-center-data.ts:120
 #: apps/app/src/features/games/game-center-data.ts:139
 #: apps/app/src/features/games/game-center-data.ts:253
 #: apps/app/src/i18n/static-dom-seed.ts:125
 msgid "隐界游戏实验室"
-msgstr "隠界ゲームラボ"
+msgstr "Enclaveゲームラボ"
 
 #: apps/app/src/features/games/game-center-data.ts:121
 msgid "首发主推"
@@ -15148,7 +15148,7 @@ msgstr "世界のキャラクターと一緒に畑を耕し、野菜を盗む人
 
 #: apps/app/src/features/games/game-center-data.ts:252
 msgid "把 QQ 农场的小时级节奏搬进隐界世界。NPC 自治种植、自治串门、自治偷菜；好感度真的会变。每个角色都按自己的性格、专长在玩——你下线时也一样。"
-msgstr "QQ ファームの時間単位のリズムを Yinjie の世界に持ち込みました。NPC は自律的に栽培、自律的に訪問、自律的に野菜を盗みます。好感度は実際に変化します。各キャラクターはそれぞれの性格と得意分野でプレイしており、あなたがオフラインのときも同じです。"
+msgstr "QQ ファームの時間単位のリズムを Enclave の世界に持ち込みました。NPC は自律的に栽培、自律的に訪問、自律的に野菜を盗みます。好感度は実際に変化します。各キャラクターはそれぞれの性格と得意分野でプレイしており、あなたがオフラインのときも同じです。"
 
 #: apps/app/src/features/games/game-center-data.ts:254
 msgid "世界自治"
@@ -15273,7 +15273,7 @@ msgstr "FCピクセルアクションの完全復刻：35ステージのオリ�
 
 #: apps/app/src/features/games/game-center-data.ts:295
 msgid "隐界游戏厅"
-msgstr "隠界ゲームセンター"
+msgstr "Enclaveゲームセンター"
 
 #: apps/app/src/features/games/game-center-data.ts:296
 msgid "怀旧像素"
@@ -17605,7 +17605,7 @@ msgstr "チャット、グループ、リマインダーから今日のタスク
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:119
 msgid "隐界效率实验室"
-msgstr "Yinjie 効率ラボ"
+msgstr "Enclave 効率ラボ"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:120
 #: apps/app/src/i18n/static-dom-seed.ts:152
@@ -19513,12 +19513,12 @@ msgstr "スマホ"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:195
 msgid "隐界正在醒来"
-msgstr "隠界が起動中です"
+msgstr "Enclaveが起動中です"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:196
 #: apps/app/src/i18n/static-dom-seed.ts:8
 msgid "暂时无法进入隐界"
-msgstr "現在、隠界に入れません"
+msgstr "現在、Enclaveに入れません"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:200
 msgid "桌面应用里没有找到内置的后端服务，应用还没法启动。"
@@ -19544,7 +19544,7 @@ msgstr "サーバーは一時利用できません。あとで再試行してく
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:212
 msgid "隐界会继续在后台恢复，你只需要稍候片刻。"
-msgstr "隠界はバックグラウンドで復旧を続けます。少しお待ちください。"
+msgstr "Enclaveはバックグラウンドで復旧を続けます。少しお待ちください。"
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:213
 #: apps/app/src/i18n/static-dom-seed.ts:10
@@ -19553,7 +19553,7 @@ msgstr "しばらく復旧しない場合は、あとでアプリを開き直し
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:215
 msgid "正在唤醒隐界..."
-msgstr "隠界を起動中..."
+msgstr "Enclaveを起動中..."
 
 #: apps/app/src/features/shell/desktop-runtime-guard.tsx:216
 msgid "正在重新检查入口..."
@@ -19706,19 +19706,19 @@ msgstr "最近の投稿を見る"
 msgid "和\"我\"对话"
 msgstr "「私」と話す"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:96
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:92
 msgid "世界状态"
 msgstr "世界の状態"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:102
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:98
 msgid "连接暂时中断"
 msgstr "接続が一時的に切断されました"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:108
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:104
 msgid "服务器正忙或正在恢复，通常几秒内就会自动恢复。你的账号和数据都安全保存在云端，点「重试」即可继续。"
 msgstr "サーバーが混雑中または復旧中です。通常は数秒で自動的に回復します。アカウントとデータはクラウドに安全に保存されています。「再試行」をタップして続行してください。"
 
-#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:126
+#: apps/app/src/features/shell/world-unavailable-dialog-host.tsx:122
 msgid "仍无法恢复？重新登录"
 msgstr "それでも回復しない場合は再ログイン"
 
@@ -20776,7 +20776,7 @@ msgstr "世界キャラクターを検索"
 
 #: apps/app/src/i18n/static-dom-seed.ts:411
 msgid "隐界日报"
-msgstr "隠界日報"
+msgstr "Enclave日報"
 
 #: apps/app/src/i18n/static-dom-seed.ts:413
 msgid "世界档案室"
@@ -21329,11 +21329,11 @@ msgstr "癒やし系"
 
 #: apps/app/src/i18n/static-dom-seed.ts:567
 msgid "我的隐界名片"
-msgstr "自分の隠界名刺"
+msgstr "自分のEnclave名刺"
 
 #: apps/app/src/i18n/static-dom-seed.ts:568
 msgid "别人可以通过隐界号或二维码找到你"
-msgstr "他の人は隠界IDまたはQRコードであなたを見つけられます"
+msgstr "他の人はEnclave IDまたはQRコードであなたを見つけられます"
 
 #: apps/app/src/i18n/static-dom-seed.ts:569
 msgid "扫一扫上面的二维码图案，加我为朋友"
@@ -21543,7 +21543,7 @@ msgstr "例：今夜はライブ化する価値が高いAI動画を3本だけ扱
 #: apps/app/src/i18n/static-dom-seed.ts:613
 #: apps/app/src/routes/legal-privacy-page.tsx:12
 msgid "隐界会在维持世界运行、会话同步和安全审计所需的范围内处理你的资料与互动数据。"
-msgstr "隠界は、世界の運行、会話同期、安全監査に必要な範囲でのみプロフィールと交流データを処理します。"
+msgstr "Enclaveは、世界の運行、会話同期、安全監査に必要な範囲でのみプロフィールと交流データを処理します。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:614
 #: apps/app/src/routes/legal-privacy-page.tsx:15
@@ -21553,7 +21553,7 @@ msgstr "保存する内容"
 #: apps/app/src/i18n/static-dom-seed.ts:615
 #: apps/app/src/routes/legal-privacy-page.tsx:17
 msgid "隐界会保存你的账号资料、聊天行为、动态内容和必要的运行日志，用于维持世界状态、消息同步和基础安全审计。"
-msgstr "隠界は、世界状態の維持、メッセージ同期、基本的な安全監査のために、アカウント情報、チャット行動、投稿内容、必要な実行ログを保存します。"
+msgstr "Enclaveは、世界状態の維持、メッセージ同期、基本的な安全監査のために、アカウント情報、チャット行動、投稿内容、必要な実行ログを保存します。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:616
 #: apps/app/src/routes/legal-privacy-page.tsx:18
@@ -21578,7 +21578,7 @@ msgstr "プロフィール設定、安全通報、ブロック入口から利用
 #: apps/app/src/i18n/static-dom-seed.ts:622
 #: apps/app/src/routes/legal-terms-page.tsx:12
 msgid "你在隐界发布和互动的内容，需要遵守当前世界的服务规则、法律要求与基础安全边界。"
-msgstr "Yinjie で投稿・交流するコンテンツは、現在の世界のサービス規則、法的要件、基本的な安全境界を遵守する必要があります。"
+msgstr "Enclave で投稿・交流するコンテンツは、現在の世界のサービス規則、法的要件、基本的な安全境界を遵守する必要があります。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:623
 #: apps/app/src/routes/legal-terms-page.tsx:15
@@ -21588,7 +21588,7 @@ msgstr "利用者の責任"
 #: apps/app/src/i18n/static-dom-seed.ts:624
 #: apps/app/src/routes/legal-terms-page.tsx:17
 msgid "你需要对自己发送的消息、评论、动态、资料修改和举报内容负责，不得利用隐界发布违法、骚扰、仇恨、侵权或误导性内容。"
-msgstr "送信したメッセージ、コメント、投稿、プロフィール変更、通報内容には責任があります。違法、嫌がらせ、憎悪、権利侵害、誤解を招く内容を隠界で公開してはいけません。"
+msgstr "送信したメッセージ、コメント、投稿、プロフィール変更、通報内容には責任があります。違法、嫌がらせ、憎悪、権利侵害、誤解を招く内容をEnclaveで公開してはいけません。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:625
 #: apps/app/src/routes/legal-terms-page.tsx:18
@@ -22006,7 +22006,7 @@ msgstr "件"
 
 #: apps/app/src/i18n/static-dom-seed.ts:756
 msgid "把自己的世界展示给别人，也可以通过隐界号被快速搜索到。"
-msgstr "自分の世界を他の人に見せ、Yinjie ID からすばやく検索できるようにします。"
+msgstr "自分の世界を他の人に見せ、Enclave ID からすばやく検索できるようにします。"
 
 #: apps/app/src/i18n/static-dom-seed.ts:757
 #: apps/app/src/routes/chat-background-page.tsx:812
@@ -24043,11 +24043,11 @@ msgstr "リクエストが中断されました。後でもう一度お試しく
 
 #: apps/app/src/lib/request-error.ts:76
 msgid "当前无法连接到隐界世界，请先检查世界地址和网络连接。"
-msgstr "現在 Yinjie の世界に接続できません。先に世界のアドレスとネットワーク接続を確認してください。"
+msgstr "現在 Enclave の世界に接続できません。先に世界のアドレスとネットワーク接続を確認してください。"
 
 #: apps/app/src/lib/request-error.ts:82
 msgid "当前隐界世界暂时不可用，请确认世界服务已经启动后重试。"
-msgstr "Yinjie の世界は一時的に利用できません。世界サービスが起動していることを確認してから再試行してください。"
+msgstr "Enclave の世界は一時的に利用できません。世界サービスが起動していることを確認してから再試行してください。"
 
 #: apps/app/src/lib/request-error.ts:95
 msgid "服务返回异常响应，请检查世界地址是否正确或稍后重试。"
@@ -24614,7 +24614,7 @@ msgstr "システム共有シートを開く"
 
 #: apps/app/src/routes/character-detail-page.tsx:416
 msgid "复制这张隐界名片"
-msgstr "この隐界名刺をコピー"
+msgstr "このEnclave名刺をコピー"
 
 #: apps/app/src/routes/character-detail-page.tsx:422
 msgid "角色简介"
@@ -24675,7 +24675,7 @@ msgstr "友だち情報を更新しました。"
 #: apps/app/src/routes/character-detail-page.tsx:1033
 #: apps/app/src/routes/character-detail-page.tsx:1042
 msgid "{shareDisplayName} 的隐界名片"
-msgstr "{shareDisplayName} の隠界カード"
+msgstr "{shareDisplayName} のEnclaveカード"
 
 #. placeholder {0}: buildYinjieId(character.id)
 #. placeholder {0}: buildYinjieId(targetCharacterId)
@@ -24684,7 +24684,7 @@ msgstr "{shareDisplayName} の隠界カード"
 #: apps/app/src/routes/chat-details-page.tsx:440
 #: apps/app/src/routes/chat-details-page.tsx:470
 msgid "隐界号：{0}"
-msgstr "Yinjie ID：{0}"
+msgstr "Enclave ID：{0}"
 
 #: apps/app/src/routes/character-detail-page.tsx:1065
 msgid "当前环境暂不支持复制名片。"
@@ -24903,7 +24903,7 @@ msgstr "連絡先の友だち"
 #: apps/app/src/routes/chat-details-page.tsx:465
 #: apps/app/src/routes/chat-details-page.tsx:467
 msgid "{contactName} 的隐界名片"
-msgstr "{contactName} のYinjie連絡先カード"
+msgstr "{contactName} のEnclave連絡先カード"
 
 #: apps/app/src/routes/chat-details-page.tsx:542
 msgid "当前环境暂不支持复制联系人摘要。"
@@ -27331,7 +27331,7 @@ msgstr "一致するお気に入りがありません"
 
 #: apps/app/src/routes/favorites-page.tsx:872
 #: apps/app/src/routes/mobile-favorites-page.tsx:447
-#: apps/app/src/routes/mobile-notes-page.tsx:235
+#: apps/app/src/routes/mobile-notes-page.tsx:266
 msgid "还没有笔记"
 msgstr "メモはまだありません"
 
@@ -27572,7 +27572,7 @@ msgstr "私の注文"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:96
 msgid "礼物柜需要登录隐界云账号。"
-msgstr "ギフトキャビネットの利用には Yinjie クラウドアカウントへのログインが必要です。"
+msgstr "ギフトキャビネットの利用には Enclave クラウドアカウントへのログインが必要です。"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:125
 msgid "收到的礼物"
@@ -28518,15 +28518,15 @@ msgstr "新しい友達、{0} 件保留中"
 
 #: apps/app/src/routes/mobile-add-friend-page.tsx:631
 msgid "隐界号 / 角色名"
-msgstr "隠界ID / キャラクター名"
+msgstr "Enclave ID / キャラクター名"
 
 #: apps/app/src/routes/mobile-add-friend-page.tsx:863
 msgid "输入完整的隐界号能精确命中，也可以用角色名或资料关键词搜索。"
-msgstr "隠界IDを完全入力すると正確に見つかります。キャラクター名やプロフィールキーワードでも検索できます。"
+msgstr "Enclave IDを完全入力すると正確に見つかります。キャラクター名やプロフィールキーワードでも検索できます。"
 
 #: apps/app/src/routes/mobile-add-friend-page.tsx:937
 msgid "请检查隐界号是否完整，或者换个关键词试试。"
-msgstr "隠界IDが正しいか確認するか、別のキーワードで試してください。"
+msgstr "Enclave IDが正しいか確認するか、別のキーワードで試してください。"
 
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1172
 msgid "你好，我是{owner}，想把你添加到通讯录里。"
@@ -28775,28 +28775,28 @@ msgstr "確認ダイアログを閉じる"
 msgid "附件还在上传，完成后再保存或者直接放弃。"
 msgstr "添付ファイルをまだアップロード中です。完了してから保存するか破棄してください。"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:152
+#: apps/app/src/routes/mobile-notes-page.tsx:183
 msgid "我的笔记"
 msgstr "マイメモ"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:183
+#: apps/app/src/routes/mobile-notes-page.tsx:214
 msgid "正在读取我的笔记..."
 msgstr "マイメモを読み込み中…"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:216
+#: apps/app/src/routes/mobile-notes-page.tsx:247
 msgid "已收藏笔记"
 msgstr "保存済みメモ"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:236
+#: apps/app/src/routes/mobile-notes-page.tsx:267
 msgid "记下灵感、待办、链接和图片，发到聊天里也很方便。"
 msgstr "アイデア、ToDoリスト、リンク、画像を記録。チャットでシェアするのも簡単。"
 
-#: apps/app/src/routes/mobile-notes-page.tsx:325
+#: apps/app/src/routes/mobile-notes-page.tsx:356
 msgid "仅含附件的草稿"
 msgstr "添付ファイルのみの下書き"
 
 #. placeholder {0}: formatMessageTimestamp(draft.updatedAt)
-#: apps/app/src/routes/mobile-notes-page.tsx:328
+#: apps/app/src/routes/mobile-notes-page.tsx:359
 msgid "草稿 · 更新于 {0}"
 msgstr "下書き · {0}に更新"
 
@@ -29378,7 +29378,7 @@ msgstr "画像の読み込みに失敗しました。別の画像をお試しく
 
 #: apps/app/src/routes/profile-info-page.tsx:242
 msgid "已复制隐界号"
-msgstr "隠界 ID をコピーしました"
+msgstr "Enclave ID をコピーしました"
 
 #: apps/app/src/routes/profile-info-page.tsx:242
 msgid "复制失败，请重试"
@@ -29394,7 +29394,7 @@ msgstr "アバターを変更"
 
 #: apps/app/src/routes/profile-info-page.tsx:326
 msgid "复制隐界号 {yinjieIdText}"
-msgstr "隠界 ID {yinjieIdText} をコピー"
+msgstr "Enclave ID {yinjieIdText} をコピー"
 
 #: apps/app/src/routes/profile-info-page.tsx:333
 msgid "未生成"
@@ -29739,7 +29739,7 @@ msgstr "オフにすると、他の人はあなたのアバターと出会えず
 
 #: apps/app/src/routes/profile-subscription-page.tsx:513
 msgid "会员中心需要登录隐界云账号。当前只登录了本地世界，无法查看订阅与邀请信息。"
-msgstr "メンバーシップセンターを利用するには隠界クラウドアカウントへのログインが必要です。現在はローカルワールドのみログインしているため、サブスクリプションや招待情報は表示できません。"
+msgstr "メンバーシップセンターを利用するにはEnclaveクラウドアカウントへのログインが必要です。現在はローカルワールドのみログインしているため、サブスクリプションや招待情報は表示できません。"
 
 #: apps/app/src/routes/profile-subscription-page.tsx:752
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:231
@@ -29750,7 +29750,7 @@ msgstr "RED に投稿してメンバーシップを獲得"
 
 #: apps/app/src/routes/profile-subscription-page.tsx:755
 msgid "在小红书发布隐界体验帖，审核通过即得会员。点这里生成文案并提交凭证 →"
-msgstr "RED に Yinjie の体験談を投稿し、承認されるとメンバーシップがもらえます。ここをタップして文案を生成し、証拠を提出 →"
+msgstr "RED に Enclave の体験談を投稿し、承認されるとメンバーシップがもらえます。ここをタップして文案を生成し、証拠を提出 →"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:125
 msgid "文案生成失败，请稍后重试。"
@@ -29786,7 +29786,7 @@ msgstr "投稿のスクリーンショットをアップロードしてくださ
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:253
 msgid "此功能需要登录隐界云账号。"
-msgstr "この機能の利用には Yinjie クラウドアカウントへのログインが必要です。"
+msgstr "この機能の利用には Enclave クラウドアカウントへのログインが必要です。"
 
 #: apps/app/src/routes/profile-xhs-reward-page.tsx:268
 msgid "正在加载…"
@@ -29995,7 +29995,7 @@ msgstr "返金済み"
 
 #: apps/app/src/routes/shop-orders-page.tsx:104
 msgid "订单需要登录隐界云账号。"
-msgstr "注文には Yinjie クラウドアカウントへのログインが必要です。"
+msgstr "注文には Enclave クラウドアカウントへのログインが必要です。"
 
 #: apps/app/src/routes/shop-orders-page.tsx:125
 msgid "正在加载订单…"
@@ -30041,7 +30041,7 @@ msgstr "購入に失敗しました。後でもう一度お試しください。
 
 #: apps/app/src/routes/shop-page.tsx:203
 msgid "商城需要登录隐界云账号，才能用钱包购买。"
-msgstr "ストアでウォレット決済を使うには Yinjie クラウドアカウントへのログインが必要です。"
+msgstr "ストアでウォレット決済を使うには Enclave クラウドアカウントへのログインが必要です。"
 
 #: apps/app/src/routes/shop-page.tsx:228
 msgid "钱包余额"
@@ -30158,7 +30158,7 @@ msgstr "チャージ申請の送信に失敗しました。後でもう一度お
 
 #: apps/app/src/routes/wallet-page.tsx:129
 msgid "钱包需要登录隐界云账号。当前只登录了本地世界，无法查看余额。"
-msgstr "ウォレットには Yinjie クラウドアカウントへのログインが必要です。現在はローカル世界にのみログインしているため、残高を表示できません。"
+msgstr "ウォレットには Enclave クラウドアカウントへのログインが必要です。現在はローカル世界にのみログインしているため、残高を表示できません。"
 
 #: apps/app/src/routes/wallet-page.tsx:144
 msgid "正在加载钱包信息…"
@@ -30196,7 +30196,7 @@ msgstr "まだ取引記録がありません。"
 
 #: apps/app/src/routes/wallet-transactions-page.tsx:101
 msgid "零钱明细需要登录隐界云账号。"
-msgstr "小銭の明細には Yinjie クラウドアカウントへのログインが必要です。"
+msgstr "小銭の明細には Enclave クラウドアカウントへのログインが必要です。"
 
 #: apps/app/src/routes/wallet-transactions-page.tsx:106
 msgid "正在加载明细…"
