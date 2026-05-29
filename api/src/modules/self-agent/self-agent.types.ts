@@ -32,6 +32,7 @@ export type SelfAgentRunStatusValue =
 export type SelfAgentRunRouteKeyValue =
   | 'action_runtime'
   | 'reminder_runtime'
+  | 'expert_delegation'
   | 'self_chat'
   | 'heartbeat'
   | 'ignored';
@@ -47,7 +48,10 @@ export type SelfAgentRunPolicyDecisionValue =
 export const DEFAULT_SELF_AGENT_RULES: SelfAgentRulesValue = {
   policy: {
     enabled: true,
-    allowActionRuntimeDelegation: true,
+    // 默认关闭：跟「我」聊天不应被静默转发给「行动助理」并绕过其准入角色闸。
+    // 历史上这导致一条带「面」字的普通 self-chat 蹦出 mock 外卖假回执。
+    // 真要让分身代发动作，去后台显式开启，并先配好真实连接器。
+    allowActionRuntimeDelegation: false,
     forceConfirmationForDelegatedActions: true,
     blockedActionConnectorKeys: [],
     blockedActionOperationKeys: [],

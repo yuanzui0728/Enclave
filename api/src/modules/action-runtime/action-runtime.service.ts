@@ -75,6 +75,14 @@ function truncateActionSignalSummary(value: string) {
     : normalized;
 }
 
+// mock 连接器（Mock 外卖/智能家居/订票）只是开发期占位：它们返回硬编码假数据
+// （「3 家 mock 外卖，预算 48 元，30 分钟送达」）。生产环境绝不能把它们当成可执行的
+// 真连接器——否则一条带「面」字的普通聊天就会被吐出一段冒充真实回执的假成品。
+// 默认关闭，仅在显式置 ACTION_RUNTIME_ALLOW_MOCK=1 的开发/测试环境放行。
+function isMockConnectorRuntimeAllowed() {
+  return process.env.ACTION_RUNTIME_ALLOW_MOCK === '1';
+}
+
 function rankConnectorProvider(
   providerType: ActionConnectorEntity['providerType'],
 ) {
@@ -822,10 +830,16 @@ export class ActionRuntimeService {
   }
 
   private async listReadyConnectorEntities() {
-    return this.connectorRepo.find({
+    const ready = await this.connectorRepo.find({
       where: { status: 'ready' },
       order: { displayName: 'ASC' },
     });
+    // 生产环境剔除 mock 连接器：它们只产假数据，不能进真实对话的规划/执行路径。
+    // 没有真连接器时整个 action-runtime 自然休眠（plan 找不到连接器→handled:false→回落正常回复）。
+    if (isMockConnectorRuntimeAllowed()) {
+      return ready;
+    }
+    return ready.filter((connector) => connector.providerType !== 'mock');
   }
 
   private async findLatestPendingRun(
@@ -1411,13 +1425,16 @@ export class ActionRuntimeService {
     cyberAvatarPromptContext = '',
   ) {
     const parsed = this.parseFoodDeliverySlots(message);
+    // 必须出现明确的「点外卖/订餐」动作意图才算命中。绝不能仅凭偏好词子串触发——
+    // 否则「见面/方面/界面/前面」里的「面」、闲聊里的「奶茶/咖啡」都会被误判成下单外卖。
     const hitFood =
       message.includes('外卖') ||
       message.includes('点餐') ||
+      message.includes('订餐') ||
+      message.includes('叫餐') ||
+      message.includes('送餐') ||
       message.includes('点个') ||
-      message.includes('午饭') ||
-      message.includes('晚饭') ||
-      parsed.matchedKeywords.length > 0;
+      message.includes('帮我点');
     if (!hitFood) {
       return null;
     }
@@ -2072,7 +2089,7 @@ export class ActionRuntimeService {
       '粥',
       '火锅',
       '麻辣烫',
-      '面',
+      '面条',
       '米饭',
     ];
 
@@ -3516,6 +3533,12 @@ export class ActionRuntimeService {
     connector: ActionConnectorEntity | undefined,
     previewOnly: boolean,
   ): ActionExecutionResultValue {
+    // 兜底：哪怕某条 mock 引用经由陈旧 pending run 走到真实执行（previewOnly=false），
+    // 生产环境也拒绝产出假回执——让它失败回落，而不是冒充「已经处理好了」。
+    // previewOnly（后台连接器自检）不受影响。
+    if (!previewOnly && !isMockConnectorRuntimeAllowed()) {
+      throw new Error('mock 连接器在生产环境已禁用，未执行任何真实动作。');
+    }
     if (plan.operationKey === 'smart_home_control') {
       const room = (plan.slots.room as string | undefined) ?? '默认房间';
       const device = (plan.slots.device as string | undefined) ?? '设备';
