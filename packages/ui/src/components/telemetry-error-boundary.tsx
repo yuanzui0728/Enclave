@@ -48,6 +48,48 @@ export class TelemetryErrorBoundary extends Component<
   }
 }
 
+// 顶层崩溃兜底文案：boundary 挂在 AppLocaleProvider 之上，崩溃时拿不到运行时
+// i18n context（用 msg``/<Trans> 会在它本要兜的崩溃上二次抛错）。这里用一份不依赖
+// 任何 React context 的静态四语字典 + 纯函数语言探测（先读已存的 locale 偏好，
+// 回落 navigator.language），保证 i18n 整个挂掉时仍能按用户语言展示且绝不再抛。
+// 故意不进 catalog（catalog 取值需要运行时上下文），用 i18n-ignore 标注为有意为之。
+// i18n-ignore-start: 顶层崩溃兜底文案不能依赖运行时 i18n，必须是 context-free 常量
+const CRASH_FALLBACK_TEXT = {
+  "zh-CN": { title: "页面发生错误", retry: "重试", reload: "刷新页面" },
+  "en-US": { title: "Something went wrong", retry: "Retry", reload: "Reload page" },
+  "ja-JP": { title: "ページでエラーが発生しました", retry: "再試行", reload: "再読み込み" },
+  "ko-KR": { title: "페이지에 오류가 발생했어요", retry: "다시 시도", reload: "새로고침" },
+} as const;
+// i18n-ignore-end
+
+type CrashLocale = keyof typeof CRASH_FALLBACK_TEXT;
+
+// 纯探测，绝不抛错；与 @yinjie/i18n 的 surface 存储键约定一致，但不引入运行时依赖。
+function detectCrashLocale(): CrashLocale {
+  try {
+    let raw: string | null = null;
+    if (typeof window !== "undefined" && window.localStorage) {
+      for (const surface of ["app", "cloud-console", "wiki", "site", "admin"]) {
+        const v = window.localStorage.getItem(`yinjie-i18n-locale:${surface}`);
+        if (v) {
+          raw = v;
+          break;
+        }
+      }
+    }
+    if (!raw && typeof navigator !== "undefined") {
+      raw = navigator.language || navigator.languages?.[0] || null;
+    }
+    const n = (raw || "").toLowerCase();
+    if (n.startsWith("en")) return "en-US";
+    if (n.startsWith("ja")) return "ja-JP";
+    if (n.startsWith("ko")) return "ko-KR";
+    return "zh-CN";
+  } catch {
+    return "zh-CN";
+  }
+}
+
 function DefaultFallback({
   error,
   onReset,
@@ -61,6 +103,7 @@ function DefaultFallback({
       : typeof error === "string"
         ? error
         : "Unexpected error";
+  const text = CRASH_FALLBACK_TEXT[detectCrashLocale()];
   return (
     <div
       role="alert"
@@ -78,7 +121,7 @@ function DefaultFallback({
         color: "#27272a",
       }}
     >
-      <div style={{ fontSize: 16, fontWeight: 600 }}>页面发生错误</div>
+      <div style={{ fontSize: 16, fontWeight: 600 }}>{text.title}</div>
       <div
         style={{
           maxWidth: 360,
@@ -104,7 +147,7 @@ function DefaultFallback({
             cursor: "pointer",
           }}
         >
-          重试
+          {text.retry}
         </button>
         <button
           type="button"
@@ -121,7 +164,7 @@ function DefaultFallback({
             cursor: "pointer",
           }}
         >
-          刷新页面
+          {text.reload}
         </button>
       </div>
     </div>
