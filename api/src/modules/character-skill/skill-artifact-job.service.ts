@@ -63,6 +63,10 @@ export class SkillArtifactJobService {
 
   @Cron('*/3 * * * * *')
   async processDueJobs() {
+    // 技能交付 job 只在共享 world 进程（:4100）处理；wiki(:3500) 等进程虽因
+    // ChatModule 传递依赖加载了本服务，但其 DataSource 未注册 SkillArtifactJobEntity，
+    // 直接查表会每 3s 抛 EntityMetadataNotFoundError 刷屏。这里早退即可。
+    if (!isSharedWorldMode()) return;
     if (this.processing) return;
     this.processing = true;
     try {
