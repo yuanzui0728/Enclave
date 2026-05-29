@@ -4287,7 +4287,9 @@ export class FeedService implements OnModuleInit {
       return name ? name.trim() || null : null;
     };
     const isOwn = (post: FeedPostEntity) => post.ownerId === viewerOwnerId;
-    const chosenByKey = new Map<string, FeedPostEntity>();
+    // 记录每个 media key 已选帖在 result 里的下标，替换时 O(1) 命中（视频号池会做大，
+    // getChannelHome 是每请求热路径，避免 indexOf 的 O(n²)）。
+    const chosenIdxByKey = new Map<string, number>();
     const result: FeedPostEntity[] = [];
     for (const post of posts) {
       const key = mediaKeyOf(post);
@@ -4295,17 +4297,15 @@ export class FeedService implements OnModuleInit {
         result.push(post); // 无媒体（text 帖等）不去重
         continue;
       }
-      const existing = chosenByKey.get(key);
-      if (!existing) {
-        chosenByKey.set(key, post);
+      const existingIdx = chosenIdxByKey.get(key);
+      if (existingIdx === undefined) {
+        chosenIdxByKey.set(key, result.length);
         result.push(post);
         continue;
       }
-      // 已有同媒体帖：若当前是 owner 自己的、而已选的不是 → 用自己的替换
-      if (isOwn(post) && !isOwn(existing)) {
-        const idx = result.indexOf(existing);
-        if (idx >= 0) result[idx] = post;
-        chosenByKey.set(key, post);
+      // 已有同媒体帖：若当前是 owner 自己的、而已选的不是 → 用自己的替换（保位次）
+      if (isOwn(post) && !isOwn(result[existingIdx])) {
+        result[existingIdx] = post;
       }
       // 否则丢弃当前重复帖
     }
