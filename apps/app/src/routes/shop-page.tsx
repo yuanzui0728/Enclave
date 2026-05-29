@@ -222,10 +222,10 @@ export function ShopPage() {
         <button
           type="button"
           onClick={() => void navigate({ to: "/profile/wallet" })}
-          className="flex items-center justify-between rounded-[18px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#fff3d6,#ffe2b8)] px-5 py-3 text-left"
+          className="flex items-center justify-between rounded-[18px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#f2edfc,#e8e0f8)] px-5 py-3 text-left"
         >
-          <span className="text-[13px] text-[#8a5a12]">{t(msg`钱包余额`)}</span>
-          <span className="text-[18px] font-semibold text-[#3b2206]">
+          <span className="text-[13px] text-[color:var(--text-muted)]">{t(msg`钱包余额`)}</span>
+          <span className="text-[18px] font-semibold text-[color:var(--text-primary)]">
             {walletQuery.data
               ? formatCents(walletQuery.data.wallet.balanceCents, walletQuery.data.wallet.currency)
               : "—"}
