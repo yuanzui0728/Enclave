@@ -1365,8 +1365,12 @@ export class ActionRuntimeService {
   ) {
     const parsed = this.parseSmartHomeSlots(message);
 
+    // 必须是「具体设备 + 明确控制动作」或显式「智能家居」短语才算命中。绝不能仅凭
+    // 裸『智能』子串（会被『人工智能/智能手机/智能音箱』命中）或单凭设备词
+    // （『红绿灯坏了』里的『灯』、『客厅』房间词）触发——那是误判，不是控制意图。
     const hitSmartHome = Boolean(
-      parsed.slots.device || parsed.slots.room || message.includes('智能'),
+      (parsed.slots.device && parsed.slots.action) ||
+        message.includes('智能家居'),
     );
     if (!hitSmartHome) {
       return null;
