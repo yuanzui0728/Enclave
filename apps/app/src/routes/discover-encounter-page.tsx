@@ -530,7 +530,11 @@ function MobileDiscoverEncounterPage() {
               {isShakeErrorRetryable(shakeMutation.error) ? (
                 <button
                   type="button"
-                  onClick={() => shakeMutation.mutate({ mode: "new" })}
+                  // 走查：走 triggerShake 而非硬编码 mode:"new"。一次失败的「换一个」会
+                  // 保留旧卡片（preview 非空），此时重试必须用 reroll；否则 new 模式撞到
+                  // 服务端仍 active 的 preview_ready 会把同一个人原样返回。triggerShake
+                  // 按 preview 是否存在自动选 reroll / new。
+                  onClick={() => triggerShake()}
                   className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试摇一摇`)}
