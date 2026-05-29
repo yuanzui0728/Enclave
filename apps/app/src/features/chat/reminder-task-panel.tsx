@@ -191,7 +191,7 @@ export function ReminderTaskPanel({
             ? isDesktop
               ? "px-4 py-3"
               : "px-4 py-3"
-            : "rounded-[var(--radius-lg)] border border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(60, 40, 110, 0.45)]",
+            : "rounded-[var(--radius-lg)] border border-[color:var(--brand-primary)]/16 bg-[color:var(--surface-section)] shadow-[0_14px_32px_-26px_rgba(60, 40, 110, 0.45)]",
           !isDetailsSurface && (isDesktop ? "px-4 py-3" : "px-3 py-2.5"),
         )}
       >

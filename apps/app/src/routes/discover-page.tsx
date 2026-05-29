@@ -747,7 +747,7 @@ function DesktopDiscoverWorkspace() {
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/18 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/18 bg-[color:var(--state-warning-bg)] px-4 py-4 shadow-[var(--shadow-soft)]">
                   <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--state-success-text)]">
                     {t(msg`朋友圈`)}
                   </div>
@@ -760,7 +760,7 @@ function DesktopDiscoverWorkspace() {
                     )}
                   </div>
                 </div>
-                <div className="rounded-[var(--radius-xl)] border border-[color:var(--state-info-bg)] bg-[linear-gradient(180deg,rgba(246,247,255,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                <div className="rounded-[var(--radius-xl)] border border-[color:var(--state-info-bg)] bg-[color:var(--state-info-bg)] px-4 py-4 shadow-[var(--shadow-soft)]">
                   <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--state-info-text)]">
                     {t(msg`广场动态`)}
                   </div>
@@ -777,7 +777,7 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
-              <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/14 bg-[color:var(--state-warning-bg)] p-4 shadow-[var(--shadow-soft)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--state-success-text)]">
@@ -859,7 +859,7 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 border-[color:var(--border-faint)] shadow-none">
-              <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
+              <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/14 bg-[color:var(--state-warning-bg)] p-4 shadow-none">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="text-[length:var(--text-eyebrow)] tracking-[0.14em] text-[color:var(--brand-primary)]">
@@ -977,8 +977,8 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
           </div>
 
-          <AppSection className="space-y-4 bg-[linear-gradient(180deg,rgba(248,249,255,0.98),rgba(255,255,255,0.96))]">
-            <div className="rounded-[var(--radius-xl)] border border-[color:var(--state-info-bg)] bg-[linear-gradient(180deg,rgba(245,247,255,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+          <AppSection className="space-y-4 bg-[color:var(--state-info-bg)]">
+            <div className="rounded-[var(--radius-xl)] border border-[color:var(--state-info-bg)] bg-[color:var(--state-info-bg)] p-4 shadow-[var(--shadow-soft)]">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--state-info-text)]">

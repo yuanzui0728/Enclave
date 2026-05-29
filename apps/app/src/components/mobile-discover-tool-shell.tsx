@@ -192,7 +192,7 @@ export function MobileDiscoverToolShell({
             )}
           </InlineNotice>
         ) : null}
-        <section className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--brand-primary)]/12 bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
+        <section className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--brand-primary)]/12 bg-[color:var(--state-success-bg)] px-4 py-5">
           <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-[color:var(--brand-primary)]/8 blur-3xl" />
           <div className="relative flex items-start gap-4">
             <div className="min-w-0 flex-1">

@@ -259,7 +259,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
           {shareUrl && invite.code ? (
             <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="flex-1 space-y-3">
-                <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(135deg,#f0fdf4,#ffffff)] px-4 py-3">
+                <div className="rounded-[var(--radius-lg)] bg-[color:var(--state-success-bg)] px-4 py-3">
                   <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                     {invite.shareTitle}
                   </div>
@@ -496,7 +496,7 @@ export function SubscriptionPanel({
           : "mx-auto flex max-w-4xl flex-col gap-4"
       }
     >
-      <AppSection className="overflow-hidden rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#f7fff8,#ffffff)] px-6 py-6 shadow-none">
+      <AppSection className="overflow-hidden rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[color:var(--state-success-bg)] px-6 py-6 shadow-none">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             {/*
