@@ -2121,7 +2121,10 @@ export class RealWorldSyncService {
       config.applyMode === 'live' ? 'live' : 'shadow';
 
     if (config.applyMode === 'live') {
-      await this.digestRepo.update(
+      // 必须经 TenantRepository 把当前租户 ownerId 并进 WHERE：characterId 跨租户共用
+      // （多 owner 各有一行同 id 的角色），裸 update 会把别的 owner 的 active digest 一起
+      // 改成 superseded（本子系统历史上就栽过跨 owner 混的坑，见 entity ownerId 注释）。
+      await new TenantRepository(this.digestRepo).update(
         {
           characterId: character.id,
           status: 'active',
