@@ -382,20 +382,24 @@ function MobileWorldPage() {
         <section className="space-y-4">
           <SectionHeader title={t(msg`探索`)} />
 
+          {/* 三组各自的重点入口占整行：相遇→分身相遇、动态→朋友圈、生活→游戏。 */}
           <FeaturedExploreGroup
             title={t(msg`相遇`)}
             entries={encounterEntries}
             pathname={pathname}
+            featuredKey="avatarEncounter"
           />
-          <ExploreGroup
+          <FeaturedExploreGroup
             title={t(msg`动态`)}
             entries={dynamicsEntries}
             pathname={pathname}
+            featuredKey="moments"
           />
-          <ExploreGroup
+          <FeaturedExploreGroup
             title={t(msg`生活`)}
             entries={lifeEntries}
             pathname={pathname}
+            featuredKey="games"
           />
           {/* 「我」tab 功能镜像：个人功能常显 + 钱包组仅云账号可见，
               合并折叠到「更多」（默认收起、中性色、纯图标），零功能丢失。 */}
@@ -752,29 +756,6 @@ function SectionHeader({
   );
 }
 
-function ExploreGroup({
-  title,
-  entries,
-  pathname,
-}: {
-  title: string;
-  entries: ExploreEntry[];
-  pathname: string;
-}) {
-  return (
-    <div>
-      <div className="mb-1.5 text-[length:var(--text-caption)] font-medium tracking-[0.02em] text-[color:var(--text-muted)]">
-        {title}
-      </div>
-      <div className="grid grid-cols-2 gap-2.5">
-        {entries.map((entry) => (
-          <ExploreTile key={entry.key} entry={entry} pathname={pathname} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // 探索入口共享导航逻辑：buildSearch/buildHash 的入口走 navigate 带状态，
 // 普通入口走 Link 默认跳转。ExploreTile / FeaturedExploreTile / 「更多」格子共用。
 function useExploreLinkProps(entry: ExploreEntry, pathname: string) {
@@ -802,12 +783,17 @@ function FeaturedExploreGroup({
   title,
   entries,
   pathname,
+  featuredKey,
 }: {
   title: string;
   entries: ExploreEntry[];
   pathname: string;
+  // 指定哪个入口作为整宽重点卡（按 key），找不到回退第一个；其余按原顺序进网格。
+  featuredKey?: string;
 }) {
-  const [featured, ...rest] = entries;
+  const featured =
+    entries.find((entry) => entry.key === featuredKey) ?? entries[0];
+  const rest = entries.filter((entry) => entry !== featured);
   return (
     <div>
       <div className="mb-1.5 text-[length:var(--text-caption)] font-medium tracking-[0.02em] text-[color:var(--text-muted)]">
