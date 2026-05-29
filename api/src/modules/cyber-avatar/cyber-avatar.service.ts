@@ -5,6 +5,7 @@ import { In, MoreThanOrEqual, Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { CyberAvatarProfileEntity } from './cyber-avatar-profile.entity';
 import { CyberAvatarSignalEntity } from './cyber-avatar-signal.entity';
 import { CyberAvatarRunEntity } from './cyber-avatar-run.entity';
@@ -141,6 +142,7 @@ export class CyberAvatarService {
     private readonly rulesService: CyberAvatarRulesService,
     private readonly matchmakingSync: CyberAvatarMatchmakingSyncService,
     private readonly passiveInference: PassiveProfileInferenceService,
+    private readonly subscription: SubscriptionService,
   ) {}
 
   @Cron(CYBER_AVATAR_INCREMENTAL_SCAN_CRON)
@@ -160,6 +162,9 @@ export class CyberAvatarService {
       ) {
         return;
       }
+      // 会员到期 owner：整帧短路，省掉 collectSignals/建 payload 等重活（否则做完才在
+      // LLM 闸抛 SubscriptionExpired 被下面 catch 吞掉，纯浪费 + 占用共享单事件循环）。
+      if (await this.subscription.isAiHardBlockedForCurrentOwner()) return;
       await this.runIncrementalRefresh({ trigger: 'scheduler' });
     }, 'cyber-avatar incremental');
   }
@@ -178,6 +183,7 @@ export class CyberAvatarService {
       ) {
         return;
       }
+      if (await this.subscription.isAiHardBlockedForCurrentOwner()) return;
       await this.runDeepRefresh({ trigger: 'scheduler' });
       // Phase 4 被动推断：深度刷新后，用刚建好的画像回填用户「个人资料」的空字段
       // （默认静默、只填空、不覆盖用户手填）。best-effort，失败不影响刷新主流程。

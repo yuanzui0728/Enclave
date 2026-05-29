@@ -174,16 +174,10 @@ export class SchedulerService {
     'npc_autonomy_tick',
   ]);
 
-  // 当前租户帧的 AI 是否被硬拦（会员到期）。全局哨兵 owner 永远放行（SubscriptionService
-  // 对 GLOBAL_WORLD_OWNER_PHONE 直接返 active），所以全局帧不会被这道闸拦下。
-  // 查询失败保守放行，沿用原行为，不误伤正常 owner。
-  private async isAiHardBlockedForCurrentOwner(): Promise<boolean> {
-    try {
-      const status = await this.subscription.getStatus();
-      return status.hardBlockEnabled && status.status !== 'active';
-    } catch {
-      return false;
-    }
+  // 委托 SubscriptionService 的共享判定（单一事实源，与 assertCanUseAi 抛错条件一致；
+  // 同一道闸也用于 cyber-avatar / owner-open-question 等其它 per-owner AI cron）。
+  private isAiHardBlockedForCurrentOwner(): Promise<boolean> {
+    return this.subscription.isAiHardBlockedForCurrentOwner();
   }
 
   // 提醒触发：5min→10min。reminder 命中窗口最差延迟 +10min，可接受。

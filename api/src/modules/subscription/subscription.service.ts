@@ -127,6 +127,20 @@ export class SubscriptionService {
     throw new SubscriptionExpiredException(status.copy.expiredMessage, meta);
   }
 
+  // 当前租户帧的 AI 是否被会员硬拦——与 assertCanUseAi 抛错条件**逐字一致**
+  // （hardBlockEnabled && 非 active）。供后台 per-owner cron 提前整帧短路用：到期 owner
+  // 在做完 getRuntimeProfile/loadBlob/建 prompt 等重活后才在 LLM 闸抛 SubscriptionExpired
+  // 是纯浪费，还持续占用共享世界单事件循环把全员拖到 504。全局哨兵 owner（getStatus 永远
+  // 返 active）/ 未托管 / 查询失败一律放行（返 false），绝不误伤正常生成。
+  async isAiHardBlockedForCurrentOwner(): Promise<boolean> {
+    try {
+      const status = await this.getStatus();
+      return status.hardBlockEnabled && status.status !== 'active';
+    } catch {
+      return false;
+    }
+  }
+
   invalidateCache(phone?: string) {
     if (phone) {
       this.cacheByPhone.delete(phone);

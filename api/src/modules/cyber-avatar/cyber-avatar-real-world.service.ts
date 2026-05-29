@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
+import { SubscriptionService } from '../subscription/subscription.service';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
   CYBER_AVATAR_REAL_WORLD_SYNC_CRON,
@@ -200,6 +201,7 @@ export class CyberAvatarRealWorldService {
     private readonly worldOwnerService: WorldOwnerService,
     private readonly rulesService: CyberAvatarRulesService,
     private readonly cyberAvatar: CyberAvatarService,
+    private readonly subscription: SubscriptionService,
   ) {}
 
   @Cron(CYBER_AVATAR_REAL_WORLD_SYNC_CRON)
@@ -217,6 +219,7 @@ export class CyberAvatarRealWorldService {
       ) {
         return;
       }
+      if (await this.subscription.isAiHardBlockedForCurrentOwner()) return;
       await this.runSync({ trigger: 'scheduler' });
     }, 'cyber-avatar real-world sync');
   }
