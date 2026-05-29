@@ -39,6 +39,7 @@ import {
   bootstrapIosPushTokenAfterHydrate,
 } from "./runtime/adapters/ios";
 import { router } from "./router";
+import { setLoginRedirectHandler } from "./lib/login-redirect";
 import {
   hydrateCloudSessionStore,
   refreshCloudSessionIfNeeded,
@@ -114,6 +115,12 @@ async function bootstrap() {
   const nativeLocalePreference =
     androidLocalePreference ?? desktopLocalePreference;
   configureContractsRuntime();
+  // 云鉴权失效（401）/ 账号封禁注销（403）被全局错误处理器命中时走 SPA 软跳转
+  // 回登录页（无刷新闪烁）。router 单例此时已就绪；放在 configureContractsRuntime
+  // 之后即可，错误处理器要到首个请求出错才会调用它。
+  setLoginRedirectHandler(() => {
+    void router.navigate({ to: "/welcome", replace: true });
+  });
   // Sliding TTL：boot 时检查一次，再每小时复查；token 临到期 (剩余 < 1d)
   // 自动调 cloud-api refresh-access 续命，过期则不动让登录流程兜底。
   void refreshCloudSessionIfNeeded();

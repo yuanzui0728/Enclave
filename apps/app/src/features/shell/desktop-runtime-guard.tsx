@@ -5,9 +5,11 @@ import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { getSystemStatus } from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button, useDesktopRuntime } from "@yinjie/ui";
+import { isCloudAuthExpiredError } from "../../lib/cloud-auth-expired";
 import { requiresRemoteServiceConfiguration } from "../../lib/runtime-config";
 import { resolveAppRuntimeContext } from "../../runtime/platform";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
+import { useHasCloudSession } from "../../store/cloud-session-store";
 
 const REMOTE_GUARD_FAILURE_THRESHOLD = 2;
 
@@ -24,6 +26,9 @@ export function DesktopRuntimeGuard() {
   const needsRemoteConfiguration =
     runtimeContext.deploymentMode === "remote-connected" &&
     requiresRemoteServiceConfiguration();
+  // 未登录不探活远端 world（登录页本就用 welcome 自己的 assertWorldReachable）——
+  // 否则纯 web 部署在登录前就空打 /cloud/world-api/api/system/status 拿 401。
+  const hasCloudSession = useHasCloudSession();
   const onEntryRoute =
     pathname === "/setup" ||
     pathname === "/onboarding" ||
@@ -48,6 +53,7 @@ export function DesktopRuntimeGuard() {
     queryKey: ["app-availability", runtimeConfig.apiBaseUrl ?? "__default__"],
     queryFn: () => getSystemStatus(runtimeConfig.apiBaseUrl),
     enabled:
+      hasCloudSession &&
       !isMobileRuntime &&
       !hasDesktopRuntimeControl &&
       !needsRemoteConfiguration,
@@ -137,8 +143,14 @@ export function DesktopRuntimeGuard() {
   const desktopUnavailable =
     hasDesktopRuntimeControl &&
     (!desktopStatusQuery.data || !desktopStatusQuery.data.reachable);
+  // 探活请求带的是当前 cloud token。token 在服务端失效时 getSystemStatus 也会
+  // 401，原本会被算进 remoteProbeUnavailable → 闪「服务器暂时不可用」覆盖层（误导，
+  // 真因是鉴权）。这类 401 交给全局错误处理器清会话 + 跳 /welcome，这里不再当作
+  // 「服务不可用」，避免跳转前的误导覆盖层。
+  const remoteAuthExpired = isCloudAuthExpiredError(remoteStatusQuery.error);
   const remoteProbeUnavailable =
     remoteStatusQuery.error instanceof Error &&
+    !remoteAuthExpired &&
     (!remoteProbeState.hasSuccessfulProbe ||
       remoteProbeState.consecutiveFailures >= REMOTE_GUARD_FAILURE_THRESHOLD);
   const remoteCoreApiHealthy = remoteStatusQuery.data?.coreApi?.healthy;

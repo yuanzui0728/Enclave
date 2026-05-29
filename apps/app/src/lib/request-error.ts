@@ -1,6 +1,10 @@
 import { msg } from "@lingui/macro";
 import { isApiRequestError } from "@yinjie/contracts";
 import { translateRuntimeMessage } from "@yinjie/i18n";
+import {
+  CLOUD_ACCOUNT_FORBIDDEN_MESSAGES,
+  CLOUD_AUTH_401_MESSAGES,
+} from "./cloud-auth-expired";
 import { translateAppErrorCode } from "./error-translate";
 
 const NETWORK_ERROR_MESSAGES = new Set([
@@ -20,16 +24,8 @@ const SERVICE_UNAVAILABLE_PATTERNS = [
 // 客户端要按 status + 已知 message 集合把它们翻成当前 locale 的"会话已失效"
 // / "账号被停用"，否则 zh-CN / ja-JP / ko-KR 用户在「账号安全 → 发送验证码」
 // / 「修改密码」等位置看到的反馈就是裸英文 "Invalid or expired cloud
-// access token."。
-const CLOUD_AUTH_401_MESSAGES = new Set([
-  "Missing cloud access token.",
-  "Invalid or expired cloud access token.",
-  "Invalid cloud access token.",
-]);
-const CLOUD_ACCOUNT_FORBIDDEN_MESSAGES = new Set([
-  "This cloud account has been banned.",
-  "This cloud account has been archived.",
-]);
+// access token."。哨兵 message 常量集统一在 cloud-auth-expired.ts 维护（同一份
+// 也驱动全局「鉴权失效自动跳登录」处理器），这里 import 复用防漂移。
 
 export function describeRequestError(error: unknown, fallback?: string) {
   const resolvedFallback =

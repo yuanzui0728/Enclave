@@ -10,6 +10,7 @@ import {
   setCoreApiBaseUrlProvider,
 } from "@yinjie/contracts";
 import { getActiveLocale } from "@yinjie/i18n";
+import { handleApiCloudAuthExpiredError } from "./cloud-auth-expired";
 import { handleApiSubscriptionExpiredError } from "./subscription-expired";
 import { handleApiWorldUnavailableError } from "./world-unavailable";
 import { resolveAppRuntimeContext } from "../runtime/platform";
@@ -132,6 +133,10 @@ export function configureContractsRuntime() {
     return session.accessToken;
   });
   setApiRequestErrorHandler((error) => {
+    // 云会话在服务端失效（token 过期 / JWT 密钥轮换 / 账号封禁注销）→ 清会话
+    // 静默跳 /welcome。放最前：这是终态，命中后其它分支不再有意义。没有这一行
+    // 前端会陷入「服务器暂时不可用」无限刷新 + toast 且无任何重新登录入口。
+    handleApiCloudAuthExpiredError(error);
     handleApiSubscriptionExpiredError(error);
     // world child 死了 / 被 idle-suspend 之后所有 world API 请求会一直 502/503，
     // 没有这一行前端会陷入无限 toast；命中后弹「世界已休眠」对话框，让用户走重登 → resume 闭环。
