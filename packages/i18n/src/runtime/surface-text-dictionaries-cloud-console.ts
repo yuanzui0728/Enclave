@@ -243,6 +243,13 @@ const cloudConsoleText: LocaleDictionary = {
     "Save failed: {0}": "保存失败：{0}",
     "Saved — takes effect network-wide (up to ~30 seconds)": "已保存，全网生效（最多约 30 秒）",
     "Select a preset character on the left to edit its network-wide behavior.": "从左侧选择一个预设角色，编辑其全网统一行为。",
+    // 走查补漏:订单/充值状态标签(t(MAP[status]) 动态查表,字面量扫描漏掉;zh 原仅在动荡运行时字典)
+    Completed: "已完成",
+    "Awaiting shipment": "待发货",
+    Shipped: "已发货",
+    Delivered: "已送达",
+    Refunded: "已退款",
+    Credited: "已入账",
     "User detail": "用户详情",
     "Fleet Dashboard": "舰队仪表盘",
     "World requests": "世界申请",
@@ -1223,6 +1230,13 @@ const cloudConsoleText: LocaleDictionary = {
     "Saved — takes effect network-wide (up to ~30 seconds)": "保存しました — 全体に反映されます（最大約 30 秒）",
     "Select a preset character on the left to edit its network-wide behavior.":
       "左側でプリセットキャラクターを選択して、全体共通の挙動を編集してください。",
+    // 注文/チャージ状態ラベル
+    Completed: "完了",
+    "Awaiting shipment": "発送待ち",
+    Shipped: "発送済み",
+    Delivered: "配達済み",
+    Refunded: "返金済み",
+    Credited: "入金済み",
     "User detail": "ユーザー詳細",
     Account: "アカウント",
     Subscription: "サブスクリプション",
@@ -2097,6 +2111,13 @@ const cloudConsoleText: LocaleDictionary = {
     "Saved — takes effect network-wide (up to ~30 seconds)": "저장됨 — 전체에 반영됩니다(최대 약 30초)",
     "Select a preset character on the left to edit its network-wide behavior.":
       "왼쪽에서 프리셋 캐릭터를 선택해 전체 공통 행동을 편집하세요.",
+    // 주문/충전 상태 라벨
+    Completed: "완료",
+    "Awaiting shipment": "발송 대기",
+    Shipped: "발송됨",
+    Delivered: "배송 완료",
+    Refunded: "환불됨",
+    Credited: "입금됨",
     "User detail": "사용자 상세",
     Account: "계정",
     Subscription: "구독",
