@@ -25,6 +25,8 @@ import { CharacterBehaviorAdminService } from './character-behavior-admin.servic
 import { ChatRecordsAdminService } from './chat-records-admin.service';
 import { ChatRecordsAdminController } from './chat-records-admin.controller';
 import { OwnerArchiveAdminController } from './owner-archive-admin.controller';
+import { RuntimeActivityAdminController } from './runtime-activity-admin.controller';
+import { RuntimeActivityAdminService } from './runtime-activity-admin.service';
 import { BehaviorRecordsAdminService } from './behavior-records-admin.service';
 import { BehaviorRecordsAdminController } from './behavior-records-admin.controller';
 import { AdminConversationReviewEntity } from './admin-conversation-review.entity';
@@ -104,6 +106,7 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
     ChatRecordsAdminService,
     BehaviorRecordsAdminService,
     WechatSyncAdminService,
+    RuntimeActivityAdminService,
     AdminGuard,
   ],
   controllers: [
@@ -111,6 +114,7 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
     ChatRecordsAdminController,
     BehaviorRecordsAdminController,
     OwnerArchiveAdminController,
+    RuntimeActivityAdminController,
   ],
 })
 export class AdminModule {}
