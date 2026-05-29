@@ -76,7 +76,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
           </div>
         </div>
 
-        <div className="mt-6 rounded-[24px] border border-[color:var(--brand-primary)]/12 bg-[color:var(--brand-primary)]/6 px-4 py-3 text-left text-sm leading-7 text-[#475569]">
+        <div className="mt-6 rounded-[24px] border border-[color:var(--brand-primary)]/12 bg-[color:var(--brand-primary)]/6 px-4 py-3 text-left text-sm leading-7 text-[color:var(--text-secondary)]">
           {message ??
             t(msg`正在整理这次进入世界的路径，马上带你回到上次停留的地方。`)}
         </div>
