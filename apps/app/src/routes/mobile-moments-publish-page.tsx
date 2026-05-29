@@ -718,9 +718,9 @@ export function MobileMomentsPublishPage() {
             onClick={handleBack}
             disabled={createMutation.isPending}
             className={cn(
-              "h-9 px-2 text-[15px] active:opacity-70",
+              "h-9 px-2 text-[length:var(--text-base)] active:opacity-70",
               createMutation.isPending
-                ? "text-[#B0B0B0]"
+                ? "text-[color:var(--text-dim)]"
                 : "text-[color:var(--text-primary)]",
             )}
           >
@@ -759,10 +759,10 @@ export function MobileMomentsPublishPage() {
             className={cn(
               // min-w 让"发表"(2 字) → "发表中"(3 字) 的状态切换不再撑大按钮，
               // 避免顶栏右上角看起来抖一下；按住够装下 isPending 文案。
-              "h-7 min-w-[3.75rem] rounded-full px-3 text-[14px] font-medium transition",
+              "h-7 min-w-[3.75rem] rounded-full px-3 text-[length:var(--text-body)] font-medium transition",
               canSubmit
                 ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
-                : "bg-[#e8e0d2] text-[#b3a591]",
+                : "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]",
             )}
           >
             {createMutation.isPending ? t(msg`发表中`) : t(msg`发表`)}
@@ -779,7 +779,7 @@ export function MobileMomentsPublishPage() {
               // 用户按"发表"后 5s 无响应、textarea 又锁了 readOnly，错过红条等于
               // 完全不知道为啥。挂 role="alert" 让 assertive 立即朗读。
               role="alert"
-              className="rounded-[8px] px-3 py-2 text-[12px] shadow-none"
+              className="rounded-[8px] px-3 py-2 text-[length:var(--text-caption)] shadow-none"
             >
               {errorMessage}
             </InlineNotice>
@@ -818,7 +818,7 @@ export function MobileMomentsPublishPage() {
             // tokens.css 里 :focus-visible 的全局 3px 绿光 box-shadow——autoFocus
             // 一进页面就吃这一圈、看起来像微信里冒出来一个绿色描边的输入框，
             // 实际 WeChat compose 没有这层 ring。
-            className="block w-full resize-none border-0 bg-transparent text-[17px] leading-[26px] text-[color:var(--text-primary)] outline-none placeholder:text-[#B0B0B0] focus:shadow-none focus-visible:shadow-none"
+            className="block w-full resize-none border-0 bg-transparent text-[length:var(--text-title)] leading-[26px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:shadow-none focus-visible:shadow-none"
             style={{ minHeight: "104px" }}
             autoFocus
           />
@@ -915,7 +915,7 @@ export function MobileMomentsPublishPage() {
                     void handlePickImages();
                   }}
                   disabled={createMutation.isPending}
-                  className="flex items-center justify-center bg-[color:var(--surface-secondary)] text-[#B0B0B0] disabled:opacity-50 active:bg-[color:var(--surface-secondary)]"
+                  className="flex items-center justify-center bg-[color:var(--surface-secondary)] text-[color:var(--text-dim)] disabled:opacity-50 active:bg-[color:var(--surface-secondary)]"
                   style={{ aspectRatio: "1 / 1" }}
                   aria-label={t(msg`添加图片`)}
                 >
@@ -931,7 +931,7 @@ export function MobileMomentsPublishPage() {
                 type="button"
                 onClick={() => setMediaPickerOpen(true)}
                 disabled={createMutation.isPending}
-                className="flex h-[110px] w-[110px] items-center justify-center bg-[color:var(--surface-secondary)] text-[#B0B0B0] disabled:opacity-50 active:bg-[color:var(--surface-secondary)]"
+                className="flex h-[110px] w-[110px] items-center justify-center bg-[color:var(--surface-secondary)] text-[color:var(--text-dim)] disabled:opacity-50 active:bg-[color:var(--surface-secondary)]"
                 // aria-label 要描述真实行为：这个入口走的是 picker sheet（图片
                 // 和视频两路都开），不是 grid 内的纯图片 +。错描述会让无障碍
                 // 用户以为没法发视频。
@@ -964,7 +964,7 @@ export function MobileMomentsPublishPage() {
           />
         </section>
 
-        <div className="px-4 pt-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <div className="px-4 pt-3 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
           {t(msg`图片最多 9 张，视频当前支持 1 条且不超过 5 分钟，暂不支持图片和视频混发。`)}
         </div>
 
@@ -999,7 +999,7 @@ export function MobileMomentsPublishPage() {
           <div
             role="status"
             aria-live="polite"
-            className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[13px] text-white"
+            className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[length:var(--text-caption)] text-white"
           >
             {toast.message}
           </div>
@@ -1023,25 +1023,25 @@ export function MobileMomentsPublishPage() {
             onClick={dismissExitSheet}
             className="absolute inset-0"
           />
-          <div className="relative w-full max-w-[480px] rounded-t-[12px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+          <div className="relative w-full max-w-[480px] rounded-t-[var(--radius-sm)] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
             <button
               type="button"
               onClick={handleKeepDraft}
-              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
+              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[length:var(--text-title)] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
             >
               {t(msg`保留`)}
             </button>
             <button
               type="button"
               onClick={handleConfirmDiscard}
-              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] font-medium text-[#FA5151] active:bg-[color:var(--surface-secondary)]"
+              className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[length:var(--text-title)] font-medium text-[color:var(--state-danger-text)] active:bg-[color:var(--surface-secondary)]"
             >
               {t(msg`不保留`)}
             </button>
             <button
               type="button"
               onClick={dismissExitSheet}
-              className="mt-2 block w-full bg-[color:var(--surface-secondary)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
+              className="mt-2 block w-full bg-[color:var(--surface-secondary)] py-3.5 text-center text-[length:var(--text-title)] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
             >
               {t(msg`取消`)}
             </button>
@@ -1083,10 +1083,10 @@ function SettingRow({
         isLast ? "" : "border-b border-[color:var(--border-subtle)]",
       )}
     >
-      <span className="text-[15px] text-[color:var(--text-primary)]">{label}</span>
-      <span className="flex items-center gap-1 text-[14px] text-[color:var(--text-muted)]">
+      <span className="text-[length:var(--text-base)] text-[color:var(--text-primary)]">{label}</span>
+      <span className="flex items-center gap-1 text-[length:var(--text-body)] text-[color:var(--text-muted)]">
         {value ? <span>{value}</span> : null}
-        <ChevronRight size={16} aria-hidden="true" className="text-[#C5C5C5]" />
+        <ChevronRight size={16} aria-hidden="true" className="text-[color:var(--text-dim)]" />
       </span>
     </button>
   );
@@ -1116,11 +1116,11 @@ function MediaPickerSheet({
         className="absolute inset-0"
         aria-label={t(msg`关闭`)}
       />
-      <div className="relative w-full max-w-[480px] rounded-t-[12px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
+      <div className="relative w-full max-w-[480px] rounded-t-[var(--radius-sm)] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px)+8px)]">
         <button
           type="button"
           onClick={onPickImages}
-          className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
+          className="block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[length:var(--text-title)] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
         >
           {t(msg`从相册选择图片`)}
         </button>
@@ -1129,8 +1129,8 @@ function MediaPickerSheet({
           onClick={onPickVideo}
           disabled={videoDisabled}
           className={cn(
-            "block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[16px] active:bg-[color:var(--surface-secondary)]",
-            videoDisabled ? "text-[#B0B0B0]" : "text-[color:var(--text-primary)]",
+            "block w-full border-b border-[color:var(--border-subtle)] py-3.5 text-center text-[length:var(--text-title)] active:bg-[color:var(--surface-secondary)]",
+            videoDisabled ? "text-[color:var(--text-dim)]" : "text-[color:var(--text-primary)]",
           )}
         >
           {t(msg`选择视频`)}
@@ -1138,7 +1138,7 @@ function MediaPickerSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 block w-full bg-[color:var(--surface-secondary)] py-3.5 text-center text-[16px] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
+          className="mt-2 block w-full bg-[color:var(--surface-secondary)] py-3.5 text-center text-[length:var(--text-title)] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
         >
           {t(msg`取消`)}
         </button>

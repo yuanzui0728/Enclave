@@ -323,7 +323,7 @@ export function ProfileFeedPage() {
           <InlineNotice
             tone="danger"
             role="alert"
-            className="flex items-center justify-between gap-3 rounded-[8px] px-3 py-2 text-[12px] shadow-none"
+            className="flex items-center justify-between gap-3 rounded-[8px] px-3 py-2 text-[length:var(--text-caption)] shadow-none"
           >
             <span>{loadErrorMessage}</span>
             <button
@@ -404,7 +404,7 @@ export function ProfileFeedPage() {
                 }
                 return (
                   <div className="overflow-hidden rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]">
-                    <div className="space-y-1 px-3 py-2 text-[12px] leading-[20px]">
+                    <div className="space-y-1 px-3 py-2 text-[length:var(--text-caption)] leading-[20px]">
                       {rendered.map(({ comment, cleanText }) => {
                         const replyToName = comment.replyToAuthorName ?? null;
                         return (
@@ -432,7 +432,7 @@ export function ProfileFeedPage() {
                           type="button"
                           onClick={() => void handleExpandComments(post.id)}
                           disabled={expandingPostIds.has(post.id)}
-                          className="text-[12px] text-[#576B95] disabled:opacity-60"
+                          className="text-[length:var(--text-caption)] text-[#576B95] disabled:opacity-60"
                         >
                           {expandingPostIds.has(post.id)
                             ? t(msg`加载中…`)
@@ -440,7 +440,7 @@ export function ProfileFeedPage() {
                         </button>
                       ) : null}
                       {expandedAllFiltered ? (
-                        <div className="text-[12px] text-[color:var(--text-muted)]">
+                        <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                           {t(msg`评论暂时无法显示`)}
                         </div>
                       ) : null}
@@ -478,7 +478,7 @@ export function ProfileFeedPage() {
           <InlineNotice
             tone={notice.tone}
             role={notice.tone === "danger" ? "alert" : "status"}
-            className="flex items-center justify-between gap-3 rounded-[8px] px-3 py-2 text-[12px] shadow-none"
+            className="flex items-center justify-between gap-3 rounded-[8px] px-3 py-2 text-[length:var(--text-caption)] shadow-none"
           >
             <span>{notice.message}</span>
             {notice.actionLabel && notice.action ? (
@@ -505,15 +505,15 @@ export function ProfileFeedPage() {
           onClick={() => setPendingDeleteId(null)}
         >
           <div
-            className="w-full max-w-sm rounded-[16px] bg-[color:var(--bg-canvas-elevated)] p-5 shadow-lg"
+            className="w-full max-w-sm rounded-[var(--radius-md)] bg-[color:var(--bg-canvas-elevated)] p-5 shadow-lg"
             role="dialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`删除这条广场动态？`)}
             </div>
-            <p className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+            <p className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
               {t(msg`删除后将一并移除它的评论与互动记录，且无法恢复。`)}
             </p>
             <div className="mt-5 flex gap-3">

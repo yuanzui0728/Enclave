@@ -44,14 +44,14 @@ export function SocialPostCard({
       // scrollIntoView({block:"start"})，但移动端顶上有带 subtitle 的 sticky
       // TabPageTopBar (~80px)，对齐到 y=0 会把作者头/meta 藏在顶栏底下。
       // 给 article 加 scroll-margin-top 让浏览器把这点高度还回来。
-      className="scroll-mt-[88px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] bg-[image:var(--surface-card-gradient)] p-4 shadow-none"
+      className="scroll-mt-[88px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] bg-[image:var(--surface-card-gradient)] p-4 shadow-none"
     >
       <div className="flex items-start gap-3">
         {onAuthorClick ? (
           <button
             type="button"
             onClick={onAuthorClick}
-            className="shrink-0 rounded-[20px] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]/34 focus-visible:ring-offset-2"
+            className="shrink-0 rounded-[var(--radius-lg)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]/34 focus-visible:ring-offset-2"
             aria-label={authorActionLabel}
           >
             <AvatarChip name={authorName} src={authorAvatar} />
@@ -64,7 +64,7 @@ export function SocialPostCard({
             <button
               type="button"
               onClick={onAuthorClick}
-              className="max-w-full truncate text-left text-[13px] font-medium text-[color:var(--text-primary)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]/34 focus-visible:ring-offset-2"
+              className="max-w-full truncate text-left text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--brand-primary)]/34 focus-visible:ring-offset-2"
               aria-label={authorActionLabel}
             >
               {authorName}
@@ -76,7 +76,7 @@ export function SocialPostCard({
             // 行把 headerActions 推到下一行，meta 也跟着错位。补 truncate 与
             // 上面 button 分支对齐，长名一律单行省略号。
             <div
-              className="truncate text-[13px] font-medium text-[color:var(--text-primary)]"
+              className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]"
               title={authorName}
             >
               {authorName}
@@ -90,11 +90,11 @@ export function SocialPostCard({
         </div>
         {headerActions ? <div className="shrink-0">{headerActions}</div> : null}
       </div>
-      <div className="mt-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[12px] leading-[1.35rem] text-[color:var(--text-primary)]">
+      <div className="mt-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[length:var(--text-caption)] leading-[1.35rem] text-[color:var(--text-primary)]">
         {body}
       </div>
       {summary ? (
-        <div className="mt-2.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
+        <div className="mt-2.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-muted)]">
           {summary}
         </div>
       ) : null}
@@ -103,7 +103,7 @@ export function SocialPostCard({
       ) : null}
       {secondary ? <div className="mt-2.5">{secondary}</div> : null}
       {composer ? (
-        <div className="mt-2.5 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-2">
+        <div className="mt-2.5 flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-2">
           {composer}
         </div>
       ) : null}

@@ -299,12 +299,12 @@ export function MobileReminderToastHost() {
       }}
     >
       {actionNotice ? (
-        <div className="pointer-events-auto overflow-hidden rounded-[20px] border border-[rgba(255,255,255,0.82)] bg-[color:var(--surface-card)] shadow-[0_12px_28px_rgba(60, 40, 110, 0.12)] backdrop-blur-xl">
+        <div className="pointer-events-auto overflow-hidden rounded-[var(--radius-lg)] border border-[rgba(255,255,255,0.82)] bg-[color:var(--surface-card)] shadow-[0_12px_28px_rgba(60, 40, 110, 0.12)] backdrop-blur-xl">
           <div className="flex items-center gap-3 px-4 py-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
               <Check size={16} />
             </div>
-            <div className="min-w-0 flex-1 text-[13px] font-medium text-[color:var(--text-primary)]">
+            <div className="min-w-0 flex-1 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
               {actionNotice}
             </div>
             <button
@@ -319,19 +319,19 @@ export function MobileReminderToastHost() {
         </div>
       ) : null}
       {!shouldHideActiveReminder && activeReminder ? (
-        <div className="pointer-events-auto overflow-hidden rounded-[24px] border border-[rgba(255,255,255,0.82)] bg-[rgba(255,252,246,0.96)] shadow-[0_18px_40px_rgba(60, 40, 110, 0.16)] backdrop-blur-xl">
+        <div className="pointer-events-auto overflow-hidden rounded-[var(--radius-xl)] border border-[rgba(255,255,255,0.82)] bg-[color:var(--state-warning-bg)] shadow-[0_18px_40px_rgba(60, 40, 110, 0.16)] backdrop-blur-xl">
           <div className="flex items-start gap-3 px-4 py-3.5">
-            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
               <BellRing size={18} />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+                  <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                     {t(msg`消息提醒`)}
                   </div>
                   {remainingCount > 0 ? (
-                    <div className="shrink-0 rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-[11px] text-[#5f6368]">
+                    <div className="shrink-0 rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                       {t(msg`还有 ${remainingCount} 条`)}
                     </div>
                   ) : null}
@@ -345,19 +345,19 @@ export function MobileReminderToastHost() {
                   <X size={15} />
                 </button>
               </div>
-              <div className="mt-1 truncate text-[13px] font-medium text-[#3f3f46]">
+              <div className="mt-1 truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)]">
                 <span>{activeReminder.title}</span>
                 {activeReminderStatusLabel ? (
-                  <span className="ml-2 rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-[11px] font-normal text-[#5f6368]">
+                  <span className="ml-2 rounded-full bg-[color:var(--surface-secondary)] px-2 py-0.5 text-[length:var(--text-eyebrow)] font-normal text-[color:var(--text-secondary)]">
                     {activeReminderStatusLabel}
                   </span>
                 ) : null}
               </div>
-              <div className="mt-1 line-clamp-2 text-[13px] leading-5 text-[#5f6368]">
+              <div className="mt-1 line-clamp-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
                 {activeReminder.previewText}
               </div>
               <div className="mt-2 flex items-center justify-between gap-3">
-                <div className="text-[12px] text-[color:var(--text-muted)]">
+                <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {formatReminderListTimestamp(
                     activeReminder.remindAt,
                     activeReminder.isDue,
@@ -369,10 +369,10 @@ export function MobileReminderToastHost() {
                     type="button"
                     onClick={handleComplete}
                     className={[
-                      "rounded-full px-3 py-1.5 text-[12px] transition-colors",
+                      "rounded-full px-3 py-1.5 text-[length:var(--text-caption)] transition-colors",
                       getChatReminderActionTone(activeReminder) === "warning"
-                        ? "border border-[#f1d5a6] bg-[color:var(--surface-card)] text-[#b76a08]"
-                        : "border border-transparent bg-[color:var(--surface-secondary)] text-[#5f6b63]",
+                        ? "border border-[color:var(--state-warning-bg)] bg-[color:var(--surface-card)] text-[color:var(--state-warning-text)]"
+                        : "border border-transparent bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]",
                     ].join(" ")}
                   >
                     {getChatReminderActionLabel(activeReminder)}
@@ -380,7 +380,7 @@ export function MobileReminderToastHost() {
                   <button
                     type="button"
                     onClick={handleOpen}
-                    className="inline-flex items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[12px] font-medium text-[color:var(--text-on-brand)]"
+                    className="inline-flex items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)]"
                   >
                     <span>{t(msg`查看`)}</span>
                     <ChevronRight size={13} />

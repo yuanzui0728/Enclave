@@ -493,18 +493,18 @@ export function ChannelAuthorPage() {
         {notice ? (
           <InlineNotice
             tone={notice.tone}
-            className="mb-4 rounded-[16px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
+            className="mb-4 rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
           >
             {notice.message}
           </InlineNotice>
         ) : null}
         {profileQuery.isLoading ? (
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-8 shadow-[var(--shadow-section)]">
+          <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-8 shadow-[var(--shadow-section)]">
             <LoadingBlock label={t(msg`正在读取作者主页...`)} />
           </div>
         ) : null}
         {profileQuery.isError && profileQuery.error instanceof Error ? (
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-8 shadow-[var(--shadow-section)]">
+          <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-8 shadow-[var(--shadow-section)]">
             <MobileChannelAuthorStatusCard
               badge={t(msg`读取失败`)}
               title={t(msg`作者主页暂时不可用`)}
@@ -515,7 +515,7 @@ export function ChannelAuthorPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryLoad}
                   >
                     {t(msg`重试读取`)}
@@ -523,7 +523,7 @@ export function ChannelAuthorPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回视频号`)}
@@ -534,7 +534,7 @@ export function ChannelAuthorPage() {
           </div>
         ) : null}
         {followMutation.isError && followMutation.error instanceof Error ? (
-          <div className="mb-4 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-5 shadow-[var(--shadow-section)]">
+          <div className="mb-4 rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-5 shadow-[var(--shadow-section)]">
             <MobileChannelAuthorStatusCard
               badge={t(msg`关注失败`)}
               title={t(msg`作者状态暂未更新`)}
@@ -546,7 +546,7 @@ export function ChannelAuthorPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                       onClick={handleRetryFollow}
                     >
                       {profileQuery.data.isFollowing
@@ -557,7 +557,7 @@ export function ChannelAuthorPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回视频号`)}
@@ -569,7 +569,7 @@ export function ChannelAuthorPage() {
         ) : null}
 
         {!profileQuery.isLoading && !profileQuery.isError && profile ? (
-          <div className="mx-auto max-w-[820px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
+          <div className="mx-auto max-w-[820px] overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
             <section
               className={cn(
                 "bg-[linear-gradient(180deg,#ffffff,#f7faf8)]",
@@ -587,13 +587,13 @@ export function ChannelAuthorPage() {
                     <div className="truncate text-[24px] font-semibold text-[color:var(--text-primary)]">
                       {profile.authorName}
                     </div>
-                    <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                    <span className="rounded-full bg-[color:var(--border-faint)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                       {profile.authorType === "character"
                         ? t(msg`居民作者`)
                         : t(msg`世界主人`)}
                     </span>
                   </div>
-                  <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                  <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                     {profile.bio?.trim() || fallbackBio}
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -681,18 +681,18 @@ export function ChannelAuthorPage() {
               <button
                 type="button"
                 onClick={() => openChannelPost(featuredLivePost)}
-                className="flex w-full items-start justify-between gap-3 border-t border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(127,29,29,0.04),rgba(127,29,29,0.01))] px-4 py-4 text-left transition hover:bg-[rgba(127,29,29,0.06)]"
+                className="flex w-full items-start justify-between gap-3 border-t border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(127,29,29,0.04),rgba(127,29,29,0.01))] px-4 py-4 text-left transition hover:bg-[color:var(--state-danger-bg)]"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="inline-flex items-center gap-2 rounded-full bg-[rgba(127,29,29,0.08)] px-3 py-1 text-[11px] font-medium text-[#7f1d1d]">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-[color:var(--state-danger-bg)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-danger-text)]">
                     <RadioTower size={13} />
                     {t(msg`最近直播回放`)}
                   </div>
-                  <div className="mt-3 line-clamp-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
+                  <div className="mt-3 line-clamp-1 text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
                     {featuredLivePost.title?.trim() ||
                       t(msg`查看作者最近一次直播回放`)}
                   </div>
-                  <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+                  <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                     {t(
                       msg`${formatTimestamp(featuredLivePost.createdAt)} · ${featuredLivePost.viewCount} 播放`,
                     )}
@@ -706,13 +706,13 @@ export function ChannelAuthorPage() {
                     const cleanText = stripToolCallSyntax(featuredLivePost.text);
                     if (!cleanText) return null;
                     return (
-                      <div className="mt-2 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                      <div className="mt-2 line-clamp-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                         {cleanText}
                       </div>
                     );
                   })()}
                 </div>
-                <span className="shrink-0 rounded-full border border-[rgba(127,29,29,0.12)] bg-[color:var(--surface-card)] px-3 py-1 text-[11px] font-medium text-[#7f1d1d]">
+                <span className="shrink-0 rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-danger-text)]">
                   {t(msg`查看回放`)}
                 </span>
               </button>
@@ -743,14 +743,14 @@ export function ChannelAuthorPage() {
                         // 双重状态声明，用户体感「这控件是 tab 还是按钮」。
                         onClick={() => changeCollection(tab.key)}
                         className={cn(
-                          "relative shrink-0 px-4 py-3 text-[14px] transition",
+                          "relative shrink-0 px-4 py-3 text-[length:var(--text-body)] transition",
                           selected
                             ? "font-medium text-[color:var(--text-primary)]"
                             : "text-[color:var(--text-secondary)]",
                         )}
                       >
                         {tab.label}
-                        <span className="ml-1 text-[11px] opacity-70">
+                        <span className="ml-1 text-[length:var(--text-eyebrow)] opacity-70">
                           {tab.count}
                         </span>
                         {selected ? (
@@ -762,7 +762,7 @@ export function ChannelAuthorPage() {
                 </div>
               </div>
 
-              <div className="bg-[color:var(--surface-console)] px-4 py-3 text-[12px] text-[color:var(--text-secondary)]">
+              <div className="bg-[color:var(--surface-console)] px-4 py-3 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                 {t(
                   msg`当前分栏：${activeCollectionLabel}，共 ${visiblePosts.length} 条内容。`,
                 )}
@@ -778,7 +778,7 @@ export function ChannelAuthorPage() {
                         key={post.id}
                         type="button"
                         onClick={() => openChannelPost(post)}
-                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[rgba(60, 40, 110, 0.02)]"
+                        className="flex w-full items-start gap-4 px-4 py-4 text-left transition hover:bg-[color:var(--border-faint)]"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
@@ -805,7 +805,7 @@ export function ChannelAuthorPage() {
                             <span>{postStatus.metaLabel}</span>
                           </div>
                           {post.title ? (
-                            <div className="mt-2 line-clamp-2 text-[16px] font-semibold leading-6 text-[color:var(--text-primary)]">
+                            <div className="mt-2 line-clamp-2 text-[length:var(--text-title)] font-semibold leading-6 text-[color:var(--text-primary)]">
                               {post.title}
                             </div>
                           ) : null}
@@ -827,7 +827,7 @@ export function ChannelAuthorPage() {
                               return null;
                             }
                             return (
-                              <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                              <div className="mt-2 line-clamp-3 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                                 {cleanText}
                               </div>
                             );
@@ -844,7 +844,7 @@ export function ChannelAuthorPage() {
                               ))}
                             </div>
                           ) : null}
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                             <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-console)] px-2.5 py-1">
                               <PlaySquare size={12} />
                               {t(msg`${post.viewCount} 播放`)}
@@ -891,8 +891,8 @@ function ChannelAuthorHeaderStat({
         {icon}
       </div>
       <div>
-        <div className="text-[14px] font-semibold">{value}</div>
-        <div className="text-[11px] text-[color:var(--text-secondary)]">
+        <div className="text-[length:var(--text-body)] font-semibold">{value}</div>
+        <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
           {label}
         </div>
       </div>
@@ -915,7 +915,7 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
     // <img src> 这类标签拿不到 Authorization header，必须用 resolveAppMediaUrl
     // 把 token 拼到 query string，否则 CloudClientAuthGuard 401，封面变破图。
     return (
-      <div className="relative h-[8.75rem] w-[7rem] shrink-0 overflow-hidden rounded-[20px] bg-[#d8e5de]">
+      <div className="relative h-[8.75rem] w-[7rem] shrink-0 overflow-hidden rounded-[var(--radius-lg)] bg-[color:var(--state-success-bg)]">
         <img
           src={resolveAppMediaUrl(post.coverUrl)}
           alt={post.title || post.authorName}
@@ -952,7 +952,7 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
   return (
     <div
       className={cn(
-        "flex h-[8.75rem] w-[7rem] shrink-0 flex-col justify-between rounded-[20px] px-3 py-3 text-white",
+        "flex h-[8.75rem] w-[7rem] shrink-0 flex-col justify-between rounded-[var(--radius-lg)] px-3 py-3 text-white",
         coverPresentation.panelClassName,
       )}
     >
@@ -970,7 +970,7 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
         </div>
       </div>
       <div>
-        <div className="text-[11px] font-medium text-white/86">
+        <div className="text-[length:var(--text-eyebrow)] font-medium text-white/86">
           {coverPresentation.title}
         </div>
         <div className="mt-1 text-[10px] text-white/62">
@@ -1083,9 +1083,9 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
       label: t(msg`直播回放`),
       metaLabel: t(msg`直播精选`),
       primaryBadgeClassName:
-        "border-[rgba(185,28,28,0.12)] bg-[rgba(185,28,28,0.08)] text-[#991b1b]",
+        "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
       secondaryBadgeClassName:
-        "border-[rgba(127,29,29,0.1)] bg-[rgba(127,29,29,0.05)] text-[#7f1d1d]",
+        "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
       secondaryLabel: post.durationMs
         ? t(msg`${Math.max(1, Math.round(post.durationMs / 60000))} 分钟回放`)
         : t(msg`作者直播内容`),
@@ -1097,9 +1097,9 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
       label: t(msg`视频`),
       metaLabel: t(msg`短片更新`),
       primaryBadgeClassName:
-        "border-[rgba(60, 40, 110, 0.08)] bg-[rgba(60, 40, 110, 0.05)] text-[#0f172a]",
+        "border-[color:var(--border-subtle)] bg-[color:var(--border-faint)] text-[#0f172a]",
       secondaryBadgeClassName:
-        "border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+        "border-[color:var(--border-subtle)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
       secondaryLabel: post.durationMs
         ? t(msg`${Math.max(1, Math.round(post.durationMs / 1000))} 秒短片`)
         : t(msg`视频号短片`),
@@ -1113,9 +1113,9 @@ function resolveChannelPostCardStatus(t: Translator, post: FeedPostListItem) {
       label: t(msg`音乐`),
       metaLabel: t(msg`音乐更新`),
       primaryBadgeClassName:
-        "border-[rgba(67,32,87,0.14)] bg-[rgba(67,32,87,0.08)] text-[#3b1d52]",
+        "border-[color:var(--border-brand)] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
       secondaryBadgeClassName:
-        "border-[rgba(67,32,87,0.1)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
+        "border-[color:var(--border-brand)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
       secondaryLabel: post.durationMs
         ? t(msg`${Math.max(1, Math.round(post.durationMs / 1000))} 秒音乐`)
         : t(msg`视频号音乐`),
@@ -1208,7 +1208,7 @@ function MobileChannelAuthorStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[20px] border px-4 py-5 text-center shadow-none",
+        "rounded-[var(--radius-lg)] border px-4 py-5 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -1218,16 +1218,16 @@ function MobileChannelAuthorStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
-            : "bg-[rgba(60, 40, 110, 0.06)] text-[color:var(--text-secondary)]",
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
+            : "bg-[color:var(--border-faint)] text-[color:var(--text-secondary)]",
         )}
       >
         {badge}
       </div>
-      <div className="mt-3 text-[16px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-3 text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}

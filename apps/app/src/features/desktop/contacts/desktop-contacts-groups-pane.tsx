@@ -74,7 +74,7 @@ export function DesktopContactsGroupsPane({
 
   return (
     <div className="flex h-full min-h-0">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
         <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -109,7 +109,7 @@ export function DesktopContactsGroupsPane({
           </label>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] pb-4">
+        <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-shell)] pb-4">
           {loading ? (
             <div className="px-3 pt-3">
               <LoadingBlock label={t(msg`正在读取群聊...`)} />
@@ -165,7 +165,7 @@ export function DesktopContactsGroupsPane({
                           <div className="min-w-0 flex-1 truncate text-sm font-medium text-[color:var(--text-primary)]">
                             {group.name}
                           </div>
-                          <div className="shrink-0 text-[11px] text-[color:var(--text-dim)]">
+                          <div className="shrink-0 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                             {formatConversationTimestamp(
                               group.savedToContactsAt ?? group.lastActivityAt,
                             )}
@@ -291,7 +291,7 @@ function DesktopGroupDetailCard({
   );
 
   return (
-    <div className="w-full max-w-[520px] rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+    <div className="w-full max-w-[520px] rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-4">
         <GroupAvatarChip
           name={group.name}
@@ -329,17 +329,17 @@ function DesktopGroupDetailCard({
                 src={member.memberAvatar}
                 size="sm"
               />
-              <span className="w-full truncate text-center text-[11px] text-[color:var(--text-muted)]">
+              <span className="w-full truncate text-center text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {member.memberName || "—"}
               </span>
             </div>
           ))}
           {overflowCount > 0 ? (
             <div className="flex w-14 min-w-0 flex-col items-center gap-1">
-              <div className="flex h-9 w-9 items-center justify-center rounded-[16px] border border-dashed border-[color:var(--border-faint)] text-[11px] text-[color:var(--text-muted)]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 +{overflowCount}
               </div>
-              <span className="w-full truncate text-center text-[11px] text-[color:var(--text-muted)]">
+              <span className="w-full truncate text-center text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {t(msg`更多`)}
               </span>
             </div>

@@ -507,7 +507,7 @@ export function CreateGroupPage() {
             }}
             disabled={!selectedIds.length || createMutation.isPending}
             className={cn(
-              "h-9 rounded-full px-3 text-[15px] font-medium transition",
+              "h-9 rounded-full px-3 text-[length:var(--text-base)] font-medium transition",
               selectedIds.length && !createMutation.isPending
                 ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:opacity-90"
                 : "text-[color:var(--text-dim)]",
@@ -524,10 +524,10 @@ export function CreateGroupPage() {
         <div className="space-y-3 pt-3">
           <div className="-mx-4 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`已选联系人`)}
               </div>
-              <div className="text-[12px] text-[color:var(--text-muted)]">
+              <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {selectedIds.length
                   ? t(msg`${selectedIds.length} 人`)
                   : t(msg`未选择`)}
@@ -573,7 +573,7 @@ export function CreateGroupPage() {
                           <X size={10} />
                         </span>
                       </div>
-                      <span className="w-full truncate text-[11px] text-[color:var(--text-secondary)]">
+                      <span className="w-full truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                         {displayName}
                       </span>
                     </button>
@@ -581,7 +581,7 @@ export function CreateGroupPage() {
                 })}
               </div>
             ) : (
-              <div className="mt-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+              <div className="mt-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
                 {t(msg`先选择联系人，再开始一个新的群聊。`)}
               </div>
             )}
@@ -602,12 +602,12 @@ export function CreateGroupPage() {
             routeState.seedMemberIds.some((id) =>
               selectedFriendMap.has(id),
             )) ? (
-            <div className="-mx-4 border-y border-[color:var(--brand-primary)]/12 bg-[color:var(--brand-primary)]/6 px-4 py-3 text-[12px] leading-5 text-[#2f7a4c]">
+            <div className="-mx-4 border-y border-[color:var(--brand-primary)]/12 bg-[color:var(--brand-primary)]/6 px-4 py-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--state-success-text)]">
               {t(msg`已按当前单聊默认勾选对方，你可以继续添加其他联系人。`)}
             </div>
           ) : null}
 
-          <label className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
+          <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -619,8 +619,8 @@ export function CreateGroupPage() {
               // placeholder 在 SR 上行为分裂，盲人用户 focus 进来听到"编辑栏
               // 空"。挂 aria-label="搜索联系人" 把意图明确表达出来。
               aria-label={t(msg`搜索联系人`)}
-              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              className="min-w-0 flex-1 bg-transparent text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               // 备注名 / 角色名 / 关系关键词常常是 ASCII（"wangxiaoming"、
               // "zhang yang"）或者带英文姓名缩写，iOS 默认会句首大写 +
               // autocorrect，用户敲"wang"被改成"Wang"或者"Want"，
@@ -659,7 +659,7 @@ export function CreateGroupPage() {
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     // 走查（新一轮 R1）：原本只 onClick={refetch} 没有 disabled。
                     // refetch 期间 isFetching=true 但 isError 还停在 true，红色
                     // 卡 + 重试按钮 UI 完全不变；公网隧道 ~600ms 内用户连点重
@@ -677,7 +677,7 @@ export function CreateGroupPage() {
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={exitPage}
                   >
                     {statusBackLabel}
@@ -700,7 +700,7 @@ export function CreateGroupPage() {
               // 让 SR 立刻读出 error.message。读取失败 status card 是用户主动
               // 触发的 friendsQuery，retry 按钮在场不需要 alert。
               role="alert"
-              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -709,7 +709,7 @@ export function CreateGroupPage() {
                 <button
                   type="button"
                   onClick={exitPage}
-                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  className="shrink-0 rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {statusBackLabel}
                 </button>
@@ -730,7 +730,7 @@ export function CreateGroupPage() {
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={exitPage}
                 >
                   {statusBackLabel}
@@ -759,7 +759,7 @@ export function CreateGroupPage() {
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={() => setSearchTerm("")}
                 >
                   {t(msg`清空搜索`)}
@@ -773,7 +773,7 @@ export function CreateGroupPage() {
           <div>
             {filteredSections.map((section) => (
               <section key={section.key} className="mt-2">
-                <div className="px-4 py-1.5 text-[12px] text-[color:var(--text-muted)]">
+                <div className="px-4 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {section.title}
                 </div>
                 <div className="border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
@@ -840,8 +840,8 @@ function FriendSelectionRow({
         "flex w-full items-center gap-3 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[12px] border border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-secondary)] px-4 py-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
-            : "rounded-[12px] border border-transparent bg-transparent px-4 py-3 transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
+            ? "rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-secondary)] px-4 py-3 shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
+            : "rounded-[var(--radius-sm)] border border-transparent bg-transparent px-4 py-3 transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
             ? "bg-[color:var(--brand-primary)]/6 px-4 py-3.5"
             : "bg-[color:var(--bg-canvas-elevated)] px-4 py-3.5",
@@ -855,11 +855,11 @@ function FriendSelectionRow({
     >
       <AvatarChip name={name} src={src} size={isDesktop ? "md" : "wechat"} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-base)] text-[color:var(--text-primary)]">
           {name}
         </div>
         {isDesktop ? (
-          <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {relationship || t(msg`世界联系人`)}
           </div>
         ) : null}
@@ -927,7 +927,7 @@ function MobileCreateGroupStatusCard({
         tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
       }
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -937,7 +937,7 @@ function MobileCreateGroupStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -947,13 +947,13 @@ function MobileCreateGroupStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

@@ -109,16 +109,16 @@ export function DesktopContactsWorkspace({
   const t = useRuntimeTranslator();
   return (
     <div className="h-full min-h-0">
-      <AppPage className="h-full min-h-0 space-y-0 bg-[#f5f5f5] px-0 py-0">
+      <AppPage className="h-full min-h-0 space-y-0 bg-[color:var(--surface-card)] px-0 py-0">
         <div className="flex h-full min-h-0">
-          <section className="flex w-[320px] shrink-0 flex-col border-r border-[rgba(0,0,0,0.06)] bg-[#f7f7f7]">
-            <div className="border-b border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-3">
+          <section className="flex w-[320px] shrink-0 flex-col border-r border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)]">
+            <div className="border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-4 py-3">
               <div className="flex items-center justify-between gap-2">
-                <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`通讯录`)}
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="text-[11px] text-[color:var(--text-muted)]">
+                  <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                     {directoryCountLabel}
                   </div>
                   {onOpenManagement ? (
@@ -138,7 +138,7 @@ export function DesktopContactsWorkspace({
               <div ref={searchContainerRef} className="relative mt-3">
                 <label
                   onClick={onSearchOpen}
-                  className="flex items-center gap-2 rounded-[8px] border border-transparent bg-[#ececec] px-3 py-2 text-sm text-[color:var(--text-dim)] transition-colors hover:bg-[#e7e7e7]"
+                  className="flex items-center gap-2 rounded-[8px] border border-transparent bg-[color:var(--surface-soft)] px-3 py-2 text-sm text-[color:var(--text-dim)] transition-colors hover:bg-[color:var(--surface-soft)]"
                 >
                   <Search size={15} className="shrink-0" />
                   <input
@@ -183,7 +183,7 @@ export function DesktopContactsWorkspace({
             <div className="relative min-h-0 flex-1">
               <div
                 ref={directoryScrollRef}
-                className="h-full overflow-auto bg-[#f7f7f7] pb-5"
+                className="h-full overflow-auto bg-[color:var(--surface-card)] pb-5"
               >
                 <div className="px-2 py-2">{shortcutList}</div>
 
@@ -193,7 +193,7 @@ export function DesktopContactsWorkspace({
                       tone={notice.tone}
                       className={
                         notice.tone === "danger"
-                          ? "border-[rgba(220,38,38,0.18)] bg-white text-xs"
+                          ? "border-[color:var(--state-danger-bg)] bg-white text-xs"
                           : "border-[rgba(0,0,0,0.06)] bg-white text-xs"
                       }
                     >
@@ -300,7 +300,7 @@ export function DesktopContactsWorkspace({
             {bulkActionBar}
           </section>
 
-          <section className="min-w-0 flex-1 bg-[#f5f5f5]">
+          <section className="min-w-0 flex-1 bg-[color:var(--surface-card)]">
             {detailContent}
           </section>
         </div>
@@ -311,7 +311,7 @@ export function DesktopContactsWorkspace({
 
 function DesktopDirectoryTitle({ title }: { title: string }) {
   return (
-    <div className="px-4 pb-1 pt-1 text-[11px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
+    <div className="px-4 pb-1 pt-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
       {title}
     </div>
   );
@@ -381,10 +381,10 @@ function DesktopFriendListRow({
         size="wechat"
       />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
           {item.displayName}
         </div>
-        <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+        <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
           {pendingCharacterId === item.character.id
             ? t(msg`正在打开会话...`)
             : item.displayName !== item.character.name
@@ -428,10 +428,10 @@ function DesktopWorldCharacterRow({
         size="wechat"
       />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
           {item.character.name}
         </div>
-        <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+        <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
           {item.character.relationship ||
             item.character.currentStatus?.trim() ||
             t(msg`查看角色资料`)}
@@ -443,7 +443,7 @@ function DesktopWorldCharacterRow({
 
 function DesktopSectionHeader({ title }: { title: string }) {
   return (
-    <div className="px-4 py-1 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+    <div className="px-4 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
       {title}
     </div>
   );

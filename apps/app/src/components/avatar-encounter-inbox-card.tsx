@@ -16,7 +16,7 @@ type StatusPill = {
 
 const PILL_MATCHED: StatusPill = {
   label: msg`已匹配`,
-  className: "bg-[rgba(244,63,94,0.12)] text-[#f43f5e]",
+  className: "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
 };
 const PILL_MUTED = (label: MessageDescriptor): StatusPill => ({
   label,
@@ -38,7 +38,7 @@ function resolveStatusPill(
     return role === "recipient"
       ? {
           label: msg`待查看`,
-          className: "bg-[rgba(96,165,250,0.16)] text-[#2563eb]",
+          className: "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
         }
       : {
           label: msg`等待对方`,
@@ -69,14 +69,14 @@ export function AvatarEncounterInboxCard({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-3 text-left transition-colors active:bg-black/[0.04]"
+      className="flex w-full items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-3 text-left transition-colors active:bg-black/[0.04]"
     >
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
         <UserRound size={18} />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+          <span className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
             {item.partnerNickname}
           </span>
           <span
@@ -89,7 +89,7 @@ export function AvatarEncounterInboxCard({
           </span>
         </div>
         {snippet ? (
-          <div className="mt-0.5 truncate text-[12px] leading-5 text-[color:var(--text-secondary)]">
+          <div className="mt-0.5 truncate text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
             {snippet}
           </div>
         ) : null}

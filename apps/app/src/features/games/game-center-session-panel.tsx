@@ -76,8 +76,8 @@ export function GameCenterSessionPanel({
     <section
       className={cn(
         compact
-          ? "rounded-[20px] border p-4 shadow-none"
-          : "rounded-[24px] border p-5 shadow-[var(--shadow-card)]",
+          ? "rounded-[var(--radius-lg)] border p-4 shadow-none"
+          : "rounded-[var(--radius-xl)] border p-5 shadow-[var(--shadow-card)]",
         tone.mutedPanelClassName,
       )}
     >
@@ -94,14 +94,14 @@ export function GameCenterSessionPanel({
             >
               {isActive ? t(msg`即玩中`) : t(msg`详情页`)}
             </div>
-            <div className={cn("text-[color:var(--text-muted)]", compact ? "text-[10px]" : "text-[11px]")}>
+            <div className={cn("text-[color:var(--text-muted)]", compact ? "text-[10px]" : "text-[length:var(--text-eyebrow)]")}>
               {isActive ? t(msg`已建立会话承接`) : t(msg`点击开始后进入会话承接`)}
             </div>
           </div>
           <div
             className={cn(
               "font-semibold text-[color:var(--text-primary)]",
-              compact ? "mt-2 text-[15px]" : "mt-3 text-lg",
+              compact ? "mt-2 text-[length:var(--text-base)]" : "mt-3 text-lg",
             )}
           >
             {isActive ? `${t(msg`继续`)} ${game.name}` : game.name}
@@ -109,7 +109,7 @@ export function GameCenterSessionPanel({
           <div
             className={cn(
               "text-[color:var(--text-secondary)]",
-              compact ? "mt-1 text-[12px] leading-[1.35rem]" : "mt-2 text-sm leading-7",
+              compact ? "mt-1 text-[length:var(--text-caption)] leading-[1.35rem]" : "mt-2 text-sm leading-7",
             )}
           >
             {game.sessionObjective}
@@ -125,7 +125,7 @@ export function GameCenterSessionPanel({
               "shrink-0 border",
               compact
                 ? "h-9 w-9 rounded-full border-white/80 bg-white/72"
-                : "rounded-[16px] border-[color:var(--border-faint)] bg-white/86 text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]",
+                : "rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-white/86 text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]",
             )}
           >
             <X size={16} />
@@ -167,7 +167,7 @@ export function GameCenterSessionPanel({
               "rounded-full text-[color:var(--text-muted)]",
               compact
                 ? "bg-white/82 px-2 py-0.5 text-[10px]"
-                : "border border-white/72 bg-white/88 px-2.5 py-1 text-[11px]",
+                : "border border-white/72 bg-white/88 px-2.5 py-1 text-[length:var(--text-eyebrow)]",
             )}
           >
             {tag}
@@ -186,7 +186,7 @@ export function GameCenterSessionPanel({
           onClick={() => onLaunch(game.id)}
           className={
             compact
-              ? "h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+              ? "h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
               : undefined
           }
         >
@@ -199,7 +199,7 @@ export function GameCenterSessionPanel({
             onClick={() => onCopyToMobile(game.id)}
             className={
               compact
-                ? "h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3.5 text-[11px] shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-white"
+                ? "h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3.5 text-[length:var(--text-eyebrow)] shadow-none hover:border-[color:var(--brand-primary)]/16 hover:bg-white"
                 : undefined
             }
           >
@@ -210,7 +210,7 @@ export function GameCenterSessionPanel({
         <div
           className={cn(
             "text-[color:var(--text-muted)]",
-            compact ? "flex items-center text-[11px] leading-[1.35rem]" : "w-full text-xs leading-6",
+            compact ? "flex items-center text-[length:var(--text-eyebrow)] leading-[1.35rem]" : "w-full text-xs leading-6",
           )}
         >
           {isActive
@@ -240,14 +240,14 @@ function SessionMetric({
       className={cn(
         "border",
         compact
-          ? "rounded-[16px] border-white/80 bg-white/82 px-3 py-3"
+          ? "rounded-[var(--radius-md)] border-white/80 bg-white/82 px-3 py-3"
           : "border-white/72 bg-white/88 shadow-[0_8px_18px_rgba(180,130,20,0.04)]",
       )}
     >
       <div
         className={cn(
           "flex items-center gap-2 uppercase text-[color:var(--text-muted)]",
-          compact ? "text-[10px] tracking-[0.12em]" : "text-[11px] tracking-[0.14em]",
+          compact ? "text-[10px] tracking-[0.12em]" : "text-[length:var(--text-eyebrow)] tracking-[0.14em]",
         )}
       >
         {icon}
@@ -256,7 +256,7 @@ function SessionMetric({
       <div
         className={cn(
           "font-medium text-[color:var(--text-primary)]",
-          compact ? "mt-1.5 text-[13px] leading-5" : "mt-2 text-sm",
+          compact ? "mt-1.5 text-[length:var(--text-caption)] leading-5" : "mt-2 text-sm",
         )}
       >
         {value}
@@ -265,7 +265,7 @@ function SessionMetric({
         <div
           className={cn(
             "text-[color:var(--text-dim)]",
-            compact ? "mt-1 text-[10px] leading-4" : "mt-1 text-[11px] leading-5",
+            compact ? "mt-1 text-[10px] leading-4" : "mt-1 text-[length:var(--text-eyebrow)] leading-5",
           )}
         >
           {detail}

@@ -194,7 +194,7 @@ export function DesktopGroupMemberRemovalPicker({
         aria-labelledby={titleId}
         className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
       >
-        <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+        <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
             <div
               id={titleId}
@@ -202,7 +202,7 @@ export function DesktopGroupMemberRemovalPicker({
             >
               {t(msg`移除群成员`)}
             </div>
-            <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`选择要从“${groupName}”中移除的角色成员。`)}
             </div>
 
@@ -220,12 +220,12 @@ export function DesktopGroupMemberRemovalPicker({
                 // SR 进来只听到「编辑栏 搜索群成员 空」分裂行为。和姊妹
                 // chat-history R24 / 移动端 group-member-picker R3 同款 a11y。
                 aria-label={t(msg`搜索群成员`)}
-                className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
+                className="h-10 w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
               />
             </label>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-3 py-3">
+          <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-shell)] px-3 py-3">
             {!removableMembers.length ? (
               <div className="px-2 py-8">
                 <EmptyState
@@ -260,10 +260,10 @@ export function DesktopGroupMemberRemovalPicker({
         <section className="flex min-w-0 flex-1 flex-col bg-[rgba(255,255,255,0.62)]">
           <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
             <div>
-              <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+              <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`已选成员`)}
               </div>
-              <div className="mt-2 text-[15px] font-medium text-[color:var(--text-primary)]">
+              <div className="mt-2 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`已选择 ${selectedIds.length} 位群成员`)}
               </div>
             </div>
@@ -314,7 +314,7 @@ export function DesktopGroupMemberRemovalPicker({
             ) : (
               <div className="flex h-full items-center justify-center px-8">
                 <div className="max-w-[320px] rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-6 py-8 text-center">
-                  <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
                     {t(msg`右侧会显示待移除成员`)}
                   </div>
                   <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
@@ -326,7 +326,7 @@ export function DesktopGroupMemberRemovalPicker({
           </div>
 
           <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-            <div className="text-[12px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`世界主人不会出现在移除列表里。`)}
             </div>
             <div className="flex items-center gap-3">
@@ -344,7 +344,7 @@ export function DesktopGroupMemberRemovalPicker({
                 variant="primary"
                 onClick={handleConfirm}
                 disabled={!selectedIds.length || pending}
-                className="rounded-[10px] bg-[#e14c45] px-6 text-white hover:bg-[#cf433d]"
+                className="rounded-[10px] bg-[color:var(--state-danger-bg)] px-6 text-white hover:bg-[color:var(--state-danger-bg)]"
               >
                 {pending ? t(msg`正在移除...`) : t(msg`移出群聊`)}
               </Button>

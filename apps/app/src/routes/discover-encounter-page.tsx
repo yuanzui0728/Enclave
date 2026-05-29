@@ -251,7 +251,7 @@ function MobileDiscoverEncounterPage() {
           // 是橙黄色渐变；只盖 bg-[color:var(--brand-primary)]（color，不带 image）会被橙色渐变覆盖，
           // 实际渲染出来是橙色不是设计想要的微信绿。补 [background-image:none]
           // 让 bg-color 真正生效。
-          className="h-12 w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)] [background-image:none]"
+          className="h-12 w-full rounded-[var(--radius-md)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)] [background-image:none]"
         >
           {/* 走查 Round 1：AI 端到端 ~60s（planning + 角色生成两次推理），按钮原来全程
               只有「正在寻找...」一行文字、没有 spinner——公网隧道 + 移动端用户经常以为
@@ -274,7 +274,7 @@ function MobileDiscoverEncounterPage() {
           // 按钮 disabled 状态推断完成，没有内容上下文。挂 role=status + aria-live=polite
           // 让 SR 在 AI 跑完一刻读出结果（与 account-security-panel 的 success/info 收口一致）。
           <InlineNotice
-            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             tone={tone}
             role="status"
             aria-live="polite"
@@ -290,7 +290,7 @@ function MobileDiscoverEncounterPage() {
         // SHAKE_AI_*_FAILED 等）必须立即打断 SR 当前朗读告诉用户摇失败了，挂 role=alert
         // （隐含 aria-live=assertive）。与 account-security-panel 的 danger feedback 对齐。
         <InlineNotice
-          className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
           tone="danger"
           role="alert"
         >
@@ -314,7 +314,7 @@ function MobileDiscoverEncounterPage() {
                 <button
                   type="button"
                   onClick={() => shakeMutation.mutate()}
-                  className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试摇一摇`)}
                 </button>
@@ -322,7 +322,7 @@ function MobileDiscoverEncounterPage() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                className="rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
               >
                 {routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
                   ? t(msg`返回上一页`)

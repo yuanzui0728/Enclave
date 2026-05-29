@@ -69,8 +69,8 @@ export function DigitalHumanPlayer({
           className={cn(
             "relative overflow-hidden border text-white",
             variant === "mobile"
-              ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
-              : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(60, 40, 110, 0.06)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
+              ? "rounded-[var(--radius-xl)] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
+              : "flex min-h-0 flex-1 rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
           )}
         >
           <iframe
@@ -105,19 +105,19 @@ export function DigitalHumanPlayer({
             className="absolute inset-0 h-full w-full border-0"
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 rounded-t-[22px] bg-[linear-gradient(180deg,rgba(2,6,23,0),rgba(2,6,23,0.78))] px-4 pb-4 pt-10">
-            <div className="rounded-[20px] border border-white/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
-              <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">
+            <div className="rounded-[var(--radius-lg)] border border-white/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
+              <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/42">
                 {t(msg`通话提示`)}
               </div>
-              <div className="mt-1 text-[13px] leading-6 text-white/78">
+              <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-white/78">
                 {statusHint}
               </div>
               {renderStatusHint ? (
-                <div className="mt-2 text-[12px] leading-6 text-white/64">
+                <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-white/64">
                   {renderStatusHint}
                 </div>
               ) : null}
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/52">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-white/52">
                 <span>{providerLabel}</span>
                 {renderStatusLabel ? (
                   <span>{renderStatusLabel}</span>
@@ -156,8 +156,8 @@ export function DigitalHumanPlayer({
       className={cn(
         "relative overflow-hidden border text-white",
         variant === "mobile"
-          ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
-          : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(60, 40, 110, 0.06)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
+          ? "rounded-[var(--radius-xl)] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
+          : "flex min-h-0 flex-1 rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
       )}
     >
       {/* 走查电脑端单聊 R136：和姊妹 R133 (CameraPreviewCard <video>) 同款。本
@@ -183,11 +183,11 @@ export function DigitalHumanPlayer({
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="relative z-10 flex h-full flex-col justify-between bg-[linear-gradient(180deg,rgba(2,6,23,0.18),rgba(2,6,23,0.54))] p-4">
-        <div className="max-w-[196px] rounded-[20px] border border-white/10 bg-[rgba(2,6,23,0.44)] px-3 py-2 backdrop-blur">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">
+        <div className="max-w-[196px] rounded-[var(--radius-lg)] border border-white/10 bg-[rgba(2,6,23,0.44)] px-3 py-2 backdrop-blur">
+          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/42">
             {t(msg`状态`)}
           </div>
-          <div className="mt-1 text-sm font-medium text-[#bbf7d0]">
+          <div className="mt-1 text-sm font-medium text-[color:var(--state-success-text)]">
             {statusLabel}
           </div>
         </div>
@@ -210,19 +210,19 @@ export function DigitalHumanPlayer({
                   ? t(msg`画面正在排队，请稍候`)
                   : t(msg`画面已开启`)}
           </InlineNotice>
-          <div className="rounded-[24px] border border-white/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">
+          <div className="rounded-[var(--radius-xl)] border border-white/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
+            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/42">
               {t(msg`通话提示`)}
             </div>
-            <div className="mt-1 text-[13px] leading-6 text-white/78">
+            <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-white/78">
               {statusHint}
             </div>
             {renderStatusHint ? (
-              <div className="mt-2 text-[12px] leading-6 text-white/64">
+              <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-white/64">
                 {renderStatusHint}
               </div>
             ) : null}
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-white/52">
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-white/52">
               <span>{providerLabel}</span>
               {renderStatusLabel ? (
                 <span>{t(msg`画面: ${renderStatusLabel}`)}</span>

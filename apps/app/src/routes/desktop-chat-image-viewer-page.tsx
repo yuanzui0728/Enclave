@@ -458,7 +458,7 @@ export function DesktopChatImageViewerPage() {
   if (!routeState || !activeItem) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[#1f1f1f] p-6">
-        <div className="w-full max-w-lg rounded-[20px] border border-white/10 bg-[#2a2a2a] p-8 shadow-[0_24px_64px_rgba(0,0,0,0.28)]">
+        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-white/10 bg-[#2a2a2a] p-8 shadow-[0_24px_64px_rgba(0,0,0,0.28)]">
           <EmptyState
             title={t(msg`这张图片已经失去上下文`)}
             description={t(msg`可能是新窗口参数被清掉了。回到消息页后重新打开一次即可。`)}
@@ -520,15 +520,15 @@ export function DesktopChatImageViewerPage() {
               image-print-stage CSS 的 print 标题用同一个 string)。改成
               语义 <h1>，Tailwind 样式不动；header 内 meta + index 仍是
               辅助 div。 */}
-          <h1 className="truncate text-[16px] font-medium">
+          <h1 className="truncate text-[length:var(--text-title)] font-medium">
             {activeItem.title}
           </h1>
           {activeItem.meta ? (
-            <div className="mt-1 truncate text-[12px] text-white/62">
+            <div className="mt-1 truncate text-[length:var(--text-caption)] text-white/62">
               {activeItem.meta}
             </div>
           ) : null}
-          <div className="mt-1 text-[12px] text-white/46">
+          <div className="mt-1 text-[length:var(--text-caption)] text-white/46">
             {activeItemIndex + 1} / {viewerItems.length}
           </div>
         </div>
@@ -660,7 +660,7 @@ function ViewerNavButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[12px] border border-white/12 bg-[#2b2b2b] text-white transition hover:bg-[#343434] ${
+      className={`absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-white/12 bg-[#2b2b2b] text-white transition hover:bg-[#343434] ${
         side === "left" ? "left-6" : "right-6"
       } ${className ?? ""}`}
     >

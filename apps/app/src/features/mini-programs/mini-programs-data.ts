@@ -514,35 +514,35 @@ export function getMiniProgramToneStyle(
     case "jade":
       return {
         badgeClassName:
-          "border-[rgba(47,122,63,0.18)] bg-[color:var(--surface-card)] text-[#2f7a3f]",
+          "border-[color:var(--state-success-bg)] bg-[color:var(--surface-card)] text-[color:var(--state-success-text)]",
         heroCardClassName:
           "bg-[linear-gradient(135deg,#2f7a3f_0%,#4ea96f_45%,#d9f5df_120%)] text-white",
-        iconClassName: "bg-[rgba(47,122,63,0.12)] text-[#2f7a3f]",
+        iconClassName: "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
         mutedPanelClassName:
-          "border-[rgba(47,122,63,0.16)] bg-[rgba(241,251,244,0.92)]",
-        softTextClassName: "text-[#2f7a3f]",
+          "border-[color:var(--state-success-bg)] bg-[color:var(--state-success-bg)]",
+        softTextClassName: "text-[color:var(--state-success-text)]",
       };
     case "amber":
       return {
         badgeClassName:
-          "border-[rgba(255,138,61,0.18)] bg-[color:var(--surface-secondary)] text-[#e16d1f]",
+          "border-[color:var(--state-warning-bg)] bg-[color:var(--surface-secondary)] text-[color:var(--state-warning-text)]",
         heroCardClassName:
           "bg-[linear-gradient(135deg,#d56c18_0%,#ff9c42_45%,#ffe0bf_120%)] text-white",
-        iconClassName: "bg-[rgba(255,138,61,0.12)] text-[#e16d1f]",
+        iconClassName: "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]",
         mutedPanelClassName:
-          "border-[rgba(255,138,61,0.16)] bg-[color:var(--surface-card)]",
-        softTextClassName: "text-[#d56c18]",
+          "border-[color:var(--state-warning-bg)] bg-[color:var(--surface-card)]",
+        softTextClassName: "text-[color:var(--state-warning-text)]",
       };
     case "ocean":
       return {
         badgeClassName:
-          "border-[rgba(57,108,196,0.18)] bg-[rgba(236,243,255,0.94)] text-[#396cc4]",
+          "border-[color:var(--state-info-bg)] bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
         heroCardClassName:
           "bg-[linear-gradient(135deg,#285aa8_0%,#4f8ff7_45%,#dceaff_120%)] text-white",
-        iconClassName: "bg-[rgba(57,108,196,0.12)] text-[#396cc4]",
+        iconClassName: "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
         mutedPanelClassName:
-          "border-[rgba(57,108,196,0.16)] bg-[rgba(239,245,255,0.92)]",
-        softTextClassName: "text-[#396cc4]",
+          "border-[color:var(--state-info-bg)] bg-[color:var(--state-info-bg)]",
+        softTextClassName: "text-[color:var(--state-info-text)]",
       };
     case "rose":
       return {
@@ -559,13 +559,13 @@ export function getMiniProgramToneStyle(
     default:
       return {
         badgeClassName:
-          "border-[rgba(71,85,105,0.16)] bg-[color:var(--surface-secondary)] text-[#475569]",
+          "border-[rgba(71,85,105,0.16)] bg-[color:var(--surface-secondary)] text-[color:var(--state-info-text)]",
         heroCardClassName:
           "bg-[linear-gradient(135deg,#344256_0%,#5f748f_45%,#e3ebf5_120%)] text-white",
-        iconClassName: "bg-[rgba(71,85,105,0.12)] text-[#475569]",
+        iconClassName: "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
         mutedPanelClassName:
           "border-[rgba(71,85,105,0.16)] bg-[color:var(--surface-secondary)]",
-        softTextClassName: "text-[#475569]",
+        softTextClassName: "text-[color:var(--state-info-text)]",
       };
   }
 }

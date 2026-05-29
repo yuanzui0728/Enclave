@@ -25,8 +25,8 @@ export function WeChatCallToast({
         className,
       )}
     >
-      <div className="pointer-events-auto flex max-w-[88%] items-center gap-3 rounded-2xl bg-black/72 px-4 py-2.5 text-[13px] leading-5 text-white shadow-lg backdrop-blur">
-        <span className={tone === "danger" ? "text-[#ff8a8a]" : "text-white/90"}>
+      <div className="pointer-events-auto flex max-w-[88%] items-center gap-3 rounded-2xl bg-black/72 px-4 py-2.5 text-[length:var(--text-caption)] leading-5 text-white shadow-lg backdrop-blur">
+        <span className={tone === "danger" ? "text-[color:var(--state-danger-text)]" : "text-white/90"}>
           {message}
         </span>
         {action}
@@ -47,7 +47,7 @@ export function WeChatCallToastAction({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[12px] font-medium text-white transition active:bg-white/25"
+      className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[length:var(--text-caption)] font-medium text-white transition active:bg-white/25"
     >
       {label}
     </button>

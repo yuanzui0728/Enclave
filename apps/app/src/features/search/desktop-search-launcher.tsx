@@ -1068,7 +1068,7 @@ export function DesktopSearchDropdownPanel({
   return (
     <div
       className={cn(
-        "absolute left-0 right-0 top-[calc(100%+0.45rem)] z-30 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain rounded-[16px] border border-[color:var(--border-faint)] bg-white/98 p-2.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl",
+        "absolute left-0 right-0 top-[calc(100%+0.45rem)] z-30 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white/98 p-2.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl",
         className,
       )}
     >
@@ -1104,13 +1104,13 @@ export function DesktopSearchDropdownPanel({
       {trimmedKeyword ? (
         <div className="mt-1">
           {suggestionsLoading ? (
-            <div className="px-2 py-3 text-[12px] text-[color:var(--text-muted)]">
+            <div className="px-2 py-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`正在整理结果...`)}
             </div>
           ) : null}
 
           {!suggestionsLoading && suggestionsError ? (
-            <div className="px-2 py-3 text-[12px] text-[#be123c]">
+            <div className="px-2 py-3 text-[length:var(--text-caption)] text-[color:var(--state-danger-text)]">
               {t(msg`搜索建议暂时读取失败，请按 Enter 进入完整搜索。`)}
             </div>
           ) : null}
@@ -1130,7 +1130,7 @@ export function DesktopSearchDropdownPanel({
                     key={config.viewMoreActionId}
                     className="mt-1 first:mt-0"
                   >
-                    <div className="px-2 pb-1 pt-2 text-[11px] font-medium text-[color:var(--text-muted)]">
+                    <div className="px-2 pb-1 pt-2 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
                       {config.title}
                     </div>
                     <div className="space-y-0.5">
@@ -1161,7 +1161,7 @@ export function DesktopSearchDropdownPanel({
               })}
 
               {!hasSuggestionResults ? (
-                <div className="px-2 py-3 text-[12px] text-[color:var(--text-muted)]">
+                <div className="px-2 py-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {t(msg`没有直接命中的结果，按 Enter 进入完整搜索。`)}
                 </div>
               ) : null}
@@ -1172,7 +1172,7 @@ export function DesktopSearchDropdownPanel({
 
       {history.length ? (
         <section className="mt-1">
-          <div className="px-2 pb-1 pt-2 text-[11px] font-medium text-[color:var(--text-muted)]">
+          <div className="px-2 pb-1 pt-2 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
             {t(msg`搜索历史`)}
           </div>
           <div className="space-y-0.5">
@@ -1186,7 +1186,7 @@ export function DesktopSearchDropdownPanel({
                   onClick={() => onOpenSearch(item.keyword)}
                   onMouseEnter={() => activatePanelAction(actionId)}
                   className={cn(
-                    "flex w-full items-center gap-2.5 rounded-[8px] px-2 py-2 text-left text-[13px] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                    "flex w-full items-center gap-2.5 rounded-[8px] px-2 py-2 text-left text-[length:var(--text-caption)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     active
                       ? "bg-[color:var(--surface-console)] text-[color:var(--text-primary)]"
                       : "text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
@@ -1234,11 +1234,11 @@ function SearchLauncherResultRow({
     >
       <AvatarChip name={entry.avatarName} src={entry.avatarSrc} size="sm" />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
           {renderHighlightedText(entry.title, keyword)}
         </div>
         {entry.description ? (
-          <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {renderHighlightedText(entry.description, keyword)}
           </div>
         ) : null}
@@ -1264,7 +1264,7 @@ function SearchLauncherViewMoreRow({
       onClick={onClick}
       onMouseEnter={onMouseEnter}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-[8px] px-2 py-1.5 text-left text-[12px] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+        "flex w-full items-center justify-between gap-2 rounded-[8px] px-2 py-1.5 text-left text-[length:var(--text-caption)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
           ? "bg-[color:var(--surface-console)] text-[color:var(--text-primary)]"
           : "text-[color:var(--text-muted)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
@@ -1290,7 +1290,7 @@ function SearchLauncherStatusCard({
   const t = useRuntimeTranslator();
   const toneClassName =
     status === "error"
-      ? "border-[rgba(225,29,72,0.14)] bg-[rgba(225,29,72,0.06)]"
+      ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)]"
       : status === "empty"
         ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
         : status === "recording"
@@ -1298,7 +1298,7 @@ function SearchLauncherStatusCard({
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]";
   const badgeClassName =
     status === "error"
-      ? "bg-white text-[#be123c]"
+      ? "bg-white text-[color:var(--state-danger-text)]"
       : status === "empty"
         ? "bg-white text-[color:var(--text-muted)]"
         : status === "recording"
@@ -1316,9 +1316,9 @@ function SearchLauncherStatusCard({
             : t(msg`已完成`);
 
   return (
-    <section className={cn("mt-2 rounded-[16px] border p-3.5", toneClassName)}>
+    <section className={cn("mt-2 rounded-[var(--radius-md)] border p-3.5", toneClassName)}>
       <div className="flex items-center justify-between gap-3">
-        <div className="text-[11px] font-medium text-[color:var(--text-primary)]">
+        <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-primary)]">
           {title}
         </div>
         <div
@@ -1329,9 +1329,9 @@ function SearchLauncherStatusCard({
       </div>
       <div
         className={cn(
-          "mt-2 rounded-[12px] bg-white px-3 py-2.5 text-xs leading-6",
+          "mt-2 rounded-[var(--radius-sm)] bg-white px-3 py-2.5 text-xs leading-6",
           status === "error"
-            ? "text-[#be123c]"
+            ? "text-[color:var(--state-danger-text)]"
             : "text-[color:var(--text-secondary)]",
         )}
       >

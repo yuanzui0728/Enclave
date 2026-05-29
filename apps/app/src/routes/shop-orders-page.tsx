@@ -40,12 +40,12 @@ function statusLabel(status: GoodsOrderStatus, t: ReturnType<typeof useRuntimeTr
 }
 
 const STATUS_COLOR: Record<GoodsOrderStatus, string> = {
-  completed: "bg-[rgba(34,197,94,0.14)] text-[#15803d]",
+  completed: "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
   pending: "bg-[color:var(--brand-primary)]/16 text-[color:var(--brand-primary)]",
-  shipped: "bg-[rgba(59,130,246,0.14)] text-[#2563eb]",
-  delivered: "bg-[rgba(34,197,94,0.14)] text-[#15803d]",
+  shipped: "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
+  delivered: "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
   cancelled: "bg-black/[0.06] text-[color:var(--text-muted)]",
-  refunded: "bg-[rgba(239,68,68,0.12)] text-[#b91c1c]",
+  refunded: "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
 };
 
 function formatDateTime(value?: string | null) {
@@ -137,24 +137,24 @@ export function ShopOrdersPage() {
             className="space-y-1.5 rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="min-w-0 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {order.goodsName}
                 {order.quantity > 1 ? ` ×${order.quantity}` : ""}
               </div>
               <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${STATUS_COLOR[order.status]}`}
+                className={`shrink-0 rounded-full px-2 py-0.5 text-[length:var(--text-eyebrow)] ${STATUS_COLOR[order.status]}`}
               >
                 {statusLabel(order.status, t)}
               </span>
             </div>
-            <div className="flex items-center justify-between text-[12px] text-[color:var(--text-muted)]">
+            <div className="flex items-center justify-between text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               <span>{formatDateTime(order.createdAt)}</span>
-              <span className="text-[14px] font-semibold text-[color:var(--brand-primary)]">
+              <span className="text-[length:var(--text-body)] font-semibold text-[color:var(--brand-primary)]">
                 {formatCents(order.totalPriceCents, order.currency)}
               </span>
             </div>
             {order.shipping ? (
-              <div className="text-[12px] text-[color:var(--text-secondary)]">
+              <div className="text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                 {t(msg`收货：${order.shipping.name} · ${order.shipping.phone}`)}
                 <div className="text-[color:var(--text-muted)]">{order.shipping.address}</div>
                 {order.trackingNo ? (
@@ -168,7 +168,7 @@ export function ShopOrdersPage() {
         ))}
 
         {totalPages > 1 ? (
-          <div className="flex items-center justify-center gap-4 pt-2 text-[13px]">
+          <div className="flex items-center justify-center gap-4 pt-2 text-[length:var(--text-caption)]">
             <Button
               variant="secondary"
               size="sm"

@@ -975,7 +975,7 @@ export function MobileFriendMomentsPage() {
       >
         {pullState.offset || pullState.refreshing ? (
           <div
-            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[color:var(--text-muted)]"
+            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
             style={{ top: 0, height: `${pullState.offset || 60}px` }}
           >
             <span>
@@ -1017,7 +1017,7 @@ export function MobileFriendMomentsPage() {
                 // 错过。danger → alert（assertive 立即朗读），success/info → status
                 // （polite 待空隙）。
                 role={notice.tone === "danger" ? "alert" : "status"}
-                className="rounded-[8px] px-3 py-2 text-[12px] shadow-none"
+                className="rounded-[8px] px-3 py-2 text-[length:var(--text-caption)] shadow-none"
               >
                 {notice.action && notice.actionLabel ? (
                   <div className="flex items-center justify-between gap-2">
@@ -1026,7 +1026,7 @@ export function MobileFriendMomentsPage() {
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-eyebrow)]"
                       onClick={notice.action}
                     >
                       {notice.actionLabel}
@@ -1051,11 +1051,11 @@ export function MobileFriendMomentsPage() {
           {!character &&
           !characterQuery.isLoading &&
           !friendsQuery.isLoading ? (
-            <section className="mx-4 mt-4 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5">
-              <div className="text-[16px] font-semibold text-[color:var(--text-primary)]">
+            <section className="mx-4 mt-4 rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5">
+              <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
                 {t(msg`无法打开这位角色的朋友圈`)}
               </div>
-              <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+              <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
                 {t(msg`角色资料不存在，或者当前资料还没有同步完成。`)}
               </div>
               {errors.length > 0 ? (
@@ -1088,7 +1088,7 @@ export function MobileFriendMomentsPage() {
           ) : null}
 
           {character && timelineLoading && !friendMoments.length ? (
-            <div className="px-4 pt-10 pb-12 text-center text-[12px] text-[color:var(--text-muted)]">
+            <div className="px-4 pt-10 pb-12 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`正在刷新这位角色的朋友圈`)}
             </div>
           ) : null}
@@ -1117,10 +1117,10 @@ export function MobileFriendMomentsPage() {
           momentsQuery.isError &&
           !friendMoments.length ? (
             <div className="px-4 pt-10 pb-12 text-center">
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`朋友圈暂时不可用`)}
               </div>
-              <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {resolveQueryErrorMessage(momentsQuery.error) ??
                   t(msg`读取这位角色的朋友圈时出错了。`)}
               </div>
@@ -1128,7 +1128,7 @@ export function MobileFriendMomentsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[length:var(--text-eyebrow)]"
                   onClick={handleRetryLoad}
                 >
                   {t(msg`重试读取`)}
@@ -1136,7 +1136,7 @@ export function MobileFriendMomentsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[length:var(--text-eyebrow)]"
                   onClick={handleBack}
                 >
                   {statusBackLabel}
@@ -1147,10 +1147,10 @@ export function MobileFriendMomentsPage() {
 
           {character && !timelineLoading && !momentsQuery.isError && isBlocked ? (
             <div className="px-4 pt-10 pb-12 text-center">
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`这位角色的朋友圈当前不可见`)}
               </div>
-              <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {t(msg`你已经将这位角色加入黑名单，相关朋友圈内容会先隐藏。`)}
               </div>
             </div>
@@ -1162,10 +1162,10 @@ export function MobileFriendMomentsPage() {
           !isBlocked &&
           !friendMoments.length ? (
             <div className="px-4 pt-12 pb-16 text-center">
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`${displayName} 还没有发表朋友圈`)}
               </div>
-              <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {t(msg`先把这页留着，等 TA 下次更新时再回来看看。`)}
               </div>
             </div>
@@ -1206,7 +1206,7 @@ export function MobileFriendMomentsPage() {
                             <div className="text-[26px] font-semibold leading-none text-[color:var(--text-primary)]">
                               {label.dayLabel}
                             </div>
-                            <div className="mt-1 text-[11px] tracking-[0.04em] text-[color:var(--text-muted)]">
+                            <div className="mt-1 text-[length:var(--text-eyebrow)] tracking-[0.04em] text-[color:var(--text-muted)]">
                               {label.monthLabel}
                             </div>
                           </>

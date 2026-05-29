@@ -236,7 +236,7 @@ export function DesktopGroupMemberPicker({
         aria-labelledby={titleId}
         className="relative flex max-h-[85vh] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
       >
-        <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+        <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
             <div
               id={titleId}
@@ -244,7 +244,7 @@ export function DesktopGroupMemberPicker({
             >
               {t(msg`添加群成员`)}
             </div>
-            <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`从通讯录里选择要加入“${groupName}”的角色。`)}
             </div>
 
@@ -262,12 +262,12 @@ export function DesktopGroupMemberPicker({
                 // SR 进来只听到「编辑栏 搜索联系人 空」分裂行为。和姊妹
                 // chat-history R24 / 移动端 group-member-picker R3 同款 a11y。
                 aria-label={t(msg`搜索联系人`)}
-                className="h-10 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
+                className="h-10 w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
               />
             </label>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-3 py-3">
+          <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-shell)] px-3 py-3">
             {friendsQuery.isLoading ? (
               <LoadingBlock
                 className="px-2 py-4 text-left"
@@ -355,10 +355,10 @@ export function DesktopGroupMemberPicker({
         <section className="flex min-w-0 flex-1 flex-col bg-[rgba(255,255,255,0.62)]">
           <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
             <div>
-              <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+              <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`已选成员`)}
               </div>
-              <div className="mt-2 text-[15px] font-medium text-[color:var(--text-primary)]">
+              <div className="mt-2 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`已选择 ${selectedIds.length} 位联系人`)}
               </div>
             </div>
@@ -420,7 +420,7 @@ export function DesktopGroupMemberPicker({
             ) : (
               <div className="flex h-full items-center justify-center px-8">
                 <div className="max-w-[320px] rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-6 py-8 text-center">
-                  <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
                     {t(msg`右侧会显示待加入成员`)}
                   </div>
                   <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">
@@ -432,7 +432,7 @@ export function DesktopGroupMemberPicker({
           </div>
 
           <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
-            <div className="text-[12px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`已在群里的成员不会重复出现。`)}
             </div>
             <div className="flex items-center gap-3">

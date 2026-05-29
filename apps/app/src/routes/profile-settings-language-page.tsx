@@ -77,7 +77,7 @@ export function ProfileSettingsLanguagePage() {
               onClick={() => setLocale(locale)}
               className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-black/[0.04]"
             >
-              <span className="text-[15px] text-[color:var(--text-primary)]">
+              <span className="text-[length:var(--text-base)] text-[color:var(--text-primary)]">
                 {SUPPORTED_LOCALE_LABELS[locale]}
               </span>
               {selected ? (
@@ -89,11 +89,11 @@ export function ProfileSettingsLanguagePage() {
       </div>
 
       {isSwitchingLocale ? (
-        <div className="px-4 pt-2 text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <div className="px-4 pt-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
           <Trans>正在切换语言...</Trans>
         </div>
       ) : (
-        <div className="px-4 pt-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <div className="px-4 pt-3 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
           {t(msg`语言偏好保存在当前设备并立即生效，同时决定好友回复使用的语言。`)}
         </div>
       )}

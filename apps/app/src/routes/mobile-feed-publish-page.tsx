@@ -598,7 +598,7 @@ export function MobileFeedPublishPage() {
               isMediaPreparing
             }
             className={cn(
-              "h-9 rounded-full px-3 text-[15px] font-medium transition",
+              "h-9 rounded-full px-3 text-[length:var(--text-base)] font-medium transition",
               composeDraft.hasContent &&
                 !createMutation.isPending &&
                 !isMediaPreparing
@@ -627,7 +627,7 @@ export function MobileFeedPublishPage() {
             // readOnly 时不会完全不知道为啥失败。
             tone="danger"
             role="alert"
-            className="rounded-[16px] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[12px] shadow-none"
+            className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-caption)] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">
@@ -639,7 +639,7 @@ export function MobileFeedPublishPage() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
               >
                 {statusBackLabel}
               </button>
@@ -647,12 +647,12 @@ export function MobileFeedPublishPage() {
           </InlineNotice>
         ) : null}
 
-        <section className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]">
-          <div className="border-b border-[rgba(60, 40, 110, 0.06)] px-4 py-3">
-            <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+        <section className="overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]">
+          <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
+            <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
               {t(msg`这一刻`)}
             </div>
-            <div className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
               {t(msg`发到广场后，世界里的居民都可能看到、点赞，甚至继续接话。`)}
             </div>
           </div>
@@ -683,7 +683,7 @@ export function MobileFeedPublishPage() {
               // 唯一漏网；readOnly 比 disabled 更合适，disabled 会把已敲内容置
               // 灰看起来像出错，readOnly 视觉一致、又能让 IME 把候选窗压下去。
               readOnly={createMutation.isPending}
-              className="min-h-[11rem] resize-none rounded-[20px] border-0 bg-[color:var(--surface-console)] px-4 py-3.5 text-[16px] leading-7 shadow-none"
+              className="min-h-[11rem] resize-none rounded-[var(--radius-lg)] border-0 bg-[color:var(--surface-console)] px-4 py-3.5 text-[length:var(--text-title)] leading-7 shadow-none"
               autoFocus
             />
 
@@ -717,7 +717,7 @@ export function MobileFeedPublishPage() {
                   createMutation.isPending ||
                   isMediaPreparing
                 }
-                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
+                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[length:var(--text-eyebrow)]"
                 onClick={() => {
                   void handlePickImages();
                 }}
@@ -734,7 +734,7 @@ export function MobileFeedPublishPage() {
                   createMutation.isPending ||
                   isMediaPreparing
                 }
-                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[11px]"
+                className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 text-[length:var(--text-eyebrow)]"
                 onClick={() => {
                   // 走查再一轮 R2：跟"添加图片"对齐——上一次视频解码失败 / 超时
                   // 留下 mediaError 红条，用户点"添加视频"重选时若 picker 被取消
@@ -753,21 +753,21 @@ export function MobileFeedPublishPage() {
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]">
+        <section className="overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]">
           <div className="flex items-center justify-between px-4 py-3">
             <div>
-              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`谁可以看`)}
               </div>
-              <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {t(msg`当前发布到广场`)}
               </div>
             </div>
-            <span className="rounded-full bg-[color:var(--brand-primary)]/12 px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+            <span className="rounded-full bg-[color:var(--brand-primary)]/12 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
               {t(msg`公开可见`)}
             </span>
           </div>
-          <div className="border-t border-[rgba(60, 40, 110, 0.06)] px-4 py-3 text-[11px] leading-5 text-[color:var(--text-muted)]">
+          <div className="border-t border-[color:var(--border-faint)] px-4 py-3 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
             {t(msg`图片最多 9 张，视频当前支持 1 条且不超过 5 分钟，暂不支持图片和视频混发。`)}
           </div>
         </section>
@@ -798,17 +798,17 @@ export function MobileFeedPublishPage() {
             onClick={() => setDiscardConfirmOpen(false)}
             className="absolute inset-0"
           />
-          <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[20px] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]">
+          <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[var(--radius-lg)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]">
             <div className="px-6 pb-3 pt-6 text-center">
               <div
                 id="discard-confirm-title"
-                className="text-[16px] font-medium text-[color:var(--text-primary)]"
+                className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]"
               >
                 {t(msg`放弃发表`)}
               </div>
               <div
                 id="discard-confirm-description"
-                className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]"
+                className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]"
               >
                 {t(msg`返回会丢失已编辑的文字与媒体，确定不发布吗？`)}
               </div>
@@ -827,14 +827,14 @@ export function MobileFeedPublishPage() {
                 type="button"
                 onClick={() => setDiscardConfirmOpen(false)}
                 autoFocus
-                className="border-r border-[color:var(--border-faint)] py-3 text-[15px] text-[color:var(--text-secondary)] active:bg-black/[0.04]"
+                className="border-r border-[color:var(--border-faint)] py-3 text-[length:var(--text-base)] text-[color:var(--text-secondary)] active:bg-black/[0.04]"
               >
                 {t(msg`继续编辑`)}
               </button>
               <button
                 type="button"
                 onClick={handleConfirmDiscard}
-                className="py-3 text-[15px] font-medium text-[#fa5151] active:bg-black/[0.04]"
+                className="py-3 text-[length:var(--text-base)] font-medium text-[color:var(--state-danger-text)] active:bg-black/[0.04]"
               >
                 {t(msg`放弃`)}
               </button>

@@ -81,14 +81,14 @@ export function TankWarGame({ variant = "fullscreen", onExit }: TankWarGameProps
 
   const containerCls =
     variant === "embedded"
-      ? "rounded-[16px] bg-black"
+      ? "rounded-[var(--radius-md)] bg-black"
       : "min-h-screen bg-black";
 
   return (
     <section className={cn("flex flex-col items-center gap-2 p-3", containerCls)}>
       <header className="flex w-full items-center justify-between text-white">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold tracking-wider">
+          <span className="text-[length:var(--text-base)] font-semibold tracking-wider">
             {t(msg`坦克大战`)}
           </span>
           <HudSummary hud={hud} />
@@ -98,7 +98,7 @@ export function TankWarGame({ variant = "fullscreen", onExit }: TankWarGameProps
             <button
               type="button"
               onClick={() => controls.togglePause()}
-              className="flex h-8 items-center gap-1 rounded-full bg-white/10 px-2.5 text-[11px] font-medium text-white"
+              className="flex h-8 items-center gap-1 rounded-full bg-white/10 px-2.5 text-[length:var(--text-eyebrow)] font-medium text-white"
               aria-label={
                 hud.status === "paused" ? t(msg`继续游戏`) : t(msg`暂停游戏`)
               }
@@ -110,7 +110,7 @@ export function TankWarGame({ variant = "fullscreen", onExit }: TankWarGameProps
           <button
             type="button"
             onClick={() => controls.toggleMute()}
-            className="rounded-full bg-white/10 px-2 py-1 text-[11px] font-medium text-white"
+            className="rounded-full bg-white/10 px-2 py-1 text-[length:var(--text-eyebrow)] font-medium text-white"
           >
             {hud.muted ? t(msg`已静音`) : t(msg`音效开`)}
           </button>
@@ -158,7 +158,7 @@ export function TankWarGame({ variant = "fullscreen", onExit }: TankWarGameProps
       ) : null}
 
       {!isTouch ? (
-        <p className="text-[11px] text-white/60">
+        <p className="text-[length:var(--text-eyebrow)] text-white/60">
           {hud.mode === "two-player"
             ? t(msg`P1: WASD + J 开火 / P2: 方向键 + / 开火`)
             : t(msg`方向键 / WASD 移动，J / 空格开火，P 暂停`)}
@@ -171,7 +171,7 @@ export function TankWarGame({ variant = "fullscreen", onExit }: TankWarGameProps
 function HudSummary({ hud }: { hud: HudSnapshot }) {
   if (hud.status === "boot") return null;
   return (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-white/80">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[length:var(--text-eyebrow)] text-white/80">
       <span>
         {t(msg`第 ${hud.stage} 关`)}
       </span>
@@ -199,7 +199,7 @@ function PausedOverlay({ onResume }: { onResume: () => void }) {
       <button
         type="button"
         onClick={onResume}
-        className="flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2 text-[14px] font-semibold text-black"
+        className="flex items-center gap-2 rounded-full bg-amber-400 px-5 py-2 text-[length:var(--text-body)] font-semibold text-black"
       >
         <Play size={16} />
         {t(msg`继续游戏`)}
@@ -236,23 +236,23 @@ function MenuOverlay({
   return (
     <div className="flex w-full max-w-[520px] flex-col gap-2 rounded-lg bg-white/5 p-3 text-white">
       {hud.status === "boot" ? (
-        <p className="text-[13px] font-semibold">{t(msg`坦克大战`)}</p>
+        <p className="text-[length:var(--text-caption)] font-semibold">{t(msg`坦克大战`)}</p>
       ) : hud.status === "game-over" ? (
-        <p className="text-[13px] font-semibold text-red-400">{t(msg`游戏结束`)}</p>
+        <p className="text-[length:var(--text-caption)] font-semibold text-red-400">{t(msg`游戏结束`)}</p>
       ) : (
-        <p className="text-[13px] font-semibold text-emerald-400">
+        <p className="text-[length:var(--text-caption)] font-semibold text-emerald-400">
           {t(msg`恭喜过关，进入下一关`)}
         </p>
       )}
       {isTouch ? (
-        <p className="text-[11px] text-white/60">{t(msg`移动端仅支持单人，双人本地对战请用桌面键盘。`)}</p>
+        <p className="text-[length:var(--text-eyebrow)] text-white/60">{t(msg`移动端仅支持单人，双人本地对战请用桌面键盘。`)}</p>
       ) : (
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setMode("one-player")}
             className={cn(
-              "rounded-full px-3 py-1 text-[12px]",
+              "rounded-full px-3 py-1 text-[length:var(--text-caption)]",
               mode === "one-player" ? "bg-amber-400 text-black" : "bg-white/10",
             )}
           >
@@ -262,7 +262,7 @@ function MenuOverlay({
             type="button"
             onClick={() => setMode("two-player")}
             className={cn(
-              "rounded-full px-3 py-1 text-[12px]",
+              "rounded-full px-3 py-1 text-[length:var(--text-caption)]",
               mode === "two-player" ? "bg-amber-400 text-black" : "bg-white/10",
             )}
           >
@@ -271,7 +271,7 @@ function MenuOverlay({
         </div>
       )}
       <div className="flex items-center gap-2">
-        <span className="text-[11px] text-white/70">{t(msg`选关:`)}</span>
+        <span className="text-[length:var(--text-eyebrow)] text-white/70">{t(msg`选关:`)}</span>
         <input
           type="number"
           min={1}
@@ -287,12 +287,12 @@ function MenuOverlay({
             const n = Number.isFinite(raw) ? Math.floor(raw) : 1;
             setStage(Math.max(1, Math.min(hud.maxUnlockedStage, n || 1)));
           }}
-          // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+          // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
           // zoom-in。在 HUD 上选关时整个游戏画面瞬间被拉大，玩家被迫先双指
           // 捏回来才能看 maxUnlockedStage / 已解锁数。
-          className="w-16 rounded bg-white/10 px-2 py-1 text-[16px] text-white"
+          className="w-16 rounded bg-white/10 px-2 py-1 text-[length:var(--text-title)] text-white"
         />
-        <span className="text-[11px] text-white/50">
+        <span className="text-[length:var(--text-eyebrow)] text-white/50">
           {t(msg`已解锁 ${hud.maxUnlockedStage} / 35`)}
         </span>
       </div>
@@ -300,7 +300,7 @@ function MenuOverlay({
         <button
           type="button"
           onClick={() => controls.start(mode, stage)}
-          className="rounded-full bg-amber-400 px-4 py-1.5 text-[13px] font-semibold text-black"
+          className="rounded-full bg-amber-400 px-4 py-1.5 text-[length:var(--text-caption)] font-semibold text-black"
         >
           {hud.status === "boot" ? t(msg`开始游戏`) : t(msg`再来一局`)}
         </button>
@@ -308,7 +308,7 @@ function MenuOverlay({
           <button
             type="button"
             onClick={() => controls.resume()}
-            className="rounded-full bg-white/10 px-4 py-1.5 text-[13px] text-white"
+            className="rounded-full bg-white/10 px-4 py-1.5 text-[length:var(--text-caption)] text-white"
           >
             {t(msg`下一关`)}
           </button>

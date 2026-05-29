@@ -73,7 +73,7 @@ export function GiftCabinetPage() {
         <Button
           variant="ghost"
           size="sm"
-          className="rounded-full bg-transparent text-[13px] text-[color:var(--brand-primary)] shadow-none active:bg-black/[0.05]"
+          className="rounded-full bg-transparent text-[length:var(--text-caption)] text-[color:var(--brand-primary)] shadow-none active:bg-black/[0.05]"
           onClick={() => void navigate({ to: "/shop/orders" })}
         >
           {t(msg`我的订单`)}
@@ -118,7 +118,7 @@ export function GiftCabinetPage() {
         {/* 分段控件 */}
         <div
           role="tablist"
-          className="flex rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1 text-[13px]"
+          className="flex rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1 text-[length:var(--text-caption)]"
         >
           {(
             [
@@ -157,11 +157,11 @@ export function GiftCabinetPage() {
                 >
                   <GiftIcon iconUrl={g.iconUrl} />
                   <div className="min-w-0 flex-1">
-                    <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                    <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                       {g.name}
                       {g.quantity > 1 ? ` ×${g.quantity}` : ""}
                     </div>
-                    <div className="truncate text-[12px] text-[color:var(--text-muted)]">
+                    <div className="truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                       {g.characterName
                         ? t(msg`来自 ${g.characterName}`)
                         : t(msg`来自好友`)}
@@ -185,10 +185,10 @@ export function GiftCabinetPage() {
                   className="flex flex-col items-center gap-1.5 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-4 text-center"
                 >
                   <GiftIcon iconUrl={item.iconUrl} />
-                  <div className="line-clamp-1 text-[13px] font-medium text-[color:var(--text-primary)]">
+                  <div className="line-clamp-1 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                     {item.name}
                   </div>
-                  <div className="text-[12px] text-[color:var(--text-muted)]">×{item.quantity}</div>
+                  <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">×{item.quantity}</div>
                 </div>
               ))}
             </div>

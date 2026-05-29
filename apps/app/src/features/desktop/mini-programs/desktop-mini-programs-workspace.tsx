@@ -120,20 +120,20 @@ export function DesktopMiniProgramsWorkspace({
 
   return (
     <div className="relative isolate flex h-full min-h-0 bg-[color:var(--bg-app)]">
-      <aside className="flex w-[288px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+      <aside className="flex w-[288px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
         <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
-          <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+          <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
             Mini Programs
           </div>
-          <div className="mt-2 text-[22px] font-semibold text-[color:var(--text-primary)]">
+          <div className="mt-2 text-[length:var(--text-section)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`小程序面板`)}
           </div>
-          <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+          <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
             {t(msg`按微信电脑版工作区节奏，把最近使用、我的小程序、搜索和专题推荐统一收口。`)}
           </div>
         </div>
 
-        <div className="min-h-0 space-y-4 overflow-auto bg-[rgba(242,246,245,0.76)] px-4 py-4">
+        <div className="min-h-0 space-y-4 overflow-auto bg-[color:var(--surface-shell)] px-4 py-4">
           <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
             <label className="relative block">
               <input
@@ -141,7 +141,7 @@ export function DesktopMiniProgramsWorkspace({
                 value={searchText}
                 onChange={(event) => onSearchTextChange(event.target.value)}
                 placeholder={t(msg`搜索小程序、服务和场景`)}
-                className="h-11 w-full rounded-[16px] border border-transparent bg-[rgba(248,250,252,0.88)] px-4 pr-12 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-faint)] focus:bg-white"
+                className="h-11 w-full rounded-[var(--radius-md)] border border-transparent bg-[color:var(--state-info-bg)] px-4 pr-12 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-faint)] focus:bg-white"
               />
               {searchText ? (
                 <button
@@ -222,13 +222,13 @@ export function DesktopMiniProgramsWorkspace({
         <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-5 backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+              <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
                 {t(msg`微信式桌面工作区`)}
               </div>
               <div className="mt-1 text-[20px] font-semibold text-[color:var(--text-primary)]">
                 {t(msg`最近使用、我的小程序、专题推荐和打开态都放进一个工作区`)}
               </div>
-              <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+              <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
                 {searchText
                   ? t(
                       msg`当前搜索“${searchText.trim()}”命中 ${visibleMiniPrograms.length} 个小程序。`,
@@ -293,7 +293,7 @@ export function DesktopMiniProgramsWorkspace({
                 <div className="relative">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-white/82">
+                      <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.18em] text-white/82">
                         {selectedMiniProgram.heroLabel}
                       </div>
                       <div className="mt-4 text-[32px] font-semibold tracking-[0.02em]">
@@ -461,13 +461,13 @@ export function DesktopMiniProgramsWorkspace({
                         )}
                       </div>
                     </div>
-                    <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                    <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
                       {t(msg`群接龙闭环`)}
                     </div>
                   </div>
 
                   <div className="mt-4 rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
-                    <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+                    <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
                       {t(msg`发送预览`)}
                     </div>
                     <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-sm leading-7 text-[color:var(--text-secondary)]">
@@ -611,7 +611,7 @@ function SidebarCard({
         {hasChildren ? (
           children
         ) : (
-          <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+          <div className="rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
             {emptyText}
           </div>
         )}
@@ -656,7 +656,7 @@ function SidebarMiniProgramButton({
 function DesktopMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-[22px] border border-white/18 bg-white/12 px-4 py-4 backdrop-blur-sm">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-white/68">
+      <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.14em] text-white/68">
         {label}
       </div>
       <div className="mt-2 text-sm font-medium text-white">{value}</div>
@@ -689,7 +689,7 @@ function MiniProgramGridCard({
       type="button"
       onClick={() => onSelect(miniProgram.id)}
       className={cn(
-        "rounded-[24px] border px-4 py-4 text-left transition",
+        "rounded-[var(--radius-xl)] border px-4 py-4 text-left transition",
         active
           ? tone.mutedPanelClassName
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
@@ -796,7 +796,7 @@ function MiniProgramListRow({
           <div className="mt-2 text-sm leading-7 text-[color:var(--text-secondary)]">
             {miniProgram.slogan}
           </div>
-          <div className="mt-2 text-[11px] leading-5 text-[color:var(--text-dim)]">
+          <div className="mt-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-dim)]">
             {lastOpenedAt
               ? t(
                   msg`上次打开 ${formatConversationTimestamp(lastOpenedAt)} · 已打开 ${launchCount} 次`,

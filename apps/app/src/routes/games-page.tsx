@@ -664,7 +664,7 @@ export function GamesPage() {
         {successNotice ? (
           <div className="bg-[color:var(--surface-card)] px-4 pt-3">
             <InlineNotice
-              className="rounded-[12px] px-3 py-2 text-[12px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)] leading-[1.35rem] shadow-none"
               tone={noticeTone}
             >
               {noticeTone === "info" &&
@@ -679,7 +679,7 @@ export function GamesPage() {
                       <button
                         type="button"
                         onClick={noticeActionState.onAction}
-                        className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)]"
                       >
                         {noticeActionState.label}
                       </button>
@@ -688,7 +688,7 @@ export function GamesPage() {
                       <button
                         type="button"
                         onClick={handleBack}
-                        className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)]"
                       >
                         {statusBackLabel}
                       </button>
@@ -707,12 +707,12 @@ export function GamesPage() {
             ref={embeddedSlotRef}
             className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3"
           >
-            <div className="overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)]">
+            <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-subtle)]">
               <EmbeddedGameSlot
                 gameId={activeGameId}
                 onExit={dismissActiveGame}
                 fallback={
-                  <div className="flex h-48 items-center justify-center text-[12px] text-[color:var(--text-muted)]">
+                  <div className="flex h-48 items-center justify-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                     {t(msg`正在准备游戏…`)}
                   </div>
                 }
@@ -818,13 +818,13 @@ function SectionHeader({
   // 避免页面上有看上去可点的「更多」实则点了没反应的死按钮。
   const showTrailingAction = Boolean(trailing && onTrailingClick);
   return (
-    <div className="flex items-center justify-between px-4 pb-2 pt-4 text-[14px] font-medium text-[color:var(--text-primary)]">
+    <div className="flex items-center justify-between px-4 pb-2 pt-4 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
       <span>{title}</span>
       {showTrailingAction ? (
         <button
           type="button"
           onClick={onTrailingClick}
-          className="inline-flex items-center gap-0.5 text-[12px] font-normal text-[color:var(--text-muted)] active:text-[color:var(--text-secondary)]"
+          className="inline-flex items-center gap-0.5 text-[length:var(--text-caption)] font-normal text-[color:var(--text-muted)] active:text-[color:var(--text-secondary)]"
         >
           {trailing}
           <ChevronRight size={13} />
@@ -844,10 +844,10 @@ function GameAvatar({
   const tone = getGameCenterToneStyle(game.tone);
   const sizeClass =
     size === "sm"
-      ? "h-10 w-10 rounded-[12px] text-[15px]"
+      ? "h-10 w-10 rounded-[var(--radius-sm)] text-[length:var(--text-base)]"
       : size === "lg"
-        ? "h-14 w-14 rounded-[16px] text-[20px]"
-        : "h-[52px] w-[52px] rounded-[16px] text-[18px]";
+        ? "h-14 w-14 rounded-[var(--radius-md)] text-[20px]"
+        : "h-[52px] w-[52px] rounded-[var(--radius-md)] text-[18px]";
   // 用 game.id 的首字符做 avatar，跟 locale 无关。早前用 [...game.name][0]
   // 在非中文 locale 也会撞到中文（gameCenterGames 在模块加载时就把
   // t(msg`...`) 求好值并冻住，locale 后续切换不会重译）。
@@ -879,7 +879,7 @@ function GameIconTile({
       className="flex w-14 shrink-0 flex-col items-center gap-1.5 text-center"
     >
       <GameAvatar game={game} size="md" />
-      <span className="w-full truncate text-[11px] leading-tight text-[color:var(--text-secondary)]">
+      <span className="w-full truncate text-[length:var(--text-eyebrow)] leading-tight text-[color:var(--text-secondary)]">
         {game.name}
       </span>
     </button>
@@ -899,7 +899,7 @@ function BannerCard({
       type="button"
       onClick={onLaunch}
       className={cn(
-        "relative block w-full overflow-hidden rounded-[16px] text-left shadow-none",
+        "relative block w-full overflow-hidden rounded-[var(--radius-md)] text-left shadow-none",
         tone.heroCardClassName,
       )}
       style={{ aspectRatio: "2 / 1" }}
@@ -916,13 +916,13 @@ function BannerCard({
           <div className="mt-2 text-[18px] font-semibold leading-tight text-white">
             {game.name}
           </div>
-          <div className="mt-1 line-clamp-1 text-[12px] leading-snug text-white/82">
+          <div className="mt-1 line-clamp-1 text-[length:var(--text-caption)] leading-snug text-white/82">
             {game.slogan}
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-white/72">{game.playersLabel}</span>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-card)] px-3 py-1 text-[12px] font-medium text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-eyebrow)] text-white/72">{game.playersLabel}</span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-card)] px-3 py-1 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             <Play size={13} />
             {t(msg`开始`)}
           </span>
@@ -954,10 +954,10 @@ function GameListRow({
       >
         <GameAvatar game={game} size="md" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
             {game.name}
           </div>
-          <div className="mt-0.5 line-clamp-1 text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 line-clamp-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {game.slogan}
           </div>
           {visibleTags.length > 0 ? (
@@ -977,7 +977,7 @@ function GameListRow({
       <button
         type="button"
         onClick={onLaunch}
-        className="h-7 shrink-0 rounded-full bg-[color:var(--brand-primary)] px-4 text-[12px] font-medium text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
+        className="h-7 shrink-0 rounded-full bg-[color:var(--brand-primary)] px-4 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
       >
         {resolvedTrailingLabel}
       </button>
@@ -1010,10 +1010,10 @@ function FriendActivityRow({
           src={activity.friendAvatar}
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
             {activity.friendName}
           </div>
-          <div className="mt-0.5 line-clamp-1 text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 line-clamp-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {t(msg`正在玩`)} {game.name} · {activity.status}
           </div>
         </div>
@@ -1022,7 +1022,7 @@ function FriendActivityRow({
         type="button"
         onClick={onInvite}
         className={cn(
-          "h-7 shrink-0 rounded-full px-4 text-[12px] font-medium",
+          "h-7 shrink-0 rounded-full px-4 text-[length:var(--text-caption)] font-medium",
           invited
             ? "border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
             : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]",

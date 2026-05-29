@@ -653,10 +653,10 @@ export function DesktopOfficialAccountsWorkspace({
       <header className="shrink-0 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-5 py-3.5 backdrop-blur-xl">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
               {t(msg`公众号`)}
             </div>
-            <div className="mt-0.5 text-[11px] leading-5 text-[color:var(--text-muted)]">
+            <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
               {t(
                 msg`已关注 ${followingCount} · 订阅 ${subscriptionCount} · 服务 ${serviceCount}`,
               )}
@@ -666,14 +666,14 @@ export function DesktopOfficialAccountsWorkspace({
             </div>
           </div>
 
-          <div className="flex items-center rounded-full border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.92)] p-1">
+          <div className="flex items-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] p-1">
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => handleDisplayModeChange("feed")}
               className={cn(
-                "h-8 rounded-full px-3 text-[12px] shadow-none",
+                "h-8 rounded-full px-3 text-[length:var(--text-caption)] shadow-none",
                 displayMode === "feed"
                   ? "bg-white text-[color:var(--text-primary)]"
                   : "text-[color:var(--text-secondary)] hover:bg-white/80",
@@ -688,7 +688,7 @@ export function DesktopOfficialAccountsWorkspace({
               size="sm"
               onClick={() => handleDisplayModeChange("accounts")}
               className={cn(
-                "h-8 rounded-full px-3 text-[12px] shadow-none",
+                "h-8 rounded-full px-3 text-[length:var(--text-caption)] shadow-none",
                 displayMode === "accounts"
                   ? "bg-white text-[color:var(--text-primary)]"
                   : "text-[color:var(--text-secondary)] hover:bg-white/80",
@@ -709,7 +709,7 @@ export function DesktopOfficialAccountsWorkspace({
                 ? t(msg`搜索常看公众号或文章`)
                 : t(msg`搜索公众号`)
             }
-            className="rounded-full border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.92)] px-4 py-2.5 text-[13px] shadow-none hover:bg-white focus:translate-y-0 focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:bg-white focus:shadow-none"
+            className="rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-4 py-2.5 text-[length:var(--text-caption)] shadow-none hover:bg-white focus:translate-y-0 focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:bg-white focus:shadow-none"
           />
           {displayMode === "accounts" ? (
             <div className="flex gap-2">
@@ -774,12 +774,12 @@ export function DesktopOfficialAccountsWorkspace({
         <div className="flex min-h-0 flex-1 bg-[color:var(--bg-app)]">
           <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
             <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
-              <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {accountFilter === "following"
                   ? t(msg`已关注公众号`)
                   : t(msg`全部公众号`)}
               </div>
-              <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {t(msg`${filteredAccounts.length} 个结果`)}
               </div>
             </div>
@@ -863,10 +863,10 @@ export function DesktopOfficialAccountsWorkspace({
                       size="lg"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[22px] font-semibold text-[color:var(--text-primary)]">
+                      <div className="text-[length:var(--text-section)] font-semibold text-[color:var(--text-primary)]">
                         {account.name}
                       </div>
-                      <div className="mt-1.5 flex flex-wrap gap-2 text-[11px]">
+                      <div className="mt-1.5 flex flex-wrap gap-2 text-[length:var(--text-eyebrow)]">
                         <span className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-2.5 py-1 text-[color:var(--brand-primary)]">
                           {account.accountType === "service"
                             ? t(msg`服务号`)
@@ -876,7 +876,7 @@ export function DesktopOfficialAccountsWorkspace({
                           @{account.handle}
                         </span>
                         {account.isVerified ? (
-                          <span className="rounded-full border border-[#d7e5fb] bg-[#f3f7ff] px-2.5 py-1 text-[#315b9a]">
+                          <span className="rounded-full border border-[color:var(--state-info-bg)] bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[color:var(--state-info-text)]">
                             {t(msg`已认证`)}
                           </span>
                         ) : null}
@@ -892,7 +892,7 @@ export function DesktopOfficialAccountsWorkspace({
                           </span>
                         ) : null}
                       </div>
-                      <div className="mt-3 max-w-[40rem] text-[14px] leading-7 text-[color:var(--text-secondary)]">
+                      <div className="mt-3 max-w-[40rem] text-[length:var(--text-body)] leading-7 text-[color:var(--text-secondary)]">
                         {account.description}
                       </div>
                     </div>
@@ -1119,7 +1119,7 @@ export function DesktopOfficialAccountsWorkspace({
                             last
                           />
                         </div>
-                        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.62)] p-4">
+                        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] p-4">
                           <div className="text-sm font-medium text-[color:var(--text-primary)]">
                             {t(msg`账号简介`)}
                           </div>
@@ -1186,14 +1186,14 @@ function DesktopOfficialFeedMode({
         <section className="border-b border-[color:var(--border-faint)] px-7 py-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+              <div className="text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 {t(msg`常看与文章`)}
               </div>
               <div className="mt-1 text-[18px] font-medium text-[color:var(--text-primary)]">
                 {t(msg`最近常读和最新推送`)}
               </div>
             </div>
-            <div className="text-[11px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {t(msg`按最近推送排序`)}
             </div>
           </div>
@@ -1220,10 +1220,10 @@ function DesktopOfficialFeedMode({
           <>
             <section className="border-b border-[color:var(--border-faint)] px-7 py-5">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`常看公众号`)}
                 </div>
-                <div className="text-[11px] text-[color:var(--text-muted)]">
+                <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                   {t(msg`${frequentAccounts.length} 个`)}
                 </div>
               </div>
@@ -1235,7 +1235,7 @@ function DesktopOfficialFeedMode({
                       key={account.id}
                       type="button"
                       onClick={() => onOpenAccount(account.id)}
-                      className="flex items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.62)] px-4 py-3 text-left transition hover:bg-white"
+                      className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-4 py-3 text-left transition hover:bg-white"
                     >
                       <AvatarChip
                         name={account.name}
@@ -1243,10 +1243,10 @@ function DesktopOfficialFeedMode({
                         size="wechat"
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+                        <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                           {account.name}
                         </div>
-                        <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
+                        <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                           {account.accountType === "service"
                             ? t(msg`服务号`)
                             : t(msg`订阅号`)}
@@ -1256,11 +1256,11 @@ function DesktopOfficialFeedMode({
                   ))}
                 </div>
               ) : (
-                <div className="mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.62)] px-4 py-5 text-center">
-                  <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+                <div className="mt-4 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-4 py-5 text-center">
+                  <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                     {t(msg`还没有常看的公众号`)}
                   </div>
-                  <p className="mx-auto mt-1.5 max-w-[22rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+                  <p className="mx-auto mt-1.5 max-w-[22rem] text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                     {t(msg`关注几个公众号后，这里会优先展示最近常看的号。`)}
                   </p>
                 </div>
@@ -1269,7 +1269,7 @@ function DesktopOfficialFeedMode({
 
             <section className="pb-4">
               <div className="border-b border-[color:var(--border-faint)] px-7 py-3">
-                <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`最近内容`)}
                 </div>
               </div>
@@ -1325,7 +1325,7 @@ function DesktopOfficialFeedArticleRow({
     <div
       className={cn(
         "border-b border-[color:var(--border-faint)] px-7 py-4 transition",
-        active ? "bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]" : "bg-white hover:bg-[rgba(15,23,42,0.015)]",
+        active ? "bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]" : "bg-white hover:bg-[color:var(--state-info-bg)]",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1340,10 +1340,10 @@ function DesktopOfficialFeedArticleRow({
             size="wechat"
           />
           <div className="min-w-0">
-            <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
               {item.account.name}
             </div>
-            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               <span>
                 {item.account.accountType === "service"
                   ? t(msg`服务号`)
@@ -1355,7 +1355,7 @@ function DesktopOfficialFeedArticleRow({
                 <span>{t(msg`最近更新`)}</span>
               )}
               {item.unread ? (
-                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[#fa5151]" />
+                <span className="inline-flex h-2 w-2 shrink-0 rounded-full bg-[color:var(--state-danger-bg)]" />
               ) : null}
             </div>
           </div>
@@ -1372,8 +1372,8 @@ function DesktopOfficialFeedArticleRow({
             className={cn(
               "inline-flex h-8 w-8 items-center justify-center rounded-full border transition",
               favorite
-                ? "border-[#d8d1a9] bg-[#fbf7e8] text-[#8a6b11]"
-                : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)] hover:bg-[rgba(247,250,250,0.92)] hover:text-[color:var(--text-primary)]",
+                ? "border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
+                : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)] hover:bg-[color:var(--surface-shell)] hover:text-[color:var(--text-primary)]",
             )}
             aria-label={favorite ? t(msg`取消收藏文章`) : t(msg`收藏文章`)}
           >
@@ -1389,7 +1389,7 @@ function DesktopOfficialFeedArticleRow({
           "mt-3 flex w-full items-start gap-3 rounded-[18px] border px-4 py-4 text-left transition",
           active
             ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
-            : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.62)] hover:bg-white",
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] hover:bg-white",
         )}
       >
         <div className="min-w-0 flex-1">
@@ -1401,10 +1401,10 @@ function DesktopOfficialFeedArticleRow({
             ) : null}
             <span>{item.article.authorName}</span>
           </div>
-          <div className="mt-2 text-[15px] font-medium leading-6 text-[color:var(--text-primary)]">
+          <div className="mt-2 text-[length:var(--text-base)] font-medium leading-6 text-[color:var(--text-primary)]">
             {item.article.title}
           </div>
-          <div className="mt-1.5 line-clamp-2 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+          <div className="mt-1.5 line-clamp-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
             {item.article.summary}
           </div>
         </div>
@@ -1414,10 +1414,10 @@ function DesktopOfficialFeedArticleRow({
             alt={item.article.title}
             loading="lazy"
             decoding="async"
-            className="h-[5.5rem] w-[5.5rem] shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
+            className="h-[5.5rem] w-[5.5rem] shrink-0 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] object-cover"
           />
         ) : (
-          <div className="flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-white text-[11px] text-[color:var(--text-dim)]">
+          <div className="flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
             {t(msg`文章`)}
           </div>
         )}
@@ -1506,7 +1506,7 @@ function OfficialWorkspaceStatusPane({
         "rounded-[18px] border px-4 py-5 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.98),rgba(254,242,242,0.95))]"
-          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
         className,
       )}
     >
@@ -1514,13 +1514,13 @@ function OfficialWorkspaceStatusPane({
         <div className="flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
       <div className={cn("font-medium text-[color:var(--text-primary)]", tone === "loading" ? "mt-3" : undefined)}>
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[26rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[26rem] text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
         {description}
       </p>
     </section>
@@ -1539,10 +1539,10 @@ function OfficialWorkspaceInlineNotice({
   return (
     <div
       className={cn(
-        "rounded-[14px] border px-3 py-2 text-[12px] leading-6 shadow-none",
+        "rounded-[14px] border px-3 py-2 text-[length:var(--text-caption)] leading-6 shadow-none",
         tone === "danger"
-          ? "border-[rgba(220,38,38,0.18)] bg-[rgba(255,245,245,0.96)] text-[color:var(--state-danger-text)]"
-          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[color:var(--text-secondary)]",
+          ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] text-[color:var(--text-secondary)]",
         className,
       )}
     >

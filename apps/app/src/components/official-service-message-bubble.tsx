@@ -42,8 +42,8 @@ export function OfficialServiceMessageBubble({
           <div
             className={
               isDesktop
-                ? "rounded-full bg-[rgba(60, 40, 110, 0.045)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
-                : "rounded-full bg-[rgba(60, 40, 110, 0.045)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]"
+                ? "rounded-full bg-[color:var(--border-faint)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]"
+                : "rounded-full bg-[color:var(--border-faint)] px-1.5 py-0.5 text-[8px] text-[color:var(--text-muted)]"
             }
           >
             {formatMessageTimestamp(message.createdAt)}
@@ -54,8 +54,8 @@ export function OfficialServiceMessageBubble({
           className={cn(
             "overflow-hidden border bg-[color:var(--surface-card)] text-left",
             isDesktop
-              ? "rounded-[20px] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]"
-              : "rounded-[16px] shadow-[0_4px_12px_rgba(60, 40, 110, 0.035)]",
+              ? "rounded-[var(--radius-lg)] shadow-[0_10px_28px_rgba(60, 40, 110, 0.05)]"
+              : "rounded-[var(--radius-md)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.035)]",
             articleCardActive
               ? "border-[color:var(--brand-primary)]/18"
               : "border-[color:var(--border-faint)]",
@@ -65,8 +65,8 @@ export function OfficialServiceMessageBubble({
             <div
               className={
                 isDesktop
-                  ? "px-4 py-3 text-[13px] leading-6 text-[color:var(--text-primary)]"
-                  : "px-3 py-2.5 text-[12px] leading-[1.4rem] text-[color:var(--text-primary)]"
+                  ? "px-4 py-3 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-primary)]"
+                  : "px-3 py-2.5 text-[length:var(--text-caption)] leading-[1.4rem] text-[color:var(--text-primary)]"
               }
             >
               {message.text}
@@ -90,15 +90,15 @@ export function OfficialServiceMessageBubble({
                 className={cn(
                   "block w-full text-left transition",
                   isDesktop
-                    ? "hover:bg-[rgba(60, 40, 110, 0.02)]"
-                    : "active:bg-[rgba(60, 40, 110, 0.03)]",
+                    ? "hover:bg-[color:var(--border-faint)]"
+                    : "active:bg-[color:var(--border-faint)]",
                 )}
               >
                 <div className={isDesktop ? "px-4 py-4" : "px-3 py-3"}>
                   <div
                     className={
                       isDesktop
-                        ? "flex items-center gap-1.5 text-[11px] tracking-[0.04em] text-[color:var(--text-muted)]"
+                        ? "flex items-center gap-1.5 text-[length:var(--text-eyebrow)] tracking-[0.04em] text-[color:var(--text-muted)]"
                         : "flex items-center gap-1 text-[9px] tracking-[0.03em] text-[color:var(--text-muted)]"
                     }
                   >
@@ -118,8 +118,8 @@ export function OfficialServiceMessageBubble({
                       <div
                         className={
                           isDesktop
-                            ? "text-[14px] font-medium leading-5.5 text-[color:var(--text-primary)]"
-                            : "text-[13px] font-medium leading-[1.35rem] text-[color:var(--text-primary)]"
+                            ? "text-[length:var(--text-body)] font-medium leading-5.5 text-[color:var(--text-primary)]"
+                            : "text-[length:var(--text-caption)] font-medium leading-[1.35rem] text-[color:var(--text-primary)]"
                         }
                       >
                         {message.attachment!.title}
@@ -127,7 +127,7 @@ export function OfficialServiceMessageBubble({
                       <div
                         className={
                           isDesktop
-                            ? "mt-1.5 line-clamp-2 text-[11px] leading-[1.125rem] text-[color:var(--text-secondary)]"
+                            ? "mt-1.5 line-clamp-2 text-[length:var(--text-eyebrow)] leading-[1.125rem] text-[color:var(--text-secondary)]"
                             : "mt-1 line-clamp-2 text-[10px] leading-[1.1rem] text-[color:var(--text-secondary)]"
                         }
                       >
@@ -142,16 +142,16 @@ export function OfficialServiceMessageBubble({
                         decoding="async"
                         className={
                           isDesktop
-                            ? "h-20 w-20 shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
-                            : "h-[3.75rem] w-[3.75rem] shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
+                            ? "h-20 w-20 shrink-0 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] object-cover"
+                            : "h-[3.75rem] w-[3.75rem] shrink-0 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] object-cover"
                         }
                       />
                     ) : (
                       <div
                         className={
                           isDesktop
-                            ? "flex h-20 w-20 shrink-0 items-center justify-center rounded-[12px] bg-[color:var(--surface-console)] text-[color:var(--text-dim)]"
-                            : "flex h-[3.75rem] w-[3.75rem] shrink-0 items-center justify-center rounded-[12px] bg-[color:var(--surface-console)] text-[color:var(--text-dim)]"
+                            ? "flex h-20 w-20 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--surface-console)] text-[color:var(--text-dim)]"
+                            : "flex h-[3.75rem] w-[3.75rem] shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--surface-console)] text-[color:var(--text-dim)]"
                         }
                       >
                         <FileText size={isDesktop ? 20 : 18} />
@@ -162,7 +162,7 @@ export function OfficialServiceMessageBubble({
                 <div
                   className={
                     isDesktop
-                      ? "flex items-center justify-between border-t border-[color:var(--border-faint)] px-4 py-2.5 text-[11px] text-[color:var(--text-secondary)]"
+                      ? "flex items-center justify-between border-t border-[color:var(--border-faint)] px-4 py-2.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
                       : "flex items-center justify-between border-t border-[color:var(--border-faint)] px-3 py-2 text-[9px] text-[color:var(--text-secondary)]"
                   }
                 >

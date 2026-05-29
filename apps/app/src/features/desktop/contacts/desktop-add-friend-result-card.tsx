@@ -77,7 +77,7 @@ export function DesktopAddFriendResultCard({
       ? {
           badge: msg`已在通讯录中`,
           badgeClassName:
-            "border-[rgba(22,163,74,0.14)] bg-[rgba(22,163,74,0.08)] text-[#15803d]",
+            "border-[color:var(--state-success-bg)] bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
           helperText: msg`你们已经是朋友，可以直接开始聊天。`,
           icon: MessageCircleMore,
           primaryLabel: actionPending ? msg`打开中...` : msg`发消息`,
@@ -87,7 +87,7 @@ export function DesktopAddFriendResultCard({
         ? {
             badge: msg`等待验证`,
             badgeClassName:
-              "border-[rgba(202,138,4,0.16)] bg-[rgba(250,204,21,0.10)] text-[#a16207]",
+              "border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]",
             helperText: pendingRequest?.createdAt
               ? msg`好友申请已发送，等待对方处理。`
               : msg`当前申请还在等待对方通过。`,
@@ -99,7 +99,7 @@ export function DesktopAddFriendResultCard({
           ? {
               badge: msg`黑名单中`,
               badgeClassName:
-                "border-[rgba(239,68,68,0.16)] bg-[rgba(254,226,226,0.82)] text-[#b91c1c]",
+                "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
               helperText: msg`当前角色已在黑名单中，移出黑名单后才能重新添加。`,
               icon: ShieldBan,
               primaryLabel: msg`已拉黑`,
@@ -108,7 +108,7 @@ export function DesktopAddFriendResultCard({
           : {
               badge: msg`可添加到通讯录`,
               badgeClassName:
-                "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[#15803d]",
+                "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--state-success-text)]",
               helperText: msg`发送验证申请后，对方通过即可成为朋友。`,
               icon: UserPlus,
               primaryLabel: actionPending
@@ -125,8 +125,8 @@ export function DesktopAddFriendResultCard({
   const PrimaryIcon = statusMeta.icon;
 
   return (
-    <section className="overflow-hidden rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white shadow-none">
-      <div className="border-b border-[rgba(15,23,42,0.06)] px-8 py-8">
+    <section className="overflow-hidden rounded-[10px] border border-[color:var(--border-subtle)] bg-white shadow-none">
+      <div className="border-b border-[color:var(--border-faint)] px-8 py-8">
         <div className="flex items-start gap-5">
           <AvatarChip name={displayName} src={character.avatar} size="xl" />
           <div className="min-w-0 flex-1">
@@ -134,24 +134,24 @@ export function DesktopAddFriendResultCard({
               <h2 className="truncate text-[30px] font-medium tracking-[-0.02em] text-[color:var(--text-primary)]">
                 {displayName}
               </h2>
-              <div className="text-[13px] text-[color:var(--text-muted)]">
+              <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {identifier}
               </div>
             </div>
 
-            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-[color:var(--text-muted)]">
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               <span>{relationshipSummary}</span>
               <span>·</span>
               <span>{matchReason}</span>
             </div>
 
-            <p className="mt-4 max-w-[720px] text-[14px] leading-7 text-[color:var(--text-secondary)]">
+            <p className="mt-4 max-w-[720px] text-[length:var(--text-body)] leading-7 text-[color:var(--text-secondary)]">
               {signature}
             </p>
 
             <div
               className={cn(
-                "mt-4 inline-flex rounded-full border px-2.5 py-1 text-[11px] font-medium",
+                "mt-4 inline-flex rounded-full border px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium",
                 statusMeta.badgeClassName,
               )}
             >
@@ -161,7 +161,7 @@ export function DesktopAddFriendResultCard({
         </div>
       </div>
 
-      <div className="divide-y divide-[rgba(15,23,42,0.06)]">
+      <div className="divide-y divide-[color:var(--border-faint)]">
         <DesktopAddFriendDetailRow label={t(msg`昵称`)} value={character.name} />
         <DesktopAddFriendDetailRow label={t(msg`隐界号`)} value={identifier} />
         <DesktopAddFriendDetailRow
@@ -197,8 +197,8 @@ export function DesktopAddFriendResultCard({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between gap-4 border-t border-[rgba(15,23,42,0.06)] bg-[#fbfbfb] px-8 py-4">
-        <div className="max-w-[420px] text-[13px] leading-6 text-[color:var(--text-muted)]">
+      <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-8 py-4">
+        <div className="max-w-[420px] text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
           {statusMeta.helperText}
         </div>
         <div className="flex shrink-0 items-center gap-3">
@@ -206,7 +206,7 @@ export function DesktopAddFriendResultCard({
             variant="secondary"
             size="lg"
             onClick={onOpenProfile}
-            className="rounded-[8px] border-[rgba(15,23,42,0.10)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[color:var(--border-strong)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`查看资料`)}
           </Button>
@@ -218,10 +218,10 @@ export function DesktopAddFriendResultCard({
             className={cn(
               "rounded-[8px] px-5 shadow-none",
               status === "pending"
-                ? "bg-[#d1d5db] text-white hover:bg-[#d1d5db]"
+                ? "bg-[color:var(--state-info-bg)] text-white hover:bg-[color:var(--state-info-bg)]"
                 : undefined,
               status === "blocked"
-                ? "bg-[#fca5a5] text-white hover:bg-[#fca5a5]"
+                ? "bg-[color:var(--state-danger-bg)] text-white hover:bg-[color:var(--state-danger-bg)]"
                 : undefined,
             )}
           >
@@ -243,8 +243,8 @@ function DesktopAddFriendDetailRow({
 }) {
   return (
     <div className="grid gap-2 px-8 py-4 md:grid-cols-[96px_minmax(0,1fr)] md:items-center">
-      <div className="text-[13px] text-[color:var(--text-muted)]">{label}</div>
-      <div className="text-[14px] leading-6 text-[color:var(--text-primary)]">
+      <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">{label}</div>
+      <div className="text-[length:var(--text-body)] leading-6 text-[color:var(--text-primary)]">
         {value}
       </div>
     </div>

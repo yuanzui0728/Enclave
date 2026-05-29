@@ -261,7 +261,7 @@ export function ProfileFeedbackPage() {
 
       <div className="space-y-5 px-4 pt-4">
         <section>
-          <div className="mb-2 text-[12px] font-medium text-[color:var(--text-secondary)]">
+          <div className="mb-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)]">
             {t(msg`反馈类型`)}
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -274,7 +274,7 @@ export function ProfileFeedbackPage() {
                   type="button"
                   onClick={() => setCategory(item.id)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-1 rounded-[12px] border px-2 py-3 text-[12px] transition-colors",
+                    "flex flex-col items-center justify-center gap-1 rounded-[var(--radius-sm)] border px-2 py-3 text-[length:var(--text-caption)] transition-colors",
                     active
                       ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
@@ -289,7 +289,7 @@ export function ProfileFeedbackPage() {
         </section>
 
         <section>
-          <div className="mb-2 flex items-center justify-between text-[12px] font-medium text-[color:var(--text-secondary)]">
+          <div className="mb-2 flex items-center justify-between text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)]">
             <span>{t(msg`标题`)}</span>
             <span className="text-[color:var(--text-muted)]">
               {title.length}/{TITLE_MAX}
@@ -304,15 +304,15 @@ export function ProfileFeedbackPage() {
               if (notice?.tone === "danger") setNotice(null);
             }}
             placeholder={t(msg`一句话描述问题`)}
-            // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+            // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in；反馈页又是一句话标题 + 一大段详情两连敲，缩放完用户
             // 还要双指捏才能回到原大小，几乎肯定会放弃。
-            className="w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-primary)]"
+            className="w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </section>
 
         <section>
-          <div className="mb-2 flex items-center justify-between text-[12px] font-medium text-[color:var(--text-secondary)]">
+          <div className="mb-2 flex items-center justify-between text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)]">
             <span>{t(msg`详细描述`)}</span>
             <span className="text-[color:var(--text-muted)]">
               {detail.length}/{DETAIL_MAX}
@@ -329,9 +329,9 @@ export function ProfileFeedbackPage() {
               msg`说说你看到了什么、期望是什么，越具体越好，比如：在哪个页面、怎么复现、希望的结果`,
             )}
             rows={8}
-            // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+            // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in，详情这种长文本框 zoom 完用户基本看不到提交按钮。
-            className="w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-primary)]"
+            className="w-full resize-none rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] focus:border-[color:var(--brand-primary)]"
           />
         </section>
 
@@ -343,10 +343,10 @@ export function ProfileFeedbackPage() {
           <div
             role={notice.tone === "danger" ? "alert" : "status"}
             className={cn(
-              "rounded-[12px] px-3 py-2 text-[12px]",
+              "rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)]",
               notice.tone === "success"
                 ? "bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]"
-                : "bg-[rgba(220,38,38,0.08)] text-[#b42318]",
+                : "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
             )}
           >
             {notice.message}
@@ -360,16 +360,16 @@ export function ProfileFeedbackPage() {
           }}
           disabled={submitting}
           className={cn(
-            "flex w-full items-center justify-center rounded-[12px] px-4 py-3 text-[14px] font-medium text-white transition-colors",
+            "flex w-full items-center justify-center rounded-[var(--radius-sm)] px-4 py-3 text-[length:var(--text-body)] font-medium text-white transition-colors",
             submitting
-              ? "bg-[#86d2a8]"
-              : "bg-[color:var(--brand-primary)] active:bg-[#0f6f33]",
+              ? "bg-[color:var(--state-success-bg)]"
+              : "bg-[color:var(--brand-primary)] active:bg-[color:var(--state-success-bg)]",
           )}
         >
           {submitting ? t(msg`提交中…`) : t(msg`提交反馈`)}
         </button>
 
-        <p className="pt-1 text-center text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <p className="pt-1 text-center text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
           {t(
             msg`反馈会同步到隐界云端控制台，处理结果可能不会逐条回复。涉及账号问题请前往设置。`,
           )}

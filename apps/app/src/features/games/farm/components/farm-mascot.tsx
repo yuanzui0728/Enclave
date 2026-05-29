@@ -33,7 +33,7 @@ export function FarmMascot({ state }: FarmMascotProps) {
       onClick={() => setCursor((c) => c + 1)}
       title={t(msg`点我换一句`)}
     >
-      <span className="farm-mascot__bubble pointer-events-none max-w-[180px] rounded-2xl rounded-br-sm bg-white/90 px-3 py-1.5 text-[11px] text-stone-700 shadow-md backdrop-blur-sm">
+      <span className="farm-mascot__bubble pointer-events-none max-w-[180px] rounded-2xl rounded-br-sm bg-white/90 px-3 py-1.5 text-[length:var(--text-eyebrow)] text-stone-700 shadow-md backdrop-blur-sm">
         {message}
       </span>
       <span className="farm-mascot__avatar relative grid h-12 w-12 place-items-center rounded-full bg-amber-100 text-3xl shadow-md ring-2 ring-white">

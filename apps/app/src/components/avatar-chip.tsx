@@ -35,9 +35,9 @@ export const AvatarChip = memo(function AvatarChip({
   const [loadFailed, setLoadFailed] = useState(false);
   const classes =
     size === "xs"
-      ? "h-7 w-7 rounded-[12px] text-xs"
+      ? "h-7 w-7 rounded-[var(--radius-sm)] text-xs"
       : size === "sm"
-        ? "h-9 w-9 rounded-[16px] text-sm"
+        ? "h-9 w-9 rounded-[var(--radius-md)] text-sm"
         : size === "xl"
           ? "h-16 w-16 rounded-full text-2xl"
           : size === "wechat"
@@ -85,7 +85,7 @@ export const AvatarChip = memo(function AvatarChip({
   if (!isLikelyImageSource(trimmedSrc) && isEmojiAvatar(trimmedSrc)) {
     const emojiTextSize =
       size === "xs"
-        ? "text-[14px]"
+        ? "text-[length:var(--text-body)]"
         : size === "sm"
           ? "text-[18px]"
           : size === "xl"
@@ -93,8 +93,8 @@ export const AvatarChip = memo(function AvatarChip({
             : size === "wechat"
               ? "text-[24px]"
               : size === "lg"
-                ? "text-[28px]"
-                : "text-[22px]";
+                ? "text-[length:var(--text-display)]"
+                : "text-[length:var(--text-section)]";
     return (
       <span
         // 走查电脑端群聊 R11：和姊妹 GroupAvatarChip R11 同款 ?? vs || 漏防 +

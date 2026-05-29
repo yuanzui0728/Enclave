@@ -17,18 +17,18 @@ export function SearchResultCard({
 }: SearchResultCardProps) {
   const badgeClassName =
     item.category === "messages"
-      ? "border-[#d7e5fb] bg-[#f3f7ff] text-[#315b9a]"
+      ? "border-[color:var(--state-info-bg)] bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]"
       : item.category === "contacts"
-        ? "border-[#cfe8d6] bg-[color:var(--surface-secondary)] text-[#1d6a37]"
+        ? "border-[color:var(--state-success-bg)] bg-[color:var(--surface-secondary)] text-[color:var(--state-success-text)]"
         : item.category === "favorites"
-          ? "border-[#eadbb4] bg-[color:var(--surface-card)] text-[#9a6b12]"
+          ? "border-[color:var(--state-warning-bg)] bg-[color:var(--surface-card)] text-[color:var(--state-warning-text)]"
         : item.category === "officialAccounts"
           ? "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] text-[color:var(--text-secondary)]"
           : item.category === "miniPrograms"
-            ? "border-[#d3e7df] bg-[#eff8f4] text-[#226448]"
+            ? "border-[color:var(--state-success-bg)] bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]"
           : item.category === "moments"
-            ? "border-[#d9e7d4] bg-[color:var(--surface-card)] text-[#557d37]"
-            : "border-[#d6e2db] bg-[color:var(--surface-secondary)] text-[#3c6a53]";
+            ? "border-[color:var(--state-success-bg)] bg-[color:var(--surface-card)] text-[color:var(--state-success-text)]"
+            : "border-[color:var(--state-success-bg)] bg-[color:var(--surface-secondary)] text-[color:var(--state-success-text)]";
 
   return (
     <button
@@ -36,8 +36,8 @@ export function SearchResultCard({
       onClick={() => onOpen(item)}
       className={
         layout === "mobile"
-          ? "flex w-full items-start gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-2.5 text-left transition hover:bg-[color:var(--surface-card)]"
-          : "flex w-full items-start gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-console)]"
+          ? "flex w-full items-start gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-2.5 text-left transition hover:bg-[color:var(--surface-card)]"
+          : "flex w-full items-start gap-3 rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-left shadow-[var(--shadow-soft)] transition hover:border-[color:var(--brand-primary)]/16 hover:bg-[color:var(--surface-console)]"
       }
     >
       <AvatarChip
@@ -50,7 +50,7 @@ export function SearchResultCard({
           <div
             className={
               layout === "mobile"
-                ? "truncate text-[13px] font-medium text-[color:var(--text-primary)]"
+                ? "truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]"
                 : "truncate text-sm font-medium text-[color:var(--text-primary)]"
             }
           >
@@ -74,7 +74,7 @@ export function SearchResultCard({
         <div
           className={
             layout === "mobile"
-              ? "mt-1.5 line-clamp-2 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]"
+              ? "mt-1.5 line-clamp-2 text-[length:var(--text-caption)] leading-[1.35rem] text-[color:var(--text-secondary)]"
               : "mt-2 line-clamp-2 text-sm leading-6 text-[color:var(--text-secondary)]"
           }
         >

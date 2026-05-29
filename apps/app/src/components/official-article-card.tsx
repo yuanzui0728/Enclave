@@ -29,7 +29,7 @@ export function OfficialArticleCard({
       className={cn(
         "group w-full transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         compact
-          ? "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
+          ? "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : dense
             ? "border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 hover:bg-[color:var(--surface-console)]"
             : "border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-4 hover:bg-[color:var(--surface-console)]",
@@ -61,7 +61,7 @@ export function OfficialArticleCard({
               <span
                 className={cn(
                   "inline-flex items-center gap-1 rounded-full border border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/7 font-medium text-[color:var(--brand-primary)]",
-                  dense ? "px-1.5 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-[11px]",
+                  dense ? "px-1.5 py-0.5 text-[10px]" : "px-2.5 py-0.5 text-[length:var(--text-eyebrow)]",
                 )}
               >
                 <Pin size={dense ? 10 : 11} />
@@ -71,7 +71,7 @@ export function OfficialArticleCard({
             <div
               className={cn(
                 "text-[color:var(--text-muted)]",
-                dense ? "text-[10px]" : "text-[11px]",
+                dense ? "text-[10px]" : "text-[length:var(--text-eyebrow)]",
               )}
             >
               {formatTimestamp(article.publishedAt)}
@@ -80,7 +80,7 @@ export function OfficialArticleCard({
           <div
             className={cn(
               "font-medium text-[color:var(--text-primary)]",
-              dense ? "mt-1 text-[14px] leading-5" : "mt-2 text-[16px] leading-6",
+              dense ? "mt-1 text-[length:var(--text-body)] leading-5" : "mt-2 text-[length:var(--text-title)] leading-6",
             )}
           >
             {article.title}
@@ -89,7 +89,7 @@ export function OfficialArticleCard({
             className={cn(
               "text-[color:var(--text-secondary)]",
               dense
-                ? "mt-1 line-clamp-2 text-[11px] leading-[1.125rem]"
+                ? "mt-1 line-clamp-2 text-[length:var(--text-eyebrow)] leading-[1.125rem]"
                 : "mt-2 line-clamp-3 text-sm leading-6",
             )}
           >
@@ -109,10 +109,10 @@ export function OfficialArticleCard({
               className={cn(
                 "inline-flex items-center gap-1 border font-medium transition",
                 dense
-                  ? "h-[1.625rem] rounded-[12px] px-2 text-[10px]"
-                  : "h-8 rounded-lg px-3 text-[11px]",
+                  ? "h-[1.625rem] rounded-[var(--radius-sm)] px-2 text-[10px]"
+                  : "h-8 rounded-lg px-3 text-[length:var(--text-eyebrow)]",
                 favorite
-                  ? "border-[#d8d1a9] bg-[color:var(--surface-secondary)] text-[#8a6b11]"
+                  ? "border-[color:var(--state-warning-bg)] bg-[color:var(--surface-secondary)] text-[color:var(--state-warning-text)]"
                   : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
               )}
             >
@@ -124,7 +124,7 @@ export function OfficialArticleCard({
             </button>
           ) : null}
           {!compact && !dense ? (
-            <div className="shrink-0 rounded-full border border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/7 px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+            <div className="shrink-0 rounded-full border border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/7 px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]">
               {article.readCount} {t(msg`阅读`)}
             </div>
           ) : null}

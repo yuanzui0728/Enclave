@@ -222,7 +222,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
   }, [shareUrl, invite.shareTitle, invite.shareBody, handleCopy, t]);
 
   return (
-    <AppSection className="rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
+    <AppSection className="rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
       <div className="text-sm font-semibold text-[color:var(--text-primary)]">
         {t(msg`邀请奖励`)}
       </div>
@@ -234,7 +234,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
       ) : (
         <>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-3">
+            <div className="rounded-[var(--radius-md)] bg-[color:var(--surface-secondary)] px-3 py-3">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`邀请码`)}
               </div>
@@ -242,7 +242,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 {invite.code || t(msg`暂无`)}
               </div>
             </div>
-            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-3">
+            <div className="rounded-[var(--radius-md)] bg-[color:var(--surface-secondary)] px-3 py-3">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`单次奖励`)}
               </div>
@@ -250,7 +250,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 {invite.rewardDays} {t(msg`天`)}
               </div>
             </div>
-            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-3">
+            <div className="rounded-[var(--radius-md)] bg-[color:var(--surface-secondary)] px-3 py-3">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`成功邀请`)}
               </div>
@@ -258,7 +258,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                 {invite.redeemCount}
               </div>
             </div>
-            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-3">
+            <div className="rounded-[var(--radius-md)] bg-[color:var(--surface-secondary)] px-3 py-3">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`累计奖励`)}
               </div>
@@ -271,7 +271,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
           {shareUrl && invite.code ? (
             <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="flex-1 space-y-3">
-                <div className="rounded-[20px] bg-[linear-gradient(135deg,#f0fdf4,#ffffff)] px-4 py-3">
+                <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(135deg,#f0fdf4,#ffffff)] px-4 py-3">
                   <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                     {invite.shareTitle}
                   </div>
@@ -280,7 +280,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
                   </div>
                 </div>
 
-                <div className="rounded-[20px] bg-[color:var(--surface-secondary)] px-4 py-3 text-xs leading-6 break-all text-[color:var(--text-secondary)]">
+                <div className="rounded-[var(--radius-lg)] bg-[color:var(--surface-secondary)] px-4 py-3 text-xs leading-6 break-all text-[color:var(--text-secondary)]">
                   {shareUrl}
                 </div>
 
@@ -338,7 +338,7 @@ function InviteShareCard({ invite }: InviteShareCardProps) {
               </div>
 
               <div className="flex flex-col items-center gap-2 self-center sm:self-start">
-                <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
+                <div className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3">
                   {qrDataUrl ? (
                     <img
                       src={qrDataUrl}
@@ -611,14 +611,14 @@ export function ProfileSubscriptionPage() {
         />
       ) : null}
       <div className="mx-auto flex max-w-4xl flex-col gap-4">
-        <AppSection className="overflow-hidden rounded-[24px] border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#f7fff8,#ffffff)] px-6 py-6 shadow-none">
+        <AppSection className="overflow-hidden rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#f7fff8,#ffffff)] px-6 py-6 shadow-none">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               {isDesktopLayout ? (
                 // 移动端 TopBar 已经渲染过 "会员中心" 标题，hero 卡里再放 h1 是重复的；
                 // 桌面端没有 TopBar，hero 卡的 h1 + "订阅" eyebrow 是页面唯一标题。
                 <>
-                  <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+                  <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
                     {t(msg`订阅`)}
                   </div>
                   <h1 className="mt-2 text-3xl font-semibold text-[color:var(--text-primary)]">
@@ -670,7 +670,7 @@ export function ProfileSubscriptionPage() {
         </AppSection>
 
         <div className="grid gap-4 lg:grid-cols-[1.25fr_0.95fr]">
-          <AppSection className="rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
+          <AppSection className="rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
             <div className="text-sm font-semibold text-[color:var(--text-primary)]">
               {t(msg`可购套餐`)}
             </div>
@@ -688,7 +688,7 @@ export function ProfileSubscriptionPage() {
               {purchasePlans.map((plan) => (
                 <div
                   key={plan.id}
-                  className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4"
+                  className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -746,7 +746,7 @@ export function ProfileSubscriptionPage() {
             <button
               type="button"
               onClick={() => void navigate({ to: "/profile/xhs-reward" })}
-              className="w-full rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#fff7ed,#ffffff)] px-6 py-5 text-left shadow-none active:bg-black/[0.03]"
+              className="w-full rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#fff7ed,#ffffff)] px-6 py-5 text-left shadow-none active:bg-black/[0.03]"
             >
               <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                 {t(msg`发小红书赢会员`)}
@@ -758,7 +758,7 @@ export function ProfileSubscriptionPage() {
 
             <InviteShareCard invite={invite} />
 
-            <AppSection className="rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
+            <AppSection className="rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
               <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                 {t(msg`最近邀请记录`)}
               </div>
@@ -771,7 +771,7 @@ export function ProfileSubscriptionPage() {
                   return (
                     <div
                       key={item.id}
-                      className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+                      className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
                     >
                       <div className="font-medium text-[color:var(--text-primary)]">
                         {item.inviteePhoneMasked}

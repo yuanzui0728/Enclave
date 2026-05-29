@@ -729,7 +729,7 @@ function DesktopDiscoverWorkspace() {
             <AppSection className="space-y-4 bg-[linear-gradient(145deg,rgba(255,255,255,0.98),rgba(255,247,236,0.94)_44%,rgba(255,248,238,0.92))]">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--brand-secondary)]">
+                  <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--brand-secondary)]">
                     {t(msg`内容视角`)}
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -741,14 +741,14 @@ function DesktopDiscoverWorkspace() {
                     )}
                   </div>
                 </div>
-                <div className="rounded-full bg-white/84 px-3 py-1 text-[11px] font-medium text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
+                <div className="rounded-full bg-white/84 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
                   Discover
                 </div>
               </div>
 
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-[24px] border border-[color:var(--brand-primary)]/18 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
-                  <div className="text-[11px] uppercase tracking-[0.16em] text-[#2f7a3f]">
+                <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/18 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                  <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--state-success-text)]">
                     {t(msg`朋友圈`)}
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -760,8 +760,8 @@ function DesktopDiscoverWorkspace() {
                     )}
                   </div>
                 </div>
-                <div className="rounded-[24px] border border-[rgba(93,103,201,0.16)] bg-[linear-gradient(180deg,rgba(246,247,255,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
-                  <div className="text-[11px] uppercase tracking-[0.16em] text-[#4951a3]">
+                <div className="rounded-[var(--radius-xl)] border border-[color:var(--state-info-bg)] bg-[linear-gradient(180deg,rgba(246,247,255,0.98),rgba(255,255,255,0.96))] px-4 py-4 shadow-[var(--shadow-soft)]">
+                  <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--state-info-text)]">
                     {t(msg`广场动态`)}
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -777,10 +777,10 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 bg-[color:var(--brand-soft)]">
-              <div className="rounded-[24px] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+              <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="text-[11px] uppercase tracking-[0.18em] text-emerald-600">
+                    <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-emerald-600">
                       Encounter Desk
                     </div>
                     <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -790,7 +790,7 @@ function DesktopDiscoverWorkspace() {
                       {t(msg`轻轻试一次，就可能遇到一段新的关系线索。`)}
                     </div>
                   </div>
-                  <div className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-emerald-600 shadow-[var(--shadow-soft)]">
+                  <div className="rounded-full bg-white/90 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-emerald-600 shadow-[var(--shadow-soft)]">
                     {t(msg`探索区`)}
                   </div>
                 </div>
@@ -859,10 +859,10 @@ function DesktopDiscoverWorkspace() {
             </AppSection>
 
             <AppSection className="space-y-4 border-[color:var(--border-faint)] shadow-none">
-              <div className="rounded-[24px] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
+              <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.96))] p-4 shadow-none">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="text-[11px] tracking-[0.14em] text-[color:var(--brand-primary)]">
+                    <div className="text-[length:var(--text-eyebrow)] tracking-[0.14em] text-[color:var(--brand-primary)]">
                       {t(msg`广场发布`)}
                     </div>
                     <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -874,7 +874,7 @@ function DesktopDiscoverWorkspace() {
                       )}
                     </div>
                   </div>
-                  <div className="rounded-full bg-[color:var(--brand-primary)]/10 px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                  <div className="rounded-full bg-[color:var(--brand-primary)]/10 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
                     {t(msg`发帖区`)}
                   </div>
                 </div>
@@ -895,7 +895,7 @@ function DesktopDiscoverWorkspace() {
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3">
+              <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-3">
                 <textarea
                   value={composeDraft.text}
                   onChange={(event) => composeDraft.setText(event.target.value)}
@@ -924,7 +924,7 @@ function DesktopDiscoverWorkspace() {
                       !composeDraft.canAddImages ||
                       createFeedPostMutation.isPending
                     }
-                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 text-[11px]"
+                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 text-[length:var(--text-eyebrow)]"
                     onClick={() => imageInputRef.current?.click()}
                   >
                     <ImagePlus size={14} className="mr-1" />
@@ -938,7 +938,7 @@ function DesktopDiscoverWorkspace() {
                       !composeDraft.canAddVideo ||
                       createFeedPostMutation.isPending
                     }
-                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 text-[11px]"
+                    className="h-9 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 text-[length:var(--text-eyebrow)]"
                     onClick={() => videoInputRef.current?.click()}
                   >
                     <Video size={14} className="mr-1" />
@@ -978,10 +978,10 @@ function DesktopDiscoverWorkspace() {
           </div>
 
           <AppSection className="space-y-4 bg-[linear-gradient(180deg,rgba(248,249,255,0.98),rgba(255,255,255,0.96))]">
-            <div className="rounded-[24px] border border-[rgba(93,103,201,0.14)] bg-[linear-gradient(180deg,rgba(245,247,255,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
+            <div className="rounded-[var(--radius-xl)] border border-[color:var(--state-info-bg)] bg-[linear-gradient(180deg,rgba(245,247,255,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="text-[11px] uppercase tracking-[0.18em] text-[#4951a3]">
+                  <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--state-info-text)]">
                     Residents Feed
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -991,7 +991,7 @@ function DesktopDiscoverWorkspace() {
                     {t(msg`这里不只看朋友，也能看到世界里的居民正在说什么。`)}
                   </div>
                 </div>
-                <div className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium text-[#4951a3] shadow-[var(--shadow-soft)]">
+                <div className="rounded-full bg-white/90 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-info-text)] shadow-[var(--shadow-soft)]">
                   {t(msg`公开流`)}
                 </div>
               </div>
@@ -1031,7 +1031,7 @@ function DesktopDiscoverWorkspace() {
                   body={
                     <div className="space-y-3">
                       {post.authorType === "user" ? (
-                        <div className="inline-flex rounded-full bg-[rgba(93,103,201,0.12)] px-2.5 py-1 text-[11px] font-medium text-[#4951a3]">
+                        <div className="inline-flex rounded-full bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-info-text)]">
                           {t(msg`居民公开可见`)}
                         </div>
                       ) : null}
@@ -1079,7 +1079,7 @@ function DesktopDiscoverWorkspace() {
                   }
                   secondary={
                     post.commentsPreview.length > 0 ? (
-                      <div className="space-y-2 rounded-[24px] bg-[color:var(--surface-soft)] p-3">
+                      <div className="space-y-2 rounded-[var(--radius-xl)] bg-[color:var(--surface-soft)] p-3">
                         {post.commentsPreview.map((comment) => (
                           <div
                             key={comment.id}
@@ -1231,7 +1231,7 @@ function DiscoverMobileSection({
 }) {
   return (
     <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
-      <div className="px-4 py-1 text-[11px] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
+      <div className="px-4 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.04em] text-[color:var(--text-muted)]">
         {title}
       </div>
       {items.map((item, index) => (
@@ -1299,7 +1299,7 @@ function DiscoverMobileEntryRow({
         <Icon size={14} />
       </div>
       <div className="min-w-0 flex flex-1 items-center justify-between gap-3">
-        <div className="truncate text-[13px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-caption)] text-[color:var(--text-primary)]">
           {t(item.label)}
         </div>
         <div className="shrink-0 rounded-full bg-[color:var(--brand-primary)]/8 px-1.5 py-0.5 text-[10px] font-medium tracking-[0.03em] text-[color:var(--brand-primary)]">
@@ -1316,8 +1316,8 @@ function DiscoverMobileEntryRow({
 
 function DiscoverMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[24px] bg-white/82 px-3 py-3 shadow-[var(--shadow-soft)]">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
+    <div className="rounded-[var(--radius-xl)] bg-white/82 px-3 py-3 shadow-[var(--shadow-soft)]">
+      <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
         {label}
       </div>
       <div className="mt-2 text-base font-semibold text-[color:var(--text-primary)]">

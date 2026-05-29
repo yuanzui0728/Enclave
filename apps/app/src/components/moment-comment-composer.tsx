@@ -83,7 +83,7 @@ export function MomentCommentComposer({
         enterKeyHint="send"
         autoComplete="off"
         className={cn(
-          "min-h-9 max-h-24 min-w-0 flex-1 resize-none rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-3 py-2 text-[16px] leading-5 text-[color:var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] outline-none transition-[border-color,background-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)] focus:shadow-[var(--shadow-focus)]",
+          "min-h-9 max-h-24 min-w-0 flex-1 resize-none rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-3 py-2 text-[length:var(--text-title)] leading-5 text-[color:var(--text-primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] outline-none transition-[border-color,background-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)] focus:shadow-[var(--shadow-focus)]",
           inputClassName,
         )}
       />
@@ -93,7 +93,7 @@ export function MomentCommentComposer({
         onClick={onSubmit}
         variant="primary"
         size="sm"
-        className={cn("h-9 shrink-0 px-3 text-[12px]", buttonClassName)}
+        className={cn("h-9 shrink-0 px-3 text-[length:var(--text-caption)]", buttonClassName)}
       >
         {pending ? pendingLabel : submitLabel}
       </Button>

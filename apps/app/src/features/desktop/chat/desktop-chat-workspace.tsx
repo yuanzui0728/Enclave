@@ -1856,7 +1856,7 @@ export function DesktopChatWorkspace({
         // 文，左右两栏 SR 导航对称。
         <section
           aria-label={t(msg`会话列表`)}
-          className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]"
+          className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]"
         >
           <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-3 py-3 backdrop-blur-xl">
             <div className="relative z-20 flex items-center gap-2">
@@ -1888,7 +1888,7 @@ export function DesktopChatWorkspace({
                   // 覆盖聊天/联系人/收藏多个 scope。和姊妹搜索框 R23/R24
                   // 同款补 aria-label 让意图明确。
                   aria-label={t(msg`搜索聊天和联系人`)}
-                  className="flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] py-2 pl-3.5 pr-11 text-[13px] shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
+                  className="flex-1 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] py-2 pl-3.5 pr-11 text-[length:var(--text-caption)] shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
                 />
                 <button
                   type="button"
@@ -2065,16 +2065,16 @@ export function DesktopChatWorkspace({
                   // utility shell h1 / R143 thread header h1 一脉的"把
                   // visible section title 也对 AT 暴露"思路。
                   aria-label={t(msg`消息提醒`)}
-                  className="overflow-hidden rounded-[12px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)] p-2 shadow-none"
+                  className="overflow-hidden rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)] p-2 shadow-none"
                 >
                   <div className="flex items-center justify-between gap-3 px-2 py-1.5">
-                    <div className="flex items-center gap-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+                    <div className="flex items-center gap-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                       <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]">
                         <BellRing size={14} />
                       </div>
                       <span>{t(msg`消息提醒`)}</span>
                     </div>
-                    <div className="text-[11px] text-[color:var(--text-dim)]">
+                    <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                       <ChatReminderSummaryText
                         summary={filteredReminderSummary}
                       />
@@ -2093,7 +2093,7 @@ export function DesktopChatWorkspace({
                         return (
                           <section
                             key={group.status}
-                            className="rounded-[12px] border border-white/80 bg-white/90"
+                            className="rounded-[var(--radius-sm)] border border-white/80 bg-white/90"
                           >
                             {collapsible ? (
                               <div className="flex items-center justify-between px-3 py-1.5">
@@ -2101,9 +2101,9 @@ export function DesktopChatWorkspace({
                                   className={cn(
                                     "rounded-full px-2 py-0.5 text-[10px] font-medium",
                                     group.status === "notified"
-                                      ? "bg-[#fff7e6] text-[#d48806]"
+                                      ? "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
                                       : group.status === "due"
-                                        ? "bg-[#fff1f0] text-[#d74b45]"
+                                        ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
                                         : "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]",
                                   )}
                                 >
@@ -2122,7 +2122,7 @@ export function DesktopChatWorkspace({
                                           ),
                                         );
                                       }}
-                                      className="px-2.5 text-[10px] text-[#717b75]"
+                                      className="px-2.5 text-[10px] text-[color:var(--text-muted)]"
                                     >
                                       {getChatReminderGroupClearLabel(
                                         group.status,
@@ -2155,9 +2155,9 @@ export function DesktopChatWorkspace({
                                   className={cn(
                                     "rounded-full px-2 py-0.5 text-[10px] font-medium",
                                     group.status === "notified"
-                                      ? "bg-[#fff7e6] text-[#d48806]"
+                                      ? "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
                                       : group.status === "due"
-                                        ? "bg-[#fff1f0] text-[#d74b45]"
+                                        ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
                                         : "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]",
                                   )}
                                 >
@@ -3043,15 +3043,15 @@ function DesktopReminderCard({
               className={cn(
                 "shrink-0 rounded-full px-1.5 py-[1px] text-[9px] font-medium",
                 getChatReminderStatus(entry) === "notified"
-                  ? "bg-[#fff7e6] text-[#d48806]"
+                  ? "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
                   : entry.isDue
-                    ? "bg-[#fff1f0] text-[#d74b45]"
+                    ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
                     : "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]",
               )}
             >
               {getChatReminderStatusLabel(entry)}
             </span>
-            <span className="min-w-0 truncate text-[12px] font-medium text-[color:var(--text-primary)]">
+            <span className="min-w-0 truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
               {entry.title}
             </span>
           </div>
@@ -3076,8 +3076,8 @@ function DesktopReminderCard({
         className={cn(
           "shrink-0 self-center rounded-full px-2 py-[3px] text-[9px] leading-none transition-colors",
           getChatReminderActionTone(entry) === "warning"
-            ? "border border-[#f3ddba] bg-[#fff9ef] text-[#ba740f] hover:bg-[#fff2df]"
-            : "border border-transparent bg-[#f5f7f5] text-[#6b736d] hover:bg-[#edf1ee]",
+            ? "border border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)] hover:bg-[color:var(--state-warning-bg)]"
+            : "border border-transparent bg-[color:var(--surface-card)] text-[color:var(--text-muted)] hover:bg-[color:var(--state-success-bg)]",
         )}
       >
         {getChatReminderActionLabel(entry)}
@@ -3110,7 +3110,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
     : contextMenuOpen
       ? "flex items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5"
       : conversation.isPinned
-        ? "flex items-center gap-3 rounded-[10px] border border-transparent bg-[rgba(240,244,242,0.92)] px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[rgba(237,243,239,0.96)]"
+        ? "flex items-center gap-3 rounded-[10px] border border-transparent bg-[color:var(--state-success-bg)] px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--state-success-bg)]"
         : "flex items-center gap-3 rounded-[10px] border border-transparent bg-transparent px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-white/80";
   const preview = getConversationPreviewParts(
     conversation,
@@ -3142,7 +3142,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
 
   const content = (
     <>
-      {/* R35：会话 isPinned 只通过 className 切到 bg-[rgba(240,244,242,0.92)]
+      {/* R35：会话 isPinned 只通过 className 切到 bg-[color:var(--state-success-bg)]
           的视觉差表达，没有任何 SR 可感知的文本。盲人用户在会话列表里只能
           听到会话名 / preview / 时间戳 / 未读数，听不出"这条是置顶的"。
           桌面端 contextMenu 已经能改置顶状态（置顶聊天 / 取消置顶），但
@@ -3163,7 +3163,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-1.5">
-            <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
               {displayTitle}
             </div>
             {isGroupConversation ? (
@@ -3172,7 +3172,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
               </span>
             ) : null}
           </div>
-          <div className="flex shrink-0 items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
+          <div className="flex shrink-0 items-center gap-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {conversation.sparkStreak ? (
               <SparkBadge streak={conversation.sparkStreak} size="sm" />
             ) : null}
@@ -3194,7 +3194,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
           </div>
         </div>
         <div className="mt-1 flex items-center justify-between gap-3">
-          <div className="truncate text-[12px] text-[color:var(--text-secondary)]">
+          <div className="truncate text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
             {preview.prefix ? (
               <span className="text-[color:var(--text-muted)]">
                 {preview.prefix}
@@ -3204,7 +3204,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
           </div>
           <div className="flex shrink-0 items-center gap-1.5">
             {hasMentionAllReminder ? (
-              <span className="shrink-0 rounded-full border border-[#f3ddba] bg-[#fff8ec] px-2 py-0.5 text-[10px] font-medium text-[#ba740f]">
+              <span className="shrink-0 rounded-full border border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-warning-text)]">
                 {t(msg`有人@所有人`)}
               </span>
             ) : null}
@@ -3227,7 +3227,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
                 // 把它当作"一张被命名的视觉指示"，AT 一致暴露 aria-label。
                 <div
                   role="img"
-                  className="h-2 w-2 rounded-full bg-[#fa5151]"
+                  className="h-2 w-2 rounded-full bg-[color:var(--state-danger-bg)]"
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 />
               ) : (
@@ -3245,7 +3245,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
                 // 名称之外又复读一遍。
                 <div
                   role="img"
-                  className="min-w-5 rounded-full bg-[#fa5151] px-1.5 py-0.5 text-center text-[10px] text-white"
+                  className="min-w-5 rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-center text-[10px] text-white"
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 >
                   <span aria-hidden="true">
@@ -3403,7 +3403,7 @@ function renderConversationPreviewText(text: string): ReactNode {
         key={`mention-${index}-${segment.text}`}
         className={
           segment.tone === "all"
-            ? "rounded-[7px] bg-[#fff4df] px-1 py-0.5 text-[#b67206]"
+            ? "rounded-[7px] bg-[color:var(--state-warning-bg)] px-1 py-0.5 text-[color:var(--state-warning-text)]"
             : "rounded-[7px] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-1 py-0.5 text-[color:var(--brand-primary)]"
         }
       >

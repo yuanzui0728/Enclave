@@ -562,11 +562,11 @@ function MobileGroupMemberPickerPage({
             onClick={handleSubmit}
             disabled={!selectedIds.length || submitMutation.isPending}
             className={cn(
-              "h-9 rounded-full px-3 text-[15px] font-medium transition",
+              "h-9 rounded-full px-3 text-[length:var(--text-base)] font-medium transition",
               selectedIds.length && !submitMutation.isPending
                 ? mode === "add"
                   ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:opacity-90"
-                  : "bg-[#ff4d4f] text-white active:opacity-90"
+                  : "bg-[color:var(--state-danger-bg)] text-white active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >
@@ -583,10 +583,10 @@ function MobileGroupMemberPickerPage({
         <div className="space-y-3 pt-3">
           <div className="-mx-4 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {mode === "add" ? t(msg`已选联系人`) : t(msg`已选成员`)}
               </div>
-              <div className="text-[12px] text-[color:var(--text-muted)]">
+              <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {selectedIds.length
                   ? t(msg`${selectedIds.length} 人`)
                   : t(msg`未选择`)}
@@ -612,14 +612,14 @@ function MobileGroupMemberPickerPage({
                         <X size={10} />
                       </span>
                     </div>
-                    <span className="w-full truncate text-[11px] text-[color:var(--text-secondary)]">
+                    <span className="w-full truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                       {item.name}
                     </span>
                   </button>
                 ))}
               </div>
             ) : (
-              <div className="mt-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+              <div className="mt-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
                 {mode === "add"
                   ? t(msg`选择联系人后，就可以把他们加入当前群聊。`)
                   : t(msg`选择成员后，就可以把他们从当前群聊移除。`)}
@@ -627,7 +627,7 @@ function MobileGroupMemberPickerPage({
             )}
           </div>
 
-          <label className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
+          <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5 text-sm text-[color:var(--text-dim)]">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -642,8 +642,8 @@ function MobileGroupMemberPickerPage({
               aria-label={
                 mode === "add" ? t(msg`搜索联系人`) : t(msg`搜索群成员`)
               }
-              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              className="min-w-0 flex-1 bg-transparent text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               // 走查 R1：和姊妹页 create-group-page R1 同款修法。备注名/角色名
               // 常是 ASCII（"wangxiaoming"、"zhang yang"）或英文姓名缩写，
               // iOS 默认句首大写 + autocorrect 把"wang"改成"Wang"或"Want"，
@@ -687,7 +687,7 @@ function MobileGroupMemberPickerPage({
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={() => {
                       void groupQuery.refetch();
                     }}
@@ -697,7 +697,7 @@ function MobileGroupMemberPickerPage({
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={openGroupDetails}
                   >
                     {t(msg`返回群聊信息`)}
@@ -719,7 +719,7 @@ function MobileGroupMemberPickerPage({
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={() => {
                       void membersQuery.refetch();
                     }}
@@ -729,7 +729,7 @@ function MobileGroupMemberPickerPage({
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={openGroupDetails}
                   >
                     {t(msg`返回群聊信息`)}
@@ -751,7 +751,7 @@ function MobileGroupMemberPickerPage({
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={() => {
                       void friendsQuery.refetch();
                     }}
@@ -761,7 +761,7 @@ function MobileGroupMemberPickerPage({
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={openGroupDetails}
                   >
                     {t(msg`返回群聊信息`)}
@@ -781,7 +781,7 @@ function MobileGroupMemberPickerPage({
               // role="alert"+assertive 立刻播报错误并提示有可继续重试的剩余条。
               role="alert"
               tone="danger"
-              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -791,14 +791,14 @@ function MobileGroupMemberPickerPage({
                   <button
                     type="button"
                     onClick={handleRetrySubmit}
-                    className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {mode === "add" ? t(msg`重试添加`) : t(msg`重试移除`)}
                   </button>
                   <button
                     type="button"
                     onClick={openGroupDetails}
-                    className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                    className="rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                   >
                     {t(msg`返回群聊信息`)}
                   </button>
@@ -822,7 +822,7 @@ function MobileGroupMemberPickerPage({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={openGroupDetails}
                 >
                   {t(msg`返回群聊信息`)}
@@ -836,7 +836,7 @@ function MobileGroupMemberPickerPage({
           <div>
             {candidateSections.map((section) => (
               <section key={section.key} className="mt-2">
-                <div className="px-4 py-1.5 text-[12px] text-[color:var(--text-muted)]">
+                <div className="px-4 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {section.title}
                 </div>
                 <div className="border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]">
@@ -929,8 +929,8 @@ function CandidateRow({
         "flex w-full items-center gap-3 px-4 py-3.5 text-left disabled:opacity-60",
         isDesktop
           ? checked
-            ? "rounded-[12px] border border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-secondary)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
-            : "rounded-[12px] border border-transparent bg-transparent transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
+            ? "rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-secondary)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
+            : "rounded-[var(--radius-sm)] border border-transparent bg-transparent transition hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]"
           : checked
             ? "bg-[color:var(--brand-primary)]/6"
             : "bg-[color:var(--bg-canvas-elevated)]",
@@ -944,18 +944,18 @@ function CandidateRow({
     >
       <AvatarChip name={name} src={src} size={isDesktop ? "md" : "wechat"} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[15px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-base)] text-[color:var(--text-primary)]">
           {name}
         </div>
         {isDesktop ? (
-          <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {subtitle}
           </div>
         ) : null}
       </div>
       <span
         className={cn(
-          "flex shrink-0 items-center justify-center rounded-full border text-[11px]",
+          "flex shrink-0 items-center justify-center rounded-full border text-[length:var(--text-eyebrow)]",
           isDesktop ? "h-6 w-6" : "h-5 w-5",
           checked
             ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
@@ -1002,7 +1002,7 @@ function MobileGroupMemberPickerStatusCard({
         tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
       }
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -1012,7 +1012,7 @@ function MobileGroupMemberPickerStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -1022,13 +1022,13 @@ function MobileGroupMemberPickerStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

@@ -22,5 +22,5 @@ export function resolveResultCardFooterActionClassName(
     return "text-[color:var(--text-muted)]";
   }
 
-  return "text-[#2563eb]";
+  return "text-[color:var(--state-info-text)]";
 }

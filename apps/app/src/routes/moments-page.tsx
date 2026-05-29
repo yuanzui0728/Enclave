@@ -2136,7 +2136,7 @@ export function MomentsPage() {
             // 行为依赖外层布局——desktop panel 的 z-20 + 自己 transparent
             // backdrop 叠加时遮罩可能漏到 panel 之外。fixed 直接对 viewport，
             // 行为稳定可控。z-[1300] 和 mobile sheet 一致，盖住所有底层 popover。
-            className="fixed inset-0 z-[1300] flex items-center justify-center bg-[rgba(60, 40, 110, 0.32)] backdrop-blur-[3px]"
+            className="fixed inset-0 z-[1300] flex items-center justify-center bg-[color:var(--state-info-bg)] backdrop-blur-[3px]"
           >
             <button
               type="button"
@@ -2144,12 +2144,12 @@ export function MomentsPage() {
               onClick={() => setDesktopExitSheetOpen(false)}
               className="absolute inset-0"
             />
-            <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[12px] bg-[color:var(--bg-canvas-elevated)] shadow-[var(--shadow-overlay)]">
+            <div className="relative w-[min(320px,calc(100vw-2rem))] overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas-elevated)] shadow-[var(--shadow-overlay)]">
               <div className="px-6 pb-3 pt-6 text-center">
-                <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`退出编辑？`)}
                 </div>
-                <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+                <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
                   {t(msg`保留后下次继续编辑这条草稿。`)}
                 </div>
               </div>
@@ -2157,21 +2157,21 @@ export function MomentsPage() {
                 <button
                   type="button"
                   onClick={handleDesktopKeepDraft}
-                  className="block w-full border-b border-[color:var(--border-faint)] py-3 text-center text-[15px] text-[color:var(--text-primary)] active:bg-black/[0.04]"
+                  className="block w-full border-b border-[color:var(--border-faint)] py-3 text-center text-[length:var(--text-base)] text-[color:var(--text-primary)] active:bg-black/[0.04]"
                 >
                   {t(msg`保留`)}
                 </button>
                 <button
                   type="button"
                   onClick={handleDesktopDiscardDraft}
-                  className="block w-full border-b border-[color:var(--border-faint)] py-3 text-center text-[15px] font-medium text-[#FA5151] active:bg-black/[0.04]"
+                  className="block w-full border-b border-[color:var(--border-faint)] py-3 text-center text-[length:var(--text-base)] font-medium text-[color:var(--state-danger-text)] active:bg-black/[0.04]"
                 >
                   {t(msg`不保留`)}
                 </button>
                 <button
                   type="button"
                   onClick={() => setDesktopExitSheetOpen(false)}
-                  className="block w-full py-3 text-center text-[15px] text-[color:var(--text-secondary)] active:bg-black/[0.04]"
+                  className="block w-full py-3 text-center text-[length:var(--text-base)] text-[color:var(--text-secondary)] active:bg-black/[0.04]"
                 >
                   {t(msg`取消`)}
                 </button>
@@ -2794,7 +2794,7 @@ function MobileMomentsView({
               // 模拟 WeChat 的"挖一圈底色"，没了底色红点会粘住下面 icon 边缘。
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-1 top-1 inline-block h-1.5 w-1.5 rounded-full bg-[#FA5151] ring-2 ring-white"
+                className="pointer-events-none absolute right-1 top-1 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--state-danger-bg)] ring-2 ring-white"
               />
             ) : null}
           </span>
@@ -2840,7 +2840,7 @@ function MobileMomentsView({
                           type="button"
                           variant="secondary"
                           size="sm"
-                          className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
+                          className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-eyebrow)]"
                           onClick={noticeAction}
                         >
                           {noticeActionLabel}
@@ -2851,7 +2851,7 @@ function MobileMomentsView({
                           type="button"
                           variant="secondary"
                           size="sm"
-                          className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
+                          className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-eyebrow)]"
                           onClick={onNoticeBack}
                         >
                           {interactionActionLabel}
@@ -2867,24 +2867,24 @@ function MobileMomentsView({
           ) : null}
 
           {momentsLoading && !visibleMoments.length ? (
-            <div className="px-4 pt-10 pb-12 text-center text-[12px] text-[color:var(--text-muted)]">
+            <div className="px-4 pt-10 pb-12 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`正在刷新朋友圈`)}
             </div>
           ) : null}
 
           {momentsError ? (
             <div className="px-4 pt-10 pb-12 text-center">
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`朋友圈暂时不可用`)}
               </div>
-              <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {describeRequestError(momentsError)}
               </div>
               <div className="mt-4 flex justify-center gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[length:var(--text-eyebrow)]"
                   onClick={onRetry}
                 >
                   {t(msg`重试读取`)}
@@ -2893,7 +2893,7 @@ function MobileMomentsView({
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={onNoticeBack}
                   >
                     {t(msg`返回上一页`)}
@@ -2956,7 +2956,7 @@ function MobileMomentsView({
               // 用户点重试后 isFetchingNextPage 翻 true，错误条让位给下方的
               // 「正在加载更多…」loading 态，跟成功流的反馈节奏一致。
               <div className="px-4 py-4 text-center">
-                <div className="text-[12px] text-[color:var(--text-muted)]">
+                <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {fetchNextPageError.message
                     ? t(msg`加载更多失败：${describeRequestError(fetchNextPageError)}`)
                     : t(msg`加载更多失败，请稍后重试。`)}
@@ -2966,7 +2966,7 @@ function MobileMomentsView({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-eyebrow)]"
                     onClick={onRetryNextPage}
                   >
                     {t(msg`重试加载`)}
@@ -2985,14 +2985,14 @@ function MobileMomentsView({
                     "正在加载更多…" 就是两条 loading 叠着重复说同一件事。
                     仅在有可见 moment 时显示这条 sentinel 文案。 */}
                 {isFetchingNextPage && !hasFilteredOutMoments ? (
-                  <div className="py-4 text-center text-[12px] text-[color:var(--text-muted)]">
+                  <div className="py-4 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                     {t(msg`正在加载更多…`)}
                   </div>
                 ) : null}
               </>
             )
           ) : visibleMoments.length > 0 ? (
-            <div className="py-4 text-center text-[12px] text-[#C0C0C0]">
+            <div className="py-4 text-center text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
               {t(msg`已经到底了`)}
             </div>
           ) : null}
@@ -3011,26 +3011,26 @@ function MobileMomentsView({
               isFetchingNextPage ||
               (hasNextPage && !fetchNextPageError) ? (
                 <div className="px-4 pt-12 pb-16 text-center">
-                  <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                     {t(msg`正在寻找未屏蔽的动态`)}
                   </div>
-                  <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+                  <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                     {t(msg`当前页加载到的动态作者都在你的屏蔽名单里，正在自动翻下一页找未屏蔽的居民动态。`)}
                   </div>
                 </div>
               ) : (
                 <div className="px-4 pt-12 pb-16 text-center">
-                  <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                     {t(msg`朋友圈都被你屏蔽了`)}
                   </div>
-                  <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+                  <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                     {t(msg`已加载的动态作者全部在你的屏蔽名单里。去通讯录里解除屏蔽，或者等其他居民发布新动态。`)}
                   </div>
                   <div className="mt-4 flex justify-center">
                     <Button
                       variant="primary"
                       size="sm"
-                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[12px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
+                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                       onClick={onOpenContacts}
                     >
                       {t(msg`打开通讯录`)}
@@ -3040,17 +3040,17 @@ function MobileMomentsView({
               )
             ) : !hasNextPage ? (
               <div className="px-4 pt-12 pb-16 text-center">
-                <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`还很安静`)}
                 </div>
-                <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+                <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {t(msg`你先发一条动态，或者等世界里的角色们先开口。`)}
                 </div>
                 <div className="mt-4 flex justify-center">
                   <Button
                     variant="primary"
                     size="sm"
-                    className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[12px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
+                    className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                     onClick={onEmptyAction}
                   >
                     {hasReturnPath ? t(msg`返回上一页`) : t(msg`发一条朋友圈`)}
@@ -3144,7 +3144,7 @@ function PullToRefreshIndicator({
       : t(msg`下拉刷新`);
   return (
     <div
-      className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[color:var(--text-muted)]"
+      className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
       style={{
         top: 0,
         height: `${state.offset || 60}px`,
@@ -3174,7 +3174,7 @@ function MobileMomentsInlineNotice({
       // success/info 用 status（polite 待空隙）。和 profile-moments-page R2 同模板，
       // 跟群聊 R2/R3 InlineNotice 走 SR alert/status 同节奏。
       role={tone === "danger" ? "alert" : "status"}
-      className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+      className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
     >
       {action ? (
         <div className="flex items-center justify-between gap-2">

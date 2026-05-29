@@ -162,7 +162,7 @@ function MomentMediaGalleryInner({
       <>
         <div
           className={cn(
-            "relative overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-black",
+            "relative overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-black",
             variant === "detail"
               ? "max-w-full"
               : variant === "mobile"
@@ -219,12 +219,12 @@ function MomentMediaGalleryInner({
                 <Play size={22} className="translate-x-[1px] fill-current" />
               </span>
             </div>
-            <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/58 px-3 py-1 text-[11px] font-medium text-white">
+            <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
               <Play size={12} className="fill-current" />
               {t(msg`视频`)}
             </div>
             {video.durationMs ? (
-              <div className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/58 px-3 py-1 text-[11px] font-medium text-white">
+              <div className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
                 {formatMomentDurationLabel(video.durationMs)}
               </div>
             ) : null}
@@ -482,7 +482,7 @@ function MomentMediaGalleryInner({
                 index,
               });
             }}
-            className="relative overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-left"
+            className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-left"
             style={{
               aspectRatio:
                 images.length === 1 && asset.width && asset.height
@@ -585,7 +585,7 @@ function MomentImageViewerOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={t(msg`图片预览`)}
-      className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.92)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 bg-[color:var(--state-info-bg)] backdrop-blur-sm"
     >
       {/* i18n-ignore-start: dev comment - 关闭层叠说明 */}
       {/* 原本想用一个 `absolute inset-0 button` 当"点击任意空白关闭"层，但下面的
@@ -722,7 +722,7 @@ function MomentVideoViewerOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={t(msg`视频预览`)}
-      className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.94)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 bg-[color:var(--state-info-bg)] backdrop-blur-sm"
     >
       {/* 跟图片 viewer 同样的层叠陷阱：absolute inset-0 close button 被下方的
           视频容器（也是 absolute inset-0）盖住，背景空白点击全部沉默。差别在
@@ -778,7 +778,7 @@ function MomentVideoViewerOverlay({
           ref={videoRef}
           src={resolveAppMediaUrl(video.url)}
           poster={video.posterUrl ? resolveAppMediaUrl(video.posterUrl) : undefined}
-          className="max-h-full max-w-full rounded-[20px] bg-black"
+          className="max-h-full max-w-full rounded-[var(--radius-lg)] bg-black"
           controls
           playsInline
           onError={() => setNeedsManualPlay(true)}

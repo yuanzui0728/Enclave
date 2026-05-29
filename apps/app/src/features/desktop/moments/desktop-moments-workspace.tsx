@@ -215,8 +215,8 @@ export function DesktopMomentsWorkspace({
   }, [scrollToMomentId]);
 
   return (
-    <div className="relative flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
-      <section className="min-w-0 flex-1 bg-[rgba(245,248,247,0.96)]">
+    <div className="relative flex h-full min-h-0 bg-[color:var(--surface-section)]">
+      <section className="min-w-0 flex-1 bg-[color:var(--surface-section)]">
         <div className="flex h-full min-h-0 flex-col">
           <DesktopMomentsToolbar
             commentErrorMessage={commentErrorMessage}

@@ -18,15 +18,15 @@ export function DesktopContactPaneEmptyState({
   description?: string;
 } = {}) {
   return (
-    <div className="flex h-full items-center justify-center bg-[#f5f5f5] px-10">
+    <div className="flex h-full items-center justify-center bg-[color:var(--surface-card)] px-10">
       <div className="flex max-w-sm flex-col items-center text-center">
-        <div className="flex h-18 w-18 items-center justify-center rounded-[20px] border border-[rgba(0,0,0,0.06)] bg-white text-xl text-[color:var(--text-dim)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="flex h-18 w-18 items-center justify-center rounded-[var(--radius-lg)] border border-[rgba(0,0,0,0.06)] bg-white text-xl text-[color:var(--text-dim)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           ···
         </div>
-        <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
+        <div className="mt-4 text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
           {title ?? t(msg`选择联系人`)}
         </div>
-        <p className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+        <p className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
           {description ??
             t(msg`从左侧通讯录选择好友后，这里会显示联系人资料、内容入口和管理操作。`)}
         </p>
@@ -56,10 +56,10 @@ export function DesktopContactProfileShell({
   }, [scrollResetKey]);
 
   return (
-    <div ref={scrollRef} className="h-full overflow-auto bg-[#f5f5f5]">
+    <div ref={scrollRef} className="h-full overflow-auto bg-[color:var(--surface-card)]">
       <div
         className={cn(
-          "mx-auto w-full max-w-[560px] bg-[#f5f5f5] px-6 py-10",
+          "mx-auto w-full max-w-[560px] bg-[color:var(--surface-card)] px-6 py-10",
           className,
         )}
       >
@@ -122,16 +122,16 @@ export function DesktopContactProfileHeader({
               {displayName}
             </h2>
             {subline ? (
-              <div className="mt-1 truncate text-[13px] text-[color:var(--text-secondary)]">
+              <div className="mt-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                 {subline}
               </div>
             ) : null}
             {tagline ? (
-              <div className="mt-2 line-clamp-2 text-[12px] text-[color:var(--text-dim)]">
+              <div className="mt-2 line-clamp-2 text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
                 {tagline}
               </div>
             ) : identifier ? (
-              <div className="mt-2 truncate text-[12px] text-[color:var(--text-dim)]">
+              <div className="mt-2 truncate text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
                 {t(msg`隐界号：${identifier}`)}
               </div>
             ) : null}
@@ -155,7 +155,7 @@ export function DesktopContactProfileSection({
   return (
     <section className="mt-3 overflow-hidden rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] first:mt-0">
       <div className="flex items-center justify-between gap-3 px-5 pb-1.5 pt-4">
-        <div className="text-[12px] font-medium text-[color:var(--text-muted)]">
+        <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-muted)]">
           {title}
         </div>
         {action}
@@ -178,7 +178,7 @@ export function DesktopContactProfileRow({
 }) {
   return (
     <div className="flex min-h-13 items-start gap-4 border-b border-[rgba(0,0,0,0.06)] px-5 py-3 text-sm last:border-b-0">
-      <div className="w-22 shrink-0 pt-0.5 text-[13px] text-[color:var(--text-dim)]">
+      <div className="w-22 shrink-0 pt-0.5 text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div
@@ -216,7 +216,7 @@ export function DesktopContactProfileToggleRow({
       role="switch"
       aria-checked={checked}
     >
-      <div className="w-22 shrink-0 text-[13px] text-[color:var(--text-primary)]">
+      <div className="w-22 shrink-0 text-[length:var(--text-caption)] text-[color:var(--text-primary)]">
         {label}
       </div>
       <div className="flex flex-1 justify-end">
@@ -225,7 +225,7 @@ export function DesktopContactProfileToggleRow({
             "relative h-6 w-10 rounded-full transition-colors",
             checked
               ? "bg-[color:var(--brand-primary)]"
-              : "bg-[#d8d8d8]",
+              : "bg-[color:var(--surface-soft)]",
           )}
         >
           <span
@@ -263,12 +263,12 @@ export function DesktopContactProfileActionRow({
       className={cn(
         "flex min-h-13 w-full items-center gap-4 border-b border-[rgba(0,0,0,0.06)] px-5 py-3 text-left text-sm transition-colors last:border-b-0",
         danger
-          ? "hover:bg-[rgba(239,68,68,0.05)]"
+          ? "hover:bg-[color:var(--state-danger-bg)]"
           : "hover:bg-[rgba(0,0,0,0.02)]",
         disabled && "opacity-60",
       )}
     >
-      <div className="w-22 shrink-0 text-[13px] text-[color:var(--text-primary)]">
+      <div className="w-22 shrink-0 text-[length:var(--text-caption)] text-[color:var(--text-primary)]">
         {label}
       </div>
       <div

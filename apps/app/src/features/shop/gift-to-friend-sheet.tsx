@@ -66,16 +66,16 @@ export function GiftToFriendSheet({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-[24px] bg-[color:var(--bg-canvas)] px-5 pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] pt-5"
+        className="w-full max-w-md rounded-t-[var(--radius-xl)] bg-[color:var(--bg-canvas)] px-5 pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] pt-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`送礼物给 ${characterName}`)}
           </span>
           <button
             type="button"
-            className="text-[13px] text-[color:var(--text-secondary)]"
+            className="text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
             onClick={onClose}
           >
             {t(msg`关闭`)}
@@ -111,19 +111,19 @@ export function GiftToFriendSheet({
                 type="button"
                 disabled={giftMutation.isPending}
                 onClick={() => send(item.goodsCode, item.name)}
-                className="flex flex-col items-center gap-1.5 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2 py-3 text-center transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-50"
+                className="flex flex-col items-center gap-1.5 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2 py-3 text-center transition-colors active:bg-[color:var(--surface-card-hover)] disabled:opacity-50"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-[12px] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-secondary)_16%,transparent))] text-[color:var(--brand-primary)]">
+                <div className="flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_18%,transparent),color-mix(in_srgb,var(--brand-secondary)_16%,transparent))] text-[color:var(--brand-primary)]">
                   {item.iconUrl ? (
                     <img src={item.iconUrl} alt="" className="h-8 w-8 rounded-[9px] object-cover" />
                   ) : (
                     <Gift size={20} />
                   )}
                 </div>
-                <div className="line-clamp-1 text-[12px] font-medium text-[color:var(--text-primary)]">
+                <div className="line-clamp-1 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                   {item.name}
                 </div>
-                <div className="text-[11px] text-[color:var(--text-muted)]">×{item.quantity}</div>
+                <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">×{item.quantity}</div>
               </button>
             ))}
           </div>

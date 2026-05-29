@@ -47,7 +47,7 @@ export function AvatarEncounterDecisionBar({
         role="status"
         aria-live="polite"
         className={cn(
-          "rounded-[14px] px-4 py-3 text-center text-[13px] font-medium",
+          "rounded-[14px] px-4 py-3 text-center text-[length:var(--text-caption)] font-medium",
           decision === "want"
             ? "bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
             : "bg-[color:var(--surface-soft)] text-[color:var(--text-secondary)]",
@@ -65,7 +65,7 @@ export function AvatarEncounterDecisionBar({
         onClick={onSkip}
         disabled={pending}
         className={cn(
-          "flex flex-1 items-center justify-center gap-1.5 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[13px] font-medium text-[color:var(--text-secondary)] transition-colors active:bg-black/[0.04]",
+          "flex flex-1 items-center justify-center gap-1.5 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)] transition-colors active:bg-black/[0.04]",
           pending && "opacity-60",
         )}
       >
@@ -78,7 +78,7 @@ export function AvatarEncounterDecisionBar({
         disabled={pending}
         aria-busy={pending || undefined}
         className={cn(
-          "flex flex-[1.4] items-center justify-center gap-1.5 rounded-[14px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] px-3 py-2.5 text-[13px] font-semibold text-white transition-opacity active:opacity-90",
+          "flex flex-[1.4] items-center justify-center gap-1.5 rounded-[14px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] px-3 py-2.5 text-[length:var(--text-caption)] font-semibold text-white transition-opacity active:opacity-90",
           pending && "opacity-70",
         )}
       >

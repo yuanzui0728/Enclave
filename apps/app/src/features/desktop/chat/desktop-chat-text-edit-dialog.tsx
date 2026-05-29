@@ -195,7 +195,7 @@ export function DesktopChatTextEditDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
         onSubmit={(event) => {
           event.preventDefault();
           handleConfirm();
@@ -212,7 +212,7 @@ export function DesktopChatTextEditDialog({
             {description ? (
               <div
                 id={descId}
-                className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+                className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]"
               >
                 {description}
               </div>
@@ -246,7 +246,7 @@ export function DesktopChatTextEditDialog({
               aria-labelledby={titleId}
               rows={6}
               disabled={pending}
-              className="min-h-[180px] resize-none rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none"
+              className="min-h-[180px] resize-none rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none"
             />
           ) : (
             <TextField
@@ -260,7 +260,7 @@ export function DesktopChatTextEditDialog({
             />
           )}
 
-          <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+          <div className="flex items-center justify-between gap-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             <span>
               {emptyAllowed ? t(msg`可留空保存`) : t(msg`内容不能为空`)}
             </span>

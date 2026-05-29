@@ -151,7 +151,7 @@ export function ProfileInfoContactPage() {
             disabled={!canSave || saveMutation.isPending}
             onClick={handleSave}
             className={cn(
-              "rounded-full px-3 py-1 text-[13px] font-medium transition-colors",
+              "rounded-full px-3 py-1 text-[length:var(--text-caption)] font-medium transition-colors",
               !canSave || saveMutation.isPending
                 ? "text-[color:var(--text-dim)]"
                 : "text-[color:var(--brand-primary)] active:bg-black/[0.05]",
@@ -177,7 +177,7 @@ export function ProfileInfoContactPage() {
                   saveMutation.reset();
                 }}
                 className={cn(
-                  "flex-1 rounded-[12px] border px-3 py-2 text-[13px] font-medium transition-colors",
+                  "flex-1 rounded-[var(--radius-sm)] border px-3 py-2 text-[length:var(--text-caption)] font-medium transition-colors",
                   active
                     ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
@@ -218,12 +218,12 @@ export function ProfileInfoContactPage() {
               }
             }
           }}
-          // text-[16px]: iOS Safari focus <16px 会强制 zoom-in，autoFocus 进页就抖。
-          className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 shadow-none disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
+          // text-[length:var(--text-title)]: iOS Safari focus <16px 会强制 zoom-in，autoFocus 进页就抖。
+          className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] leading-6 shadow-none disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
         />
         <div
           className={cn(
-            "mt-1.5 text-right text-[11px]",
+            "mt-1.5 text-right text-[length:var(--text-eyebrow)]",
             overLimit
               ? "text-[color:var(--state-danger-text)]"
               : "text-[color:var(--text-dim)]",
@@ -235,14 +235,14 @@ export function ProfileInfoContactPage() {
       </div>
 
       {/* 隐私提示：解释为什么填、什么时候才会被对方看到。 */}
-      <div className="px-4 pt-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+      <div className="px-4 pt-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
         {t(
           msg`联系方式只用于「分身相遇」：只有你和对方都选择「想要」后，才会互相披露。在此之前任何人都看不到。`,
         )}
       </div>
 
       {overLimit ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`联系方式太长啦，最多 ${CONTACT_MAX_LENGTH} 个字符，请删掉一些。`)}
         </div>
       ) : null}
@@ -250,7 +250,7 @@ export function ProfileInfoContactPage() {
       {errorMessage ? (
         <div
           role="alert"
-          className="mx-4 mt-3 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+          className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--state-danger-text)]"
         >
           {errorMessage}
         </div>

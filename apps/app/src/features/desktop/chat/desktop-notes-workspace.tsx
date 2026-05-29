@@ -1077,7 +1077,7 @@ export function DesktopNotesWorkspace({
   ) {
     return (
       <div className="flex h-full items-center justify-center bg-[color:var(--bg-canvas)] p-6">
-        <div className="w-full max-w-xl rounded-[20px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-xl rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-card)]">
           <ErrorBlock
             // R54：笔记 standalone window 读取失败时的 fatal 落地页，盲人
             // SR 必须立刻知道（页面只剩"回到来源"一个按钮，没其他焦点
@@ -1143,7 +1143,7 @@ export function DesktopNotesWorkspace({
               maxLength={32}
               aria-label={t(msg`笔记标题`)}
               disabled={noteQuery.isLoading}
-              className="min-w-0 flex-1 truncate bg-transparent text-[16px] font-medium tracking-normal text-[color:var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--text-secondary)] disabled:cursor-default"
+              className="min-w-0 flex-1 truncate bg-transparent text-[length:var(--text-title)] font-medium tracking-normal text-[color:var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--text-secondary)] disabled:cursor-default"
             />
           </div>
           <div className="mt-1 text-xs text-[color:var(--text-muted)]">
@@ -1176,7 +1176,7 @@ export function DesktopNotesWorkspace({
               // 跟 sendMutation 同款逻辑：保存中 disable 删除 trigger，让用户等保存
               // 落地再决定要不要删。
               disabled={deleteMutation.isPending || saveMutation.isPending}
-              className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[13px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--state-danger-text)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--state-danger-text)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={15} />
               {t(msg`删除`)}
@@ -1255,7 +1255,7 @@ export function DesktopNotesWorkspace({
           <Tag size={15} />
         </ToolbarButton>
         {attachmentPending ? (
-          <span className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+          <span className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]">
             {t(msg`正在上传附件...`)}
           </span>
         ) : null}
@@ -1266,7 +1266,7 @@ export function DesktopNotesWorkspace({
           {editorState.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
+              className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-1 text-[length:var(--text-caption)] text-[color:var(--brand-primary)]"
             >
               <span>#{tag}</span>
               <button
@@ -1309,7 +1309,7 @@ export function DesktopNotesWorkspace({
                 // 不知道当前 input 是干嘛的——前面已有「标签」工具栏按钮
                 // 但 input 自己没 label 关联。补 aria-label="添加标签"。
                 aria-label={t(msg`添加标签`)}
-                className="h-9 w-[180px] rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[13px] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
+                className="h-9 w-[180px] rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
               />
               <Button
                 variant="secondary"
@@ -1340,9 +1340,9 @@ export function DesktopNotesWorkspace({
           </div>
         ) : null}
 
-        <div className="mx-auto flex w-full max-w-[840px] flex-col rounded-[24px] border border-[rgba(15,23,42,0.08)] bg-white px-10 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
-          <div className="mb-4 flex items-center gap-2 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
-            <span className="rounded-full border border-[rgba(15,23,42,0.08)] px-2 py-1">
+        <div className="mx-auto flex w-full max-w-[840px] flex-col rounded-[var(--radius-xl)] border border-[color:var(--border-subtle)] bg-white px-10 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+          <div className="mb-4 flex items-center gap-2 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
+            <span className="rounded-full border border-[color:var(--border-subtle)] px-2 py-1">
               {t(msg`收藏笔记`)}
             </span>
             <span>{noteId ? t(msg`已保存文稿`) : t(msg`未保存草稿`)}</span>
@@ -1354,7 +1354,7 @@ export function DesktopNotesWorkspace({
               // 还没写字时，"写点什么。支持富文本…" 占位符仍旧浮在编辑器左上
               // 角，跟刚插的图叠在一起视觉很脏。补一刀 assets.length，凡是
               // 编辑器里已经有附件就别再显示空状态文案了。
-              <div className="pointer-events-none absolute left-0 top-0 text-[15px] leading-8 text-[color:var(--text-dim)]">
+              <div className="pointer-events-none absolute left-0 top-0 text-[length:var(--text-base)] leading-8 text-[color:var(--text-dim)]">
                 {noteQuery.isLoading
                   ? t(msg`加载笔记中…`)
                   : t(msg`写点什么。支持富文本、待办、图片和文件。`)}
@@ -1368,9 +1368,9 @@ export function DesktopNotesWorkspace({
               onClick={handleEditorClick}
               className={cn(
                 "min-h-[560px] outline-none",
-                "text-[15px] leading-8 text-[color:var(--text-primary)]",
-                "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(15,23,42,0.08)] [&_a[data-note-file='true']]:bg-[rgba(243,244,246,0.82)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
-                "[&_img[data-note-image='true']]:my-3 [&_img[data-note-image='true']]:max-h-[420px] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[18px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(15,23,42,0.08)]",
+                "text-[length:var(--text-base)] leading-8 text-[color:var(--text-primary)]",
+                "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[var(--radius-sm)] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[color:var(--border-subtle)] [&_a[data-note-file='true']]:bg-[color:var(--state-info-bg)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[length:var(--text-caption)] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+                "[&_img[data-note-image='true']]:my-3 [&_img[data-note-image='true']]:max-h-[420px] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[18px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[color:var(--border-subtle)]",
                 "[&_[data-note-checkbox='false']]:cursor-pointer [&_[data-note-checkbox='true']]:cursor-pointer [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
               )}
             />
@@ -1450,7 +1450,7 @@ function ToolbarButton({
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex h-9 items-center gap-2 rounded-[10px] border px-3 text-[13px] transition",
+        "inline-flex h-9 items-center gap-2 rounded-[10px] border px-3 text-[length:var(--text-caption)] transition",
         active
           ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
@@ -1514,7 +1514,7 @@ function DesktopNoteUnsavedDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
       >
         <div className="border-b border-[color:var(--border-faint)] px-6 py-5">
           <div
@@ -1525,7 +1525,7 @@ function DesktopNoteUnsavedDialog({
           </div>
           <div
             id={descId}
-            className="mt-2 text-[13px] leading-7 text-[color:var(--text-muted)]"
+            className="mt-2 text-[length:var(--text-caption)] leading-7 text-[color:var(--text-muted)]"
           >
             {t(msg`保存后会进入收藏；如果直接关闭，当前草稿改动会被丢弃。`)}
           </div>

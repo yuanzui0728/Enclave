@@ -603,7 +603,7 @@ export function DesktopChatFilesPage() {
             : t(msg`按会话聚合最近发送的图片和文件。`)
         }
         toolbar={
-          <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+          <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
             {t(msg`${resolveFileFilterLabel(filter, t)} · ${attachmentRows.length} 项`)}
           </div>
         }
@@ -611,7 +611,7 @@ export function DesktopChatFilesPage() {
         sidebar={
           <>
             <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
-              <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`聊天文件`)}
               </div>
               <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
@@ -629,7 +629,7 @@ export function DesktopChatFilesPage() {
                 // 实现读 placeholder、部分不读），盲人用户从 sidebar
                 // 进来不知道这个输入框是搜什么的。
                 aria-label={t(msg`搜索聊天文件`)}
-                className="mt-4 h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-sm shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
+                className="mt-4 h-9 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-sm shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
               />
             </div>
 
@@ -665,7 +665,7 @@ export function DesktopChatFilesPage() {
               ))}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-2 py-2">
+            <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-shell)] px-2 py-2">
               {conversationsQuery.isLoading ? (
                 <LoadingBlock label={t(msg`正在读取会话...`)} />
               ) : null}
@@ -834,14 +834,14 @@ export function DesktopChatFilesPage() {
                 return (
                   <div
                     key={item.id}
-                    className="rounded-[16px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)] transition hover:bg-[color:var(--surface-console)]"
+                    className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)] transition hover:bg-[color:var(--surface-console)]"
                   >
                     <div className="flex items-start gap-4">
                       {isImage ? (
                         <button
                           type="button"
                           onClick={() => setViewerAttachmentId(item.id)}
-                          className="group relative block h-24 w-24 shrink-0 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+                          className="group relative block h-24 w-24 shrink-0 overflow-hidden rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
                         >
                           <img
                             src={resolveAppMediaUrl(item.attachment.url)}
@@ -872,11 +872,11 @@ export function DesktopChatFilesPage() {
                           </div>
                         </button>
                       ) : (
-                        <div className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-center">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-[12px] bg-white text-[#4b5563] shadow-[0_4px_12px_rgba(15,23,42,0.05)]">
+                        <div className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-center">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-white text-[color:var(--state-info-text)] shadow-[0_4px_12px_rgba(15,23,42,0.05)]">
                             <FileText size={18} />
                           </div>
-                          <div className="mt-3 line-clamp-2 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+                          <div className="mt-3 line-clamp-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-secondary)]">
                             {resolveAttachmentExtension(
                               item.attachment.fileName,
                               t,
@@ -900,7 +900,7 @@ export function DesktopChatFilesPage() {
                               variant="secondary"
                               size="sm"
                               onClick={() => setViewerAttachmentId(item.id)}
-                              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
+                              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
                             >
                               {t(msg`预览图片`)}
                             </Button>
@@ -916,7 +916,7 @@ export function DesktopChatFilesPage() {
                                     : "file",
                               });
                             }}
-                            className="inline-flex h-8 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-[12px] font-medium text-white transition hover:opacity-95"
+                            className="inline-flex h-8 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] font-medium text-white transition hover:opacity-95"
                           >
                             {t(msg`打开附件`)}
                           </button>
@@ -933,7 +933,7 @@ export function DesktopChatFilesPage() {
                                     : "file",
                               });
                             }}
-                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
                           >
                             {t(msg`保存附件`)}
                           </Button>
@@ -943,7 +943,7 @@ export function DesktopChatFilesPage() {
                             onClick={() => {
                               navigateToAttachmentMessage(item);
                             }}
-                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
                           >
                             {t(msg`定位到原消息`)}
                           </Button>
@@ -973,7 +973,7 @@ export function DesktopChatFilesPage() {
                                 ),
                               );
                             }}
-                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
                           >
                             {collected ? t(msg`取消收藏`) : t(msg`收藏`)}
                           </Button>
@@ -1271,7 +1271,7 @@ function DesktopChatFilesImageViewer({
       role="dialog"
       aria-modal="true"
       aria-label={t(msg`图片查看器`)}
-      className="fixed inset-0 z-50 bg-[rgba(17,24,39,0.72)] backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 bg-[color:var(--state-info-bg)] backdrop-blur-[2px]"
     >
       <button
         type="button"
@@ -1290,10 +1290,10 @@ function DesktopChatFilesImageViewer({
 
       <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between border-b border-white/10 px-6 py-4 text-white">
         <div className="min-w-0">
-          <div className="truncate text-[15px] font-medium">
+          <div className="truncate text-[length:var(--text-base)] font-medium">
             {item.attachment.fileName}
           </div>
-          <div className="mt-1 text-[12px] text-white/70">
+          <div className="mt-1 text-[length:var(--text-caption)] text-white/70">
             {t(msg`${item.conversationTitle} · ${item.senderName} · ${formatMessageTimestamp(item.createdAt)}`)}
           </div>
         </div>
@@ -1329,7 +1329,7 @@ function DesktopChatFilesImageViewer({
         <button
           type="button"
           onClick={onPrevious}
-          className="absolute left-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[12px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+          className="absolute left-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
           aria-label={t(msg`上一张`)}
         >
           <ChevronLeft size={20} />
@@ -1340,7 +1340,7 @@ function DesktopChatFilesImageViewer({
         <button
           type="button"
           onClick={onNext}
-          className="absolute right-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[12px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+          className="absolute right-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
           aria-label={t(msg`下一张`)}
         >
           <ChevronRight size={20} />
@@ -1365,10 +1365,10 @@ function DesktopChatFilesImageViewer({
       </div>
 
       <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between border-t border-white/10 px-6 py-4 text-white/76">
-        <div className="text-[12px]">
+        <div className="text-[length:var(--text-caption)]">
           {formatAttachmentMeta(item.attachment, t)}
         </div>
-        <div className="text-[12px]">
+        <div className="text-[length:var(--text-caption)]">
           {index + 1} / {total}
         </div>
       </div>

@@ -49,14 +49,14 @@ export function MobileSocialComposerCard({
   return (
     <section
       id={sectionId}
-      className="overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
+      className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
     >
       <div className="flex items-start justify-between gap-3 px-4 pb-2 pt-3">
         <div className="min-w-0">
-          <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
             {title}
           </div>
-          <div className="mt-0.5 text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-[1.125rem] text-[color:var(--text-muted)]">
             {description}
           </div>
         </div>
@@ -76,7 +76,7 @@ export function MobileSocialComposerCard({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
-          className="min-h-[7rem] resize-none rounded-[12px] border-0 bg-[color:var(--surface-console)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none"
+          className="min-h-[7rem] resize-none rounded-[var(--radius-sm)] border-0 bg-[color:var(--surface-console)] px-3.5 py-2.5 text-[length:var(--text-caption)] leading-[1.35rem] shadow-none"
         />
 
         {mediaPreview ? <div className="mt-3">{mediaPreview}</div> : null}
@@ -88,7 +88,7 @@ export function MobileSocialComposerCard({
         ) : null}
 
         <div className="mt-2.5 flex items-center justify-between gap-3">
-          <div className="text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
+          <div className="text-[length:var(--text-eyebrow)] leading-[1.125rem] text-[color:var(--text-muted)]">
             {helperText}
           </div>
           <Button
@@ -96,21 +96,21 @@ export function MobileSocialComposerCard({
             variant="primary"
             disabled={disabled}
             onClick={onSubmit}
-            className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-[12px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
+            className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
           >
             {pending ? submittingLabel : submitLabel}
           </Button>
         </div>
 
         {errorMessage ? (
-          <div className="mt-2.5 rounded-[16px] border border-[#f2c6c3] bg-[#fff7f5] px-3.5 py-3 text-[11px] leading-[1.35rem] text-[#b42318]">
+          <div className="mt-2.5 rounded-[var(--radius-md)] border border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3.5 py-3 text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--state-danger-text)]">
             {errorActionLabel && onErrorAction ? (
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">{errorMessage}</span>
                 <button
                   type="button"
                   onClick={onErrorAction}
-                  className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[#b42318]"
+                  className="shrink-0 rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {errorActionLabel}
                 </button>

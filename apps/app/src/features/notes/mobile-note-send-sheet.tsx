@@ -109,10 +109,10 @@ export function MobileNoteSendSheet({
 
         <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-5 py-3">
           <div className="min-w-0">
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`发送笔记`)}
             </div>
-            <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {note.title}
             </div>
           </div>
@@ -138,8 +138,8 @@ export function MobileNoteSendSheet({
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder={t(msg`搜索最近会话`)}
               disabled={pending}
-              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-              className="h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pl-9 text-[16px] shadow-none"
+              // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              className="h-9 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pl-9 text-[length:var(--text-title)] shadow-none"
             />
           </label>
         </div>
@@ -156,7 +156,7 @@ export function MobileNoteSendSheet({
             </div>
           ) : null}
           {!loading && !error && !conversations.length ? (
-            <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-5 text-center text-[13px] text-[color:var(--text-secondary)]">
+            <div className="rounded-[var(--radius-sm)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-5 text-center text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
               {t(msg`先去消息列表里建立一些聊天，再回来发送笔记。`)}
             </div>
           ) : null}
@@ -164,7 +164,7 @@ export function MobileNoteSendSheet({
           !error &&
           conversations.length > 0 &&
           !filteredConversations.length ? (
-            <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-center text-[13px] text-[color:var(--text-secondary)]">
+            <div className="rounded-[var(--radius-sm)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-center text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
               {t(msg`没有匹配的最近会话。`)}
             </div>
           ) : null}
@@ -178,7 +178,7 @@ export function MobileNoteSendSheet({
                   type="button"
                   disabled={pending}
                   onClick={() => onSend(conversation)}
-                  className="flex w-full items-center gap-3 rounded-[12px] px-3 py-2.5 text-left transition active:bg-black/5 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-left transition active:bg-black/5 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isGroup ? (
                     <GroupAvatarChip
@@ -194,15 +194,15 @@ export function MobileNoteSendSheet({
                     />
                   )}
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+                    <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                       {conversation.title}
                     </div>
-                    <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+                    <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                       {getConversationThreadLabel(conversation)} ·{" "}
                       {formatMessageTimestamp(conversation.lastActivityAt)}
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-full bg-[color:var(--surface-console)] px-3 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                  <span className="shrink-0 rounded-full bg-[color:var(--surface-console)] px-3 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     {pending ? t(msg`发送中`) : t(msg`发送`)}
                   </span>
                 </button>
@@ -212,7 +212,7 @@ export function MobileNoteSendSheet({
         </div>
 
         <div className="flex items-center justify-between gap-3 border-t border-[color:var(--border-faint)] px-5 py-3">
-          <div className="text-[11px] leading-5 text-[color:var(--text-muted)]">
+          <div className="text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
             {t(msg`会以笔记卡片形式出现在对话里。`)}
           </div>
           <Button
@@ -220,7 +220,7 @@ export function MobileNoteSendSheet({
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 shadow-none"
+            className="h-9 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 shadow-none"
           >
             {t(msg`取消`)}
           </Button>

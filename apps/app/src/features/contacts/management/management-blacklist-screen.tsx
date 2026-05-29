@@ -62,7 +62,7 @@ export function ManagementBlacklistScreen() {
 
   if (isLoading) {
     return (
-      <div className="px-4 py-8 text-center text-[12px] text-[color:var(--text-muted)]">
+      <div className="px-4 py-8 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
         {t(msg`正在读取黑名单...`)}
       </div>
     );
@@ -76,7 +76,7 @@ export function ManagementBlacklistScreen() {
       <div className="px-3 py-4">
         <InlineNotice
           tone="danger"
-          className="rounded-[12px] px-2.5 py-2 text-[12px] leading-5 shadow-none"
+          className="rounded-[var(--radius-sm)] px-2.5 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
         >
           <div className="flex items-center justify-between gap-2">
             <span className="min-w-0 flex-1">
@@ -85,7 +85,7 @@ export function ManagementBlacklistScreen() {
             <button
               type="button"
               onClick={() => void blockedQuery.refetch()}
-              className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+              className="shrink-0 rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
             >
               {t(msg`重试读取`)}
             </button>
@@ -101,10 +101,10 @@ export function ManagementBlacklistScreen() {
         <div className="mx-auto inline-flex rounded-full bg-[color:var(--surface-secondary)] px-3 py-1 text-[10px] font-medium text-[color:var(--text-muted)]">
           {t(msg`黑名单`)}
         </div>
-        <div className="mt-3 text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="mt-3 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
           {t(msg`黑名单为空`)}
         </div>
-        <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <p className="mx-auto mt-2 max-w-[18rem] text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
           {t(msg`被加入黑名单的联系人会出现在这里。`)}
         </p>
       </div>
@@ -116,12 +116,12 @@ export function ManagementBlacklistScreen() {
       {unblockMutation.isError && unblockMutation.error instanceof Error ? (
         <InlineNotice
           tone="danger"
-          className="mb-3 rounded-[12px] px-2.5 py-1.5 text-[11px] leading-4 shadow-none"
+          className="mb-3 rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-4 shadow-none"
         >
           {unblockMutation.error.message}
         </InlineNotice>
       ) : null}
-      <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
+      <ul className="overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
         {blocked.map((entry, index) => {
           const character = characterMap.get(entry.characterId);
           // R2 走查：原 fallback 是 entry.characterId.slice(0,8)，charactersQuery 还在
@@ -150,11 +150,11 @@ export function ManagementBlacklistScreen() {
                   size="wechat"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+                  <div className="truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
                     {name}
                   </div>
                   {entry.reason ? (
-                    <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+                    <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                       {/* 通讯录 mobile 走查 R3：reason 当前实现是前端 hardcode 文案
                           (contact-detail-pane / character-detail-page 里直接写"来自通讯录
                           详情页加入黑名单"等)，但 server DTO 把这个字段当任意 string 透
@@ -169,7 +169,7 @@ export function ManagementBlacklistScreen() {
                   variant="secondary"
                   onClick={() => unblockMutation.mutate(entry.characterId)}
                   disabled={unblockMutation.isPending}
-                  className="h-8 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[12px]"
+                  className="h-8 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)]"
                 >
                   {unblockMutation.isPending &&
                   unblockMutation.variables === entry.characterId

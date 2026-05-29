@@ -357,8 +357,8 @@ export function DesktopFeedWorkspace({
   }, [baseUrl]);
 
   return (
-    <div className="relative flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
-      <section className="min-w-0 flex-1 bg-[rgba(245,248,247,0.96)]">
+    <div className="relative flex h-full min-h-0 bg-[color:var(--surface-section)]">
+      <section className="min-w-0 flex-1 bg-[color:var(--surface-section)]">
         <div className="flex h-full min-h-0 flex-col">
           <DesktopFeedToolbar
             commentErrorMessage={commentErrorMessage}
@@ -426,7 +426,7 @@ export function DesktopFeedWorkspace({
                     aria-hidden="true"
                   />
                   {isFetchingNextPage ? (
-                    <div className="py-4 text-center text-[12px] text-[color:var(--text-muted)]">
+                    <div className="py-4 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                       {t(msg`正在加载更多…`)}
                     </div>
                   ) : isFetchNextPageError ? (
@@ -438,12 +438,12 @@ export function DesktopFeedWorkspace({
                     <button
                       type="button"
                       onClick={() => onRetryNextPage?.()}
-                      className="block w-full py-4 text-center text-[12px] font-medium text-[color:var(--brand-primary)] hover:opacity-80"
+                      className="block w-full py-4 text-center text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)] hover:opacity-80"
                     >
                       {t(msg`加载更多失败 · 点击重试`)}
                     </button>
                   ) : !hasNextPage ? (
-                    <div className="py-4 text-center text-[12px] text-[color:var(--text-muted)]">
+                    <div className="py-4 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                       {t(msg`已经到底了`)}
                     </div>
                   ) : null}

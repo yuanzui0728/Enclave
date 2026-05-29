@@ -87,7 +87,7 @@ export function MomentComposeMediaPreview({
     return (
       <>
         <div className="space-y-2">
-          <div className="relative overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-black">
+          <div className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-black">
             <button
               type="button"
               onClick={() => setShowVideoViewer(true)}
@@ -135,11 +135,11 @@ export function MomentComposeMediaPreview({
                 </span>
               </div>
               <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/58 px-3 py-1 text-[11px] font-medium text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
                   <Play size={12} className="fill-current" />
                   {t(msg`视频`)}
                 </span>
-                <span className="rounded-full bg-black/58 px-3 py-1 text-[11px] font-medium text-white">
+                <span className="rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
                   {formatMomentDurationLabel(videoDraft.durationMs)}
                 </span>
               </div>
@@ -150,7 +150,7 @@ export function MomentComposeMediaPreview({
               disabled={removalDisabled}
             />
           </div>
-          <div className="text-[12px] text-[color:var(--text-muted)]">
+          <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {/* 走查第 N 轮 R2：buildMomentVideoPoster 内部 try/catch 失败会返回 null
                 （codec 解码不支持 / canvas toBlob 拒掉 / 超时等），此时 posterPreviewUrl
                 是 null，UI 回退用 <video preload="metadata"> 抓首帧渲染。原版文案永远
@@ -192,7 +192,7 @@ export function MomentComposeMediaPreview({
           {imageDrafts.map((draft, index) => (
             <div
               key={draft.id}
-              className="group relative overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+              className="group relative overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
               style={
                 imageDrafts.length === 1
                   ? undefined
@@ -228,7 +228,7 @@ export function MomentComposeMediaPreview({
             </div>
           ))}
         </div>
-        <div className="text-[12px] text-[color:var(--text-muted)]">
+        <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {t(msg`已选择 ${imageDrafts.length} 张图片`)}
           {remainingCount > 0 ? t(msg`，还可以继续添加 ${remainingCount} 张。`) : t(msg`。`)}
         </div>
@@ -320,7 +320,7 @@ function ComposeImageViewer({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.92)] backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 bg-[color:var(--state-info-bg)] backdrop-blur-sm">
       <button
         type="button"
         onClick={onClose}
@@ -419,7 +419,7 @@ function ComposeVideoViewer({
     });
   }, [onClose]);
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.94)] backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 bg-[color:var(--state-info-bg)] backdrop-blur-sm">
       <button
         type="button"
         onClick={onClose}
@@ -445,7 +445,7 @@ function ComposeVideoViewer({
           ref={videoRef}
           src={draft.previewUrl}
           poster={draft.posterPreviewUrl ?? undefined}
-          className="max-h-full max-w-full rounded-[20px] bg-black"
+          className="max-h-full max-w-full rounded-[var(--radius-lg)] bg-black"
           controls
           autoPlay
           playsInline

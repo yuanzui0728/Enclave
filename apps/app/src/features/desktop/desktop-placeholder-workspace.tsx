@@ -34,7 +34,7 @@ export function DesktopPlaceholderWorkspace({
   if (!isDesktopLayout) {
     return (
       <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)]">
-        <div className="w-full max-w-md rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
           <div className="text-xl font-semibold text-[color:var(--text-primary)]">
             {t(msg`该入口当前仅提供桌面布局`)}
           </div>
@@ -57,14 +57,14 @@ export function DesktopPlaceholderWorkspace({
       title={title}
       subtitle={description}
       toolbar={
-        <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+        <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
           {badge}
         </div>
       }
       aside={
         <div className="flex h-full flex-col bg-[rgba(247,250,250,0.86)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`工作区指引`)}
             </div>
             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">

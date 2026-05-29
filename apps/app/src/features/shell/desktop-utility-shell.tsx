@@ -35,7 +35,7 @@ export function DesktopUtilityShell({
       {sidebar ? (
         <aside
           className={cn(
-            "flex w-[280px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]",
+            "flex w-[280px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
             sidebarClassName,
           )}
         >
@@ -58,7 +58,7 @@ export function DesktopUtilityShell({
                   utility 页时影响最直接。改成语义 <h1>，Tailwind 样式不变；
                   subtitle 仍是辅助 <div>。和姊妹 R140/R141 一致补 page
                   title heading 语义。 */}
-              <h1 className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+              <h1 className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
                 {title}
               </h1>
               {subtitle ? (
@@ -93,7 +93,7 @@ export function DesktopUtilityShell({
         // 依然可读，但所有操作入口都可达。
         <aside
           className={cn(
-            "flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]",
+            "flex w-[320px] shrink-0 flex-col border-l border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
             asideClassName,
           )}
         >

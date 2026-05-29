@@ -590,7 +590,7 @@ function DesktopFavoritesPage() {
             variant="primary"
             size="sm"
             onClick={() => openInlineNoteEditor()}
-            className="h-9 rounded-[12px] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
+            className="h-9 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
           >
             <FileText size={15} />
             {t(msg`新建笔记`)}
@@ -604,7 +604,7 @@ function DesktopFavoritesPage() {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`搜索已收藏内容`)}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 shadow-none"
+              className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2.5 shadow-none"
             />
           </div>
 
@@ -620,7 +620,7 @@ function DesktopFavoritesPage() {
                     aria-selected={isActive}
                     onClick={() => setActiveCategory(item.id)}
                     className={cn(
-                      "flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left text-sm transition",
+                      "flex w-full items-center justify-between rounded-[var(--radius-sm)] px-3 py-2.5 text-left text-sm transition",
                       isActive
                         ? "bg-[color:var(--brand-primary)]/7 text-[color:var(--text-primary)]"
                         : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
@@ -628,7 +628,7 @@ function DesktopFavoritesPage() {
                   >
                     <span>{item.label}</span>
                     <span
-                      className="rounded-full bg-white/88 px-2 py-0.5 text-[11px] text-[color:var(--text-muted)]"
+                      className="rounded-full bg-white/88 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
                       aria-label={t(msg`${counts[item.id]} 项`)}
                     >
                       {counts[item.id]}
@@ -638,7 +638,7 @@ function DesktopFavoritesPage() {
               })}
             </div>
 
-            <div className="mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4">
+            <div className="mt-4 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4">
               <div className="text-xs text-[color:var(--text-muted)]">
                 {t(msg`收藏概览`)}
               </div>
@@ -685,7 +685,7 @@ function DesktopFavoritesPage() {
                     />
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+                        <div className="truncate text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                           {selectedFavorite.title}
                         </div>
                         <span className="rounded-full bg-[color:var(--brand-primary)]/7 px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
@@ -703,7 +703,7 @@ function DesktopFavoritesPage() {
                       summary={selectedFavoriteNoteSummary}
                     />
                   ) : (
-                    <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+                    <div className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
                       <div className="text-xs text-[color:var(--text-muted)]">
                         {t(msg`内容摘要`)}
                       </div>
@@ -713,7 +713,7 @@ function DesktopFavoritesPage() {
                     </div>
                   )}
 
-                  <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+                  <div className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
                     <div className="text-xs text-[color:var(--text-muted)]">
                       {t(msg`收藏信息`)}
                     </div>
@@ -758,7 +758,7 @@ function DesktopFavoritesPage() {
                             noteId,
                           });
                         }}
-                        className="inline-flex h-10 items-center justify-center rounded-[12px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
+                        className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
                       >
                         {t(msg`打开笔记`)}
                       </button>
@@ -767,7 +767,7 @@ function DesktopFavoritesPage() {
                         to={selectedFavoriteNavigationTarget?.to as never}
                         search={selectedFavoriteNavigationTarget?.search as never}
                         hash={selectedFavoriteNavigationTarget?.hash}
-                        className="inline-flex h-10 items-center justify-center rounded-[12px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
+                        className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
                       >
                         {t(msg`打开内容`)}
                       </Link>
@@ -780,7 +780,7 @@ function DesktopFavoritesPage() {
                         removeMutation.variables?.sourceId ===
                           selectedFavorite.sourceId
                       }
-                      className="inline-flex h-10 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card-hover)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {removeMutation.isPending &&
                       removeMutation.variables?.sourceId ===
@@ -861,7 +861,7 @@ function DesktopFavoritesPage() {
           {!favoritesQuery.isLoading &&
           !(favoritesQuery.isError && !favorites.length) &&
           !filteredFavorites.length ? (
-            <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+            <div className="rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
               <EmptyState
                 title={
                   normalizedSearchText
@@ -903,7 +903,7 @@ function DesktopFavoritesPage() {
                   aria-selected={item.sourceId === effectiveSelectedSourceId}
                   onClick={() => setSelectedFavoriteSourceId(item.sourceId)}
                   className={cn(
-                    "flex w-full items-start gap-4 rounded-[16px] border px-4 py-4 text-left transition",
+                    "flex w-full items-start gap-4 rounded-[var(--radius-md)] border px-4 py-4 text-left transition",
                     item.sourceId === effectiveSelectedSourceId
                       ? "border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/7 shadow-[var(--shadow-soft)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] hover:bg-[color:var(--surface-card)]",
@@ -926,7 +926,7 @@ function DesktopFavoritesPage() {
                     <div className="mt-1 text-xs text-[color:var(--text-muted)]">
                       {item.meta}
                     </div>
-                    <div className="mt-2 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                    <div className="mt-2 line-clamp-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                       {item.description}
                     </div>
                     {renderFavoriteListExtra(
@@ -964,15 +964,15 @@ function FavoriteNotePreview({ summary }: { summary: FavoriteNoteSummary }) {
   ).length;
 
   return (
-    <div className="overflow-hidden rounded-[20px] border border-[rgba(60, 40, 110, 0.08)] bg-[linear-gradient(180deg,#ffffff_0%,#f8faf9_100%)] shadow-[var(--shadow-soft)]">
-      <div className="border-b border-[rgba(60, 40, 110, 0.06)] px-4 py-3">
+    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[linear-gradient(180deg,#ffffff_0%,#f8faf9_100%)] shadow-[var(--shadow-soft)]">
+      <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
         <div className="text-xs text-[color:var(--text-muted)]">{t(msg`笔记预览`)}</div>
-        <div className="mt-2 line-clamp-2 text-[15px] font-medium leading-7 text-[color:var(--text-primary)]">
+        <div className="mt-2 line-clamp-2 text-[length:var(--text-base)] font-medium leading-7 text-[color:var(--text-primary)]">
           {summary.title}
         </div>
       </div>
       <div className="space-y-4 px-4 py-4">
-        <div className="rounded-[16px] border border-[rgba(60, 40, 110, 0.06)] bg-[color:var(--surface-card)] px-4 py-4 text-[13px] leading-7 text-[color:var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+        <div className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-[length:var(--text-caption)] leading-7 text-[color:var(--text-secondary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
           {summary.excerpt || t(msg`这条笔记还没有正文摘要。`)}
         </div>
         {summary.tags.length ? (
@@ -980,7 +980,7 @@ function FavoriteNotePreview({ summary }: { summary: FavoriteNoteSummary }) {
             {summary.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-[color:var(--brand-primary)]/8 px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]"
+                className="rounded-full bg-[color:var(--brand-primary)]/8 px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
               >
                 #{tag}
               </span>
@@ -990,12 +990,12 @@ function FavoriteNotePreview({ summary }: { summary: FavoriteNoteSummary }) {
         {summary.assets.length ? (
           <div className="flex flex-wrap gap-2">
             {imageCount ? (
-              <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+              <span className="rounded-full bg-[color:var(--border-faint)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                 {t(msg`图片 ${imageCount}`)}
               </span>
             ) : null}
             {fileCount ? (
-              <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+              <span className="rounded-full bg-[color:var(--border-faint)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                 {t(msg`文件 ${fileCount}`)}
               </span>
             ) : null}
@@ -1068,7 +1068,7 @@ function renderFavoriteListExtra(
         </span>
       ))}
       {summary.assets.length ? (
-        <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+        <span className="rounded-full bg-[color:var(--border-faint)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
           {t(msg`附件 ${summary.assets.length}`)}
         </span>
       ) : null}

@@ -178,7 +178,7 @@ export function ConversationThreadPanel({
         type="button"
         variant="secondary"
         size="sm"
-        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
         onClick={onBack}
       >
         {t(msg`返回上一页`)}
@@ -190,7 +190,7 @@ export function ConversationThreadPanel({
         type="button"
         variant="secondary"
         size="sm"
-        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
         onClick={() => {
           void messagesQuery.refetch();
         }}
@@ -750,18 +750,18 @@ export function ConversationThreadPanel({
                 桌面 /tabs/chat workspace 主区右栏 conversationTitle 是
                 整个工作台内"用户当前正在聊哪一条会话"的唯一身份信息，
                 左栏是 chat list、本 <header> 是右栏唯一 landmark。原版
-                用裸 <div text-[17px] font-medium> 渲染，盲人 SR 走
+                用裸 <div text-[length:var(--text-title)] font-medium> 渲染，盲人 SR 走
                 heading 导航在整条 chat tab 上找不到 <h1>，只能从左栏
                 ConversationCardLink 列表逐条 Tab 走过去再切回右栏才
                 能定位"现在聊的是谁"。改成语义 <h1>，Tailwind 样式不
                 变；subtitle 仍是辅助 <div>。和 standalone window /
                 utility shell 一批 h1 化思路一致——把 page-level 主标题
                 显式暴露给 AT。 */}
-            <h1 className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
+            <h1 className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
               {conversationTitle}
             </h1>
             {subtitle ? (
-              <div className="mt-1 flex items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-1 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {conversationType === "group" ? <Users size={12} /> : null}
                 <span>{subtitle}</span>
               </div>
@@ -839,7 +839,7 @@ export function ConversationThreadPanel({
             className={
               isDesktop
                 ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
-                : "rounded-[12px] border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-2.5 py-1.5 text-[#166534] shadow-none"
+                : "rounded-[var(--radius-sm)] border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-2.5 py-1.5 text-[color:var(--state-success-text)] shadow-none"
             }
           >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -847,7 +847,7 @@ export function ConversationThreadPanel({
                 className={`min-w-0 flex-1 ${
                   isDesktop
                     ? "text-xs leading-6 text-[color:var(--text-secondary)]"
-                    : "text-[10px] leading-4 text-[#166534]"
+                    : "text-[10px] leading-4 text-[color:var(--state-success-text)]"
                 }`}
               >
                 {routeContextNotice.description}
@@ -1023,7 +1023,7 @@ export function ConversationThreadPanel({
                   role="alert"
                   aria-live="assertive"
                   tone="danger"
-                  className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                  className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 flex-1">{socketError}</span>
@@ -1252,7 +1252,7 @@ function MobileThreadStatusCard({
       role={tone === "danger" ? "alert" : "status"}
       aria-live={tone === "danger" ? "assertive" : "polite"}
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -1262,7 +1262,7 @@ function MobileThreadStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -1272,13 +1272,13 @@ function MobileThreadStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

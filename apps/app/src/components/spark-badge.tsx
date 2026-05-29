@@ -14,17 +14,17 @@ export function getSparkTier(days: number): 0 | 1 | 2 | 3 | 4 | 5 {
 }
 
 const TIER_TEXT_COLOR: Record<1 | 2 | 3 | 4 | 5, string> = {
-  1: "text-[#ff7a30]",
-  2: "text-[#e8423d]",
-  3: "text-[#3578e5]",
-  4: "text-[#c81d39]",
+  1: "text-[color:var(--state-warning-text)]",
+  2: "text-[color:var(--state-danger-text)]",
+  3: "text-[color:var(--state-info-text)]",
+  4: "text-[color:var(--state-danger-text)]",
   5: "text-[color:var(--brand-primary)]",
 };
 
 const SIZE_PRESETS = {
   sm: { gap: "gap-0.5", icon: "h-3 w-3", text: "text-[10px]" },
-  md: { gap: "gap-1", icon: "h-4 w-4", text: "text-[12px]" },
-  lg: { gap: "gap-1.5", icon: "h-5 w-5", text: "text-[14px]" },
+  md: { gap: "gap-1", icon: "h-4 w-4", text: "text-[length:var(--text-caption)]" },
+  lg: { gap: "gap-1.5", icon: "h-5 w-5", text: "text-[length:var(--text-body)]" },
 } as const;
 
 export function SparkBadge({

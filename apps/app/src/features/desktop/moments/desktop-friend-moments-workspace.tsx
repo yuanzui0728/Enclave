@@ -238,7 +238,7 @@ export function DesktopFriendMomentsWorkspace({
       return (
         <LoadingBlock
           label={t(msg`正在读取这位角色的朋友圈...`)}
-          className="rounded-[20px] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
+          className="rounded-[var(--radius-lg)] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
         />
       );
     }
@@ -348,8 +348,8 @@ export function DesktopFriendMomentsWorkspace({
   }
 
   return (
-    <div className="relative flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
-      <section className="min-w-0 flex-1 bg-[rgba(245,248,247,0.96)]">
+    <div className="relative flex h-full min-h-0 bg-[color:var(--surface-section)]">
+      <section className="min-w-0 flex-1 bg-[color:var(--surface-section)]">
         <div className="flex h-full min-h-0 flex-col">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-5 backdrop-blur-xl">
             <div className="mx-auto flex w-full max-w-[760px] items-start justify-between gap-5">
@@ -382,18 +382,18 @@ export function DesktopFriendMomentsWorkspace({
                       className="min-w-0 text-left transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] focus-visible:ring-offset-2"
                       aria-label={profileActionAriaLabel}
                     >
-                      <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+                      <div className="text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
                         {t(msg`角色朋友圈`)}
                       </div>
                       <div className="mt-1 truncate text-[20px] font-semibold text-[color:var(--text-primary)]">
                         {displayName}
                       </div>
-                      <div className="mt-1 line-clamp-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+                      <div className="mt-1 line-clamp-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                         {signature}
                       </div>
                     </button>
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                     <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1">
                       <Newspaper size={13} />
                       {t(msg`${sortedMoments.length} 条动态`)}

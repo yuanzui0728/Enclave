@@ -2310,7 +2310,7 @@ export function DiscoverFeedPage() {
       <div ref={pullContainerRef} className="relative">
         {pullState.offset || pullState.refreshing ? (
           <div
-            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[color:var(--text-muted)]"
+            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
             style={{ top: 0, height: `${pullState.offset || 60}px` }}
           >
             <span>
@@ -2334,7 +2334,7 @@ export function DiscoverFeedPage() {
       <div className="space-y-2.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
         <section className="space-y-2">
           <div className="px-1">
-            <div className="text-[11px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {t(msg`最近动态`)}
             </div>
             <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
@@ -2343,7 +2343,7 @@ export function DiscoverFeedPage() {
           </div>
           {notice ? (
             <InlineNotice
-              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
               tone={noticeTone}
             >
               {noticeTone === "info" ? (
@@ -2380,7 +2380,7 @@ export function DiscoverFeedPage() {
                             });
                           }
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {noticeActionLabel}
                       </button>
@@ -2397,7 +2397,7 @@ export function DiscoverFeedPage() {
                           setNoticeActionLabel(null);
                           setNoticeAction(null);
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {t(msg`知道了`)}
                       </button>
@@ -2418,7 +2418,7 @@ export function DiscoverFeedPage() {
                           setNoticeAction(null);
                           handleStatusBack();
                         }}
-                        className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {safeReturnPath ? t(msg`返回上一页`) : t(msg`重试读取`)}
                       </button>
@@ -2458,7 +2458,7 @@ export function DiscoverFeedPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryLoad}
                   >
                     {t(msg`重试读取`)}
@@ -2472,7 +2472,7 @@ export function DiscoverFeedPage() {
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                       onClick={handleStatusBack}
                     >
                       {t(msg`返回上一页`)}
@@ -2589,7 +2589,7 @@ export function DiscoverFeedPage() {
                         setActionBubble({ postId: post.id, anchorRect: rect });
                       }}
                       aria-label={t(msg`更多操作`)}
-                      className="inline-flex h-7 w-9 items-center justify-center rounded-[4px] bg-[color:var(--surface-secondary)] text-[#4C4C4C] active:bg-[#E5E5E5]"
+                      className="inline-flex h-7 w-9 items-center justify-center rounded-[4px] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-soft)]"
                     >
                       <MoreHorizontalDots />
                     </button>
@@ -2630,7 +2630,7 @@ export function DiscoverFeedPage() {
                   const commentById = cached?.byId ?? new Map<string, FeedComment>();
                   return (
                     <div className="overflow-hidden rounded-[3px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]">
-                      <div className="space-y-0.5 px-2.5 py-1.5 text-[13px] leading-[22px]">
+                      <div className="space-y-0.5 px-2.5 py-1.5 text-[length:var(--text-caption)] leading-[22px]">
                         {renderedComments.map(({ comment, cleanText }) => {
                           const replyToComment = comment.replyToCommentId
                             ? commentById.get(comment.replyToCommentId) ?? null
@@ -2749,7 +2749,7 @@ export function DiscoverFeedPage() {
                               void expandFullComments(post.id);
                             }}
                             disabled={loadingFullCommentsPostIds.has(post.id)}
-                            className="mt-1 block text-left text-[12px] text-[#576B95] active:opacity-60 disabled:opacity-50"
+                            className="mt-1 block text-left text-[length:var(--text-caption)] text-[#576B95] active:opacity-60 disabled:opacity-50"
                           >
                             {loadingFullCommentsPostIds.has(post.id)
                               ? t(msg`正在读取全部评论…`)
@@ -2757,7 +2757,7 @@ export function DiscoverFeedPage() {
                           </button>
                         ) : null}
                         {expandedAllFiltered ? (
-                          <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+                          <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                             {t(msg`评论暂时无法显示`)}
                           </div>
                         ) : null}
@@ -2773,7 +2773,7 @@ export function DiscoverFeedPage() {
           {likeMutation.isError && likeMutation.error instanceof Error ? (
             <InlineNotice
               tone="info"
-              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -2799,7 +2799,7 @@ export function DiscoverFeedPage() {
                       likeMutation.reset();
                     }
                   }}
-                  className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试点赞`)}
                 </button>
@@ -2809,7 +2809,7 @@ export function DiscoverFeedPage() {
           {commentMutation.isError && commentMutation.error instanceof Error ? (
             <InlineNotice
               tone="info"
-              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="min-w-0 flex-1">
@@ -2864,7 +2864,7 @@ export function DiscoverFeedPage() {
                       },
                     );
                   }}
-                  className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试发送`)}
                 </button>
@@ -2876,7 +2876,7 @@ export function DiscoverFeedPage() {
             <>
               <div ref={loadMoreRef} className="h-1 w-full" aria-hidden="true" />
               {isFetchingNextFeedPage ? (
-                <div className="py-3 text-center text-[11px] text-[color:var(--text-muted)]">
+                <div className="py-3 text-center text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                   {t(msg`正在加载更多…`)}
                 </div>
               ) : isFetchNextFeedPageError ? (
@@ -2887,12 +2887,12 @@ export function DiscoverFeedPage() {
                 <button
                   type="button"
                   onClick={() => void fetchNextFeedPage()}
-                  className="block w-full py-3 text-center text-[11px] text-[#576B95] active:opacity-60"
+                  className="block w-full py-3 text-center text-[length:var(--text-eyebrow)] text-[#576B95] active:opacity-60"
                 >
                   {t(msg`加载更多失败 · 点击重试`)}
                 </button>
               ) : !hasNextFeedPage ? (
-                <div className="py-3 text-center text-[11px] text-[color:var(--text-muted)]">
+                <div className="py-3 text-center text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                   {t(msg`已经到底了`)}
                 </div>
               ) : null}
@@ -2937,7 +2937,7 @@ export function DiscoverFeedPage() {
                     <Button
                       variant="primary"
                       size="sm"
-                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
+                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                       onClick={() => void fetchNextFeedPage()}
                     >
                       {t(msg`重试加载更多`)}
@@ -2969,7 +2969,7 @@ export function DiscoverFeedPage() {
                     <Button
                       variant="primary"
                       size="sm"
-                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
+                      className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                       onClick={() => void navigate({ to: "/tabs/contacts" })}
                     >
                       {t(msg`打开通讯录`)}
@@ -2991,7 +2991,7 @@ export function DiscoverFeedPage() {
                   <Button
                     variant="primary"
                     size="sm"
-                    className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[11px] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
+                    className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                     onClick={handleEmptyStateAction}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`发一条广场动态`)}
@@ -3164,14 +3164,14 @@ function MobileFeedStatusCard({
     <section
       className={
         tone === "danger"
-          ? "rounded-[20px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-4 py-5 text-center shadow-none"
-          : "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none"
+          ? "rounded-[var(--radius-lg)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-4 py-5 text-center shadow-none"
+          : "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none"
       }
     >
       <div
         className={
           tone === "danger"
-            ? "mx-auto inline-flex rounded-full bg-[rgba(220,38,38,0.08)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--state-danger-text)]"
+            ? "mx-auto inline-flex rounded-full bg-[color:var(--state-danger-bg)] px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--state-danger-text)]"
             : "mx-auto inline-flex rounded-full bg-[color:var(--brand-primary)]/10 px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]"
         }
       >
@@ -3181,13 +3181,13 @@ function MobileFeedStatusCard({
         <div className="mt-3 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-black/15 animate-pulse" />
           <span className="h-2 w-2 rounded-full bg-black/25 animate-pulse [animation-delay:120ms]" />
-          <span className="h-2 w-2 rounded-full bg-[#8ecf9d] animate-pulse [animation-delay:240ms]" />
+          <span className="h-2 w-2 rounded-full bg-[color:var(--state-success-bg)] animate-pulse [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-3 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-2 max-w-[18rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}

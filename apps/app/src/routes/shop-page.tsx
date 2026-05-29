@@ -47,10 +47,10 @@ function GoodsCard({
           <Gift size={22} />
         )}
       </div>
-      <div className="line-clamp-1 text-[13px] font-medium text-[color:var(--text-primary)]">
+      <div className="line-clamp-1 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
         {goods.name}
       </div>
-      <div className="text-[13px] font-semibold text-[color:var(--brand-primary)]">
+      <div className="text-[length:var(--text-caption)] font-semibold text-[color:var(--brand-primary)]">
         {formatCents(goods.priceCents, goods.currency)}
       </div>
       {goods.stock !== null ? (
@@ -180,7 +180,7 @@ export function ShopPage() {
         <Button
           variant="ghost"
           size="sm"
-          className="rounded-full bg-transparent text-[13px] text-[color:var(--brand-primary)] shadow-none active:bg-black/[0.05]"
+          className="rounded-full bg-transparent text-[length:var(--text-caption)] text-[color:var(--brand-primary)] shadow-none active:bg-black/[0.05]"
           onClick={() => void navigate({ to: "/gift-cabinet" })}
         >
           {t(msg`礼物柜`)}
@@ -225,7 +225,7 @@ export function ShopPage() {
           onClick={() => void navigate({ to: "/profile/wallet" })}
           className="flex items-center justify-between rounded-[18px] border border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#f2edfc,#e8e0f8)] px-5 py-3 text-left"
         >
-          <span className="text-[13px] text-[color:var(--text-muted)]">{t(msg`钱包余额`)}</span>
+          <span className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">{t(msg`钱包余额`)}</span>
           <span className="text-[18px] font-semibold text-[color:var(--text-primary)]">
             {walletQuery.data
               ? formatCents(walletQuery.data.wallet.balanceCents, walletQuery.data.wallet.currency)
@@ -242,7 +242,7 @@ export function ShopPage() {
 
         {virtual.length ? (
           <AppSection className="rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-none">
-            <div className="mb-3 text-[13px] font-semibold text-[color:var(--text-primary)]">
+            <div className="mb-3 text-[length:var(--text-caption)] font-semibold text-[color:var(--text-primary)]">
               {t(msg`虚拟好物`)}
             </div>
             <div className="grid grid-cols-3 gap-2.5">
@@ -255,7 +255,7 @@ export function ShopPage() {
 
         {physical.length ? (
           <AppSection className="rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-none">
-            <div className="mb-3 text-[13px] font-semibold text-[color:var(--text-primary)]">
+            <div className="mb-3 text-[length:var(--text-caption)] font-semibold text-[color:var(--text-primary)]">
               {t(msg`实物周边`)}
             </div>
             <div className="grid grid-cols-3 gap-2.5">
@@ -278,7 +278,7 @@ export function ShopPage() {
           onClick={closeSheet}
         >
           <div
-            className="w-full max-w-md rounded-t-[24px] bg-[color:var(--bg-canvas)] px-5 pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] pt-5"
+            className="w-full max-w-md rounded-t-[var(--radius-xl)] bg-[color:var(--bg-canvas)] px-5 pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] pt-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-3">
@@ -290,24 +290,24 @@ export function ShopPage() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <div className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
                   {picked.name}
                 </div>
-                <div className="text-[13px] font-semibold text-[color:var(--brand-primary)]">
+                <div className="text-[length:var(--text-caption)] font-semibold text-[color:var(--brand-primary)]">
                   {formatCents(picked.priceCents, picked.currency)}
                 </div>
               </div>
             </div>
 
             {picked.description ? (
-              <div className="mt-3 text-[13px] text-[color:var(--text-secondary)]">
+              <div className="mt-3 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                 {picked.description}
               </div>
             ) : null}
 
             {picked.kind === "virtual" ? (
               <div className="mt-4 flex items-center justify-between">
-                <span className="text-[13px] text-[color:var(--text-secondary)]">
+                <span className="text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                   {t(msg`数量`)}
                 </span>
                 <div className="flex items-center gap-3">
@@ -319,7 +319,7 @@ export function ShopPage() {
                   >
                     −
                   </button>
-                  <span className="w-6 text-center text-[15px]">{quantity}</span>
+                  <span className="w-6 text-center text-[length:var(--text-base)]">{quantity}</span>
                   <button
                     type="button"
                     className="h-8 w-8 rounded-full border border-[color:var(--border-faint)] text-[18px] text-[color:var(--text-primary)]"

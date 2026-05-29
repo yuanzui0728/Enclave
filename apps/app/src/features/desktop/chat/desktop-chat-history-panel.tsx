@@ -380,7 +380,7 @@ export function DesktopChatHistoryPanel({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-[#f7f7f7]">
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-card)]">
       <div
         className={cn(
           "bg-white",
@@ -394,7 +394,7 @@ export function DesktopChatHistoryPanel({
         >
         <label
           className={cn(
-            "flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.04)] bg-[#f4f4f4] transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-white",
+            "flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.04)] bg-[color:var(--surface-card)] transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-white",
             isDialog ? "px-3 py-2" : "px-3 py-2.5",
           )}
         >
@@ -419,7 +419,7 @@ export function DesktopChatHistoryPanel({
             // 输入框，得自己摸索周围 chip / 区域才能猜出来。和姊妹 R17 / R23
             // 同款 a11y 修法，挂 aria-label 把意图明确表达出来。
             aria-label={t(msg`搜索聊天记录`)}
-            className="min-w-0 flex-1 bg-transparent text-[13px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+            className="min-w-0 flex-1 bg-transparent text-[length:var(--text-caption)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
           />
           {keyword ? (
             <button
@@ -434,11 +434,11 @@ export function DesktopChatHistoryPanel({
         </label>
 
         {isDialog ? null : (
-          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 rounded-[10px] bg-[#f6f6f6] px-3 py-2 text-[11px] text-[color:var(--text-muted)]">
+          <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 rounded-[10px] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]">
               {isGroupConversation ? t(msg`群聊`) : t(msg`单聊`)}
             </span>
-            <span className="truncate text-[12px] text-[color:var(--text-primary)]">
+            <span className="truncate text-[length:var(--text-caption)] text-[color:var(--text-primary)]">
               {getConversationDisplayTitle(conversation.title)}
             </span>
             {openedFromDetails ? (
@@ -567,10 +567,10 @@ export function DesktopChatHistoryPanel({
                       setSelectorView(null);
                     }}
                     className={cn(
-                      "h-7 rounded-full px-3 text-[12px] transition",
+                      "h-7 rounded-full px-3 text-[length:var(--text-caption)] transition",
                       active
                         ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)]"
-                        : "bg-[#f4f4f4] text-[color:var(--text-secondary)] hover:bg-[#ececec] hover:text-[color:var(--text-primary)]",
+                        : "bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]",
                     )}
                   >
                     {option.label}
@@ -605,10 +605,10 @@ export function DesktopChatHistoryPanel({
                     }
                   }}
                   className={cn(
-                    "h-7 inline-flex items-center gap-1 rounded-full px-3 text-[12px] transition",
+                    "h-7 inline-flex items-center gap-1 rounded-full px-3 text-[length:var(--text-caption)] transition",
                     customDate
                       ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)]"
-                      : "bg-[#f4f4f4] text-[color:var(--text-secondary)] hover:bg-[#ececec] hover:text-[color:var(--text-primary)]",
+                      : "bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]",
                   )}
                 >
                   <span>{customDate || t(msg`指定日期`)}</span>
@@ -637,7 +637,7 @@ export function DesktopChatHistoryPanel({
                       setQuickDateFilter("all");
                       setCustomDate("");
                     }}
-                    className="text-[11px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
+                    className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
                   >
                     {t(msg`清除`)}
                   </button>
@@ -660,7 +660,7 @@ export function DesktopChatHistoryPanel({
               isDialog ? "mx-auto w-full max-w-[680px]" : "",
             )}
           >
-            <label className="flex h-8 items-center gap-2 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[#f4f4f4] px-2.5 transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-white">
+            <label className="flex h-8 items-center gap-2 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-2.5 transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-white">
               <Search
                 size={13}
                 className="shrink-0 text-[color:var(--text-muted)]"
@@ -675,12 +675,12 @@ export function DesktopChatHistoryPanel({
                 // 空」分裂行为。这块是群聊「查找聊天记录」按发言人筛选时的
                 // 成员搜索框，专属群聊路径。
                 aria-label={t(msg`搜索群成员`)}
-                className="min-w-0 flex-1 bg-transparent text-[12px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                className="min-w-0 flex-1 bg-transparent text-[length:var(--text-caption)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
             </label>
 
             {membersQuery.isLoading ? (
-              <div className="mt-2 flex items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-2 flex items-center gap-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 <LoaderCircle
                   size={13}
                   className="animate-spin text-[color:var(--brand-primary)]"
@@ -695,7 +695,7 @@ export function DesktopChatHistoryPanel({
               // 只能看到空 radio group。挂 role="alert"。
               <div
                 role="alert"
-                className="mt-2 flex items-center gap-2 text-[12px] text-[#d74b45]"
+                className="mt-2 flex items-center gap-2 text-[length:var(--text-caption)] text-[color:var(--state-danger-text)]"
               >
                 <AlertCircle size={13} />
                 <span className="truncate">
@@ -704,7 +704,7 @@ export function DesktopChatHistoryPanel({
                 <button
                   type="button"
                   onClick={() => void membersQuery.refetch()}
-                  className="ml-auto text-[11px] text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]"
+                  className="ml-auto text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)]"
                 >
                   {t(msg`重试`)}
                 </button>
@@ -731,10 +731,10 @@ export function DesktopChatHistoryPanel({
                       setSelectorView(null);
                     }}
                     className={cn(
-                      "h-7 rounded-full px-3 text-[12px] transition",
+                      "h-7 rounded-full px-3 text-[length:var(--text-caption)] transition",
                       !senderId
                         ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)]"
-                        : "bg-[#f4f4f4] text-[color:var(--text-secondary)] hover:bg-[#ececec] hover:text-[color:var(--text-primary)]",
+                        : "bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]",
                     )}
                   >
                     {t(msg`全部成员`)}
@@ -750,17 +750,17 @@ export function DesktopChatHistoryPanel({
                         setSelectorView(null);
                       }}
                       className={cn(
-                        "h-7 max-w-[180px] truncate rounded-full px-3 text-[12px] transition",
+                        "h-7 max-w-[180px] truncate rounded-full px-3 text-[length:var(--text-caption)] transition",
                         senderId === option.id
                           ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)]"
-                          : "bg-[#f4f4f4] text-[color:var(--text-secondary)] hover:bg-[#ececec] hover:text-[color:var(--text-primary)]",
+                          : "bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-soft)] hover:text-[color:var(--text-primary)]",
                       )}
                     >
                       {option.label}
                     </button>
                   ))}
                   {!visibleSenderOptions.length ? (
-                    <div className="px-2 py-1 text-[12px] text-[color:var(--text-muted)]">
+                    <div className="px-2 py-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                       {t(msg`没有找到匹配的群成员`)}
                     </div>
                   ) : null}
@@ -774,10 +774,10 @@ export function DesktopChatHistoryPanel({
       {showResultsView ? (
         <div className="min-h-0 flex-1 overflow-auto">
           <div className="sticky top-0 z-[2] flex items-center justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] bg-white/96 px-5 py-1.5 backdrop-blur">
-            <div className="text-[11px] tracking-[0.08em] text-[color:var(--text-dim)]">
+            <div className="text-[length:var(--text-eyebrow)] tracking-[0.08em] text-[color:var(--text-dim)]">
               {hasSearchRequest ? t(msg`搜索结果`) : t(msg`聊天记录`)}
             </div>
-            <div className="text-[11px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {resultsQuery.isLoading
                 ? t(msg`正在搜索...`)
                 : t(msg`共 ${totalResults} 条`)}
@@ -804,7 +804,7 @@ export function DesktopChatHistoryPanel({
             <DesktopSearchFeedbackState
               role="alert"
               className="px-4 py-5"
-              icon={<AlertCircle size={16} className="text-[#d74b45]" />}
+              icon={<AlertCircle size={16} className="text-[color:var(--state-danger-text)]" />}
               title={t(msg`搜索失败`)}
               description={resultsQuery.error.message}
               actionLabel={t(msg`重试`)}
@@ -820,7 +820,7 @@ export function DesktopChatHistoryPanel({
             <DesktopSearchFeedbackState
               className="px-6 py-8"
               icon={
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f3f3f3] text-[color:var(--text-secondary)]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]">
                   <Search size={16} />
                 </span>
               }
@@ -833,7 +833,7 @@ export function DesktopChatHistoryPanel({
             <div className="bg-white">
               {resultSections.map((section) => (
                 <section key={section.key}>
-                  <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[#f7f7f7] px-4 py-1.5 text-[10px] text-[color:var(--text-dim)]">
+                  <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-4 py-1.5 text-[10px] text-[color:var(--text-dim)]">
                     <span className="tracking-[0.04em]">{section.label}</span>
                     <span>{t(msg`${section.items.length} 条`)}</span>
                   </div>
@@ -858,7 +858,7 @@ export function DesktopChatHistoryPanel({
                 type="button"
                 disabled={resultsQuery.isFetchingNextPage}
                 onClick={() => void resultsQuery.fetchNextPage()}
-                className="mx-auto flex h-9 items-center justify-center rounded-full px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[#f7f7f7] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:text-[color:var(--text-dim)]"
+                className="mx-auto flex h-9 items-center justify-center rounded-full px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:text-[color:var(--text-dim)]"
               >
                 {resultsQuery.isFetchingNextPage
                   ? t(msg`正在加载...`)
@@ -903,12 +903,12 @@ function DesktopSearchResultRow({
       type="button"
       onClick={() => onOpenMessage(item.messageId)}
       aria-label={t(msg`定位到 ${item.senderName || t(msg`消息`)} 的这条消息`)}
-      className="group block w-full border-l-2 border-l-transparent px-4 py-3 text-left transition-[background-color,border-color] duration-150 hover:border-l-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] hover:bg-[#f3f9f4] focus-visible:border-l-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] focus-visible:bg-[#f3f9f4] focus-visible:outline-none"
+      className="group block w-full border-l-2 border-l-transparent px-4 py-3 text-left transition-[background-color,border-color] duration-150 hover:border-l-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] hover:bg-[color:var(--state-success-bg)] focus-visible:border-l-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] focus-visible:bg-[color:var(--state-success-bg)] focus-visible:outline-none"
     >
       <div className="flex gap-3">
         <span
           className={cn(
-            "mt-0.5 flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-[12px] font-medium",
+            "mt-0.5 flex h-8.5 w-8.5 shrink-0 items-center justify-center rounded-full text-[length:var(--text-caption)] font-medium",
             resolveSearchResultAvatarTone(item),
           )}
         >
@@ -918,7 +918,7 @@ function DesktopSearchResultRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {item.senderName || t(msg`消息`)}
               </div>
               <span
@@ -941,7 +941,7 @@ function DesktopSearchResultRow({
             </div>
           ) : null}
 
-          <div className="mt-1 line-clamp-2 text-[12px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+          <div className="mt-1 line-clamp-2 text-[length:var(--text-caption)] leading-[1.35rem] text-[color:var(--text-secondary)]">
             {renderHighlightedText(previewText, debouncedKeyword)}
           </div>
         </div>
@@ -970,15 +970,15 @@ function DesktopSearchFeedbackState({
 }) {
   return (
     <div className={cn("px-3 py-3", className)} role={role}>
-      <div className="rounded-[12px] border border-[rgba(0,0,0,0.05)] bg-white px-5 py-8 text-center">
-        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[#f6f6f6]">
+      <div className="rounded-[var(--radius-sm)] border border-[rgba(0,0,0,0.05)] bg-white px-5 py-8 text-center">
+        <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--surface-card)]">
           {icon}
         </div>
-        <div className="mt-3 text-[14px] text-[color:var(--text-primary)]">
+        <div className="mt-3 text-[length:var(--text-body)] text-[color:var(--text-primary)]">
           {title}
         </div>
         {description ? (
-          <div className="mt-1.5 text-[12px] leading-6 text-[color:var(--text-muted)]">
+          <div className="mt-1.5 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
             {description}
           </div>
         ) : null}
@@ -986,7 +986,7 @@ function DesktopSearchFeedbackState({
           <button
             type="button"
             onClick={onAction}
-            className="mt-3 inline-flex h-8 items-center justify-center rounded-full bg-[#f6f6f6] px-3 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[#efefef] hover:text-[color:var(--text-primary)]"
+            className="mt-3 inline-flex h-8 items-center justify-center rounded-full bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
           >
             {actionLabel}
           </button>
@@ -1024,7 +1024,7 @@ function DesktopSearchTabButton({
       // 但和 aria-pressed 不矛盾——选 aria-pressed 跟前 4 个保持一致体验。
       aria-pressed={active}
       className={cn(
-        "relative inline-flex shrink-0 items-center gap-1 px-2.5 py-2 text-[13px] transition-colors",
+        "relative inline-flex shrink-0 items-center gap-1 px-2.5 py-2 text-[length:var(--text-caption)] transition-colors",
         active
           ? "text-[color:var(--brand-primary)]"
           : "text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]",
@@ -1304,42 +1304,42 @@ function resolveSearchResultBadgeLabel(item: ChatMessageSearchItem) {
 
 function resolveSearchResultBadgeTone(item: ChatMessageSearchItem) {
   if (item.categories.includes("links")) {
-    return "bg-[#eef3fa] text-[#5d6f88]";
+    return "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]";
   }
 
   if (item.messageType === "image") {
-    return "bg-[#eef7fb] text-[#59768a]";
+    return "bg-[#eef7fb] text-[color:var(--state-info-text)]";
   }
 
   if (item.messageType === "file") {
-    return "bg-[#faf2eb] text-[#87664f]";
+    return "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]";
   }
 
   if (item.messageType === "voice") {
-    return "bg-[#f4eef9] text-[#6e6284]";
+    return "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]";
   }
 
   if (item.messageType === "location_card") {
-    return "bg-[#fbefef] text-[#87635d]";
+    return "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]";
   }
 
-  return "bg-[#eef7f1] text-[#5d7865]";
+  return "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]";
 }
 
 function resolveSearchResultAvatarTone(item: ChatMessageSearchItem) {
   if (item.messageType === "file") {
-    return "bg-[#f7efe8] text-[#87664f]";
+    return "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]";
   }
 
   if (item.categories.includes("links")) {
-    return "bg-[#eef3fa] text-[#5d6f88]";
+    return "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]";
   }
 
   if (item.messageType === "voice") {
-    return "bg-[#f3eef8] text-[#6e6284]";
+    return "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]";
   }
 
-  return "bg-[#eef7f1] text-[#5d7865]";
+  return "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]";
 }
 
 function resolveSenderAvatarLabel(senderName: string) {
@@ -1512,7 +1512,7 @@ function renderHighlightedText(text: string, keyword: string) {
   return (
     <>
       {text.slice(0, start)}
-      <mark className="rounded-[3px] bg-[rgba(250,204,21,0.32)] px-0.5 text-current">
+      <mark className="rounded-[3px] bg-[color:var(--state-warning-bg)] px-0.5 text-current">
         {text.slice(start, end)}
       </mark>
       {text.slice(end)}

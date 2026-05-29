@@ -20,7 +20,7 @@ import { describeRequestError } from "../lib/request-error";
 import { useBuyGoodsMutation, useStoreGoodsQuery } from "../features/shop/use-shop";
 
 const FIELD_CLASS =
-  "rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] shadow-none";
+  "rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] shadow-none";
 
 export function ShopCheckoutPage() {
   const t = useRuntimeTranslator();
@@ -108,19 +108,19 @@ export function ShopCheckoutPage() {
           <>
             <AppSection className="flex items-center justify-between rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-none">
               <div className="min-w-0">
-                <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                   {goods.name}
                 </div>
-                <div className="text-[12px] text-[color:var(--text-muted)]">{t(msg`实物商品`)}</div>
+                <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">{t(msg`实物商品`)}</div>
               </div>
-              <div className="text-[16px] font-semibold text-[color:var(--brand-primary)]">
+              <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--brand-primary)]">
                 {formatCents(goods.priceCents, goods.currency)}
               </div>
             </AppSection>
 
             <AppSection className="space-y-3 rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-none">
               <label className="block space-y-1">
-                <span className="text-[13px] text-[color:var(--text-secondary)]">{t(msg`收货人`)}</span>
+                <span className="text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">{t(msg`收货人`)}</span>
                 <TextField
                   value={name}
                   onChange={(e) => setName(e.target.value)}
@@ -129,7 +129,7 @@ export function ShopCheckoutPage() {
                 />
               </label>
               <label className="block space-y-1">
-                <span className="text-[13px] text-[color:var(--text-secondary)]">{t(msg`手机号`)}</span>
+                <span className="text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">{t(msg`手机号`)}</span>
                 <TextField
                   value={phone}
                   inputMode="tel"
@@ -139,7 +139,7 @@ export function ShopCheckoutPage() {
                 />
               </label>
               <label className="block space-y-1">
-                <span className="text-[13px] text-[color:var(--text-secondary)]">{t(msg`收货地址`)}</span>
+                <span className="text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">{t(msg`收货地址`)}</span>
                 <TextAreaField
                   rows={3}
                   value={address}

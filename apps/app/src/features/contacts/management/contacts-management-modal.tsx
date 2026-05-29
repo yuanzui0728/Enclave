@@ -311,7 +311,7 @@ export function ContactsManagementModal({
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          className="relative flex max-h-[80vh] w-full max-w-[480px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
+          className="relative flex max-h-[80vh] w-full max-w-[480px] flex-col overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
         >
           {header}
           <div
@@ -396,12 +396,12 @@ function ModalHeader({
         ) : null}
       </div>
       {/* flex-1 min-w-0 truncate：permissions-detail 时标题来自 detailFriendName
-          （可能是较长的外语好友名），原来 text-[15px] 单元素没有 max-width 也
+          （可能是较长的外语好友名），原来 text-[length:var(--text-base)] 单元素没有 max-width 也
           没 overflow:hidden，名字稍长就把 h-12 行高撑出 / 换行；改成中间区域
           占满剩余空间并按需省略。 */}
       <div
         id={titleId}
-        className="min-w-0 flex-1 truncate text-center text-[15px] font-medium text-[color:var(--text-primary)]"
+        className="min-w-0 flex-1 truncate text-center text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]"
       >
         {title}
       </div>

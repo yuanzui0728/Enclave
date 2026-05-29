@@ -234,7 +234,7 @@ export function DesktopRuntimeGuard() {
   return (
     <div className="absolute inset-0 z-50 flex items-center justify-center bg-[linear-gradient(180deg,rgba(7,10,18,0.96),rgba(9,13,21,0.98))] px-6">
       <div className="w-full max-w-md rounded-[32px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-6 text-[color:var(--text-primary)] shadow-[var(--shadow-shell)] backdrop-blur-xl">
-        <div className="text-[11px] uppercase tracking-[0.32em] text-[color:var(--brand-secondary)]">
+        <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.32em] text-[color:var(--brand-secondary)]">
           {t(msg`请稍候`)}
         </div>
         <h2 className="mt-4 text-2xl font-semibold">{title}</h2>

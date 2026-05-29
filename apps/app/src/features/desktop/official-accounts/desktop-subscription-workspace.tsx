@@ -249,7 +249,7 @@ export function DesktopSubscriptionWorkspace({
         <div className="border-b border-[color:var(--border-faint)] bg-white px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`订阅号消息`)}
               </div>
               <div className="mt-0.5 truncate text-[10px] text-[color:var(--text-muted)]">
@@ -307,16 +307,16 @@ export function DesktopSubscriptionWorkspace({
                     index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
                     activeArticleId === delivery.articleId
                       ? "bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]"
-                      : "bg-white hover:bg-[rgba(15,23,42,0.015)]",
+                      : "bg-white hover:bg-[color:var(--state-info-bg)]",
                   )}
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                        <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                           {delivery.account.name}
                         </div>
-                        <div className="mt-1 line-clamp-2 text-[12px] leading-[1.2rem] text-[color:var(--text-secondary)]">
+                        <div className="mt-1 line-clamp-2 text-[length:var(--text-caption)] leading-[1.2rem] text-[color:var(--text-secondary)]">
                           {delivery.article.title}
                         </div>
                       </div>
@@ -327,7 +327,7 @@ export function DesktopSubscriptionWorkspace({
                     <div className="mt-1.5 flex items-center gap-1.5">
                       {!delivery.readAt ? (
                         <div
-                          className="h-2 w-2 shrink-0 rounded-full bg-[#fa5151]"
+                          className="h-2 w-2 shrink-0 rounded-full bg-[color:var(--state-danger-bg)]"
                           aria-label={t(msg`未读`)}
                         />
                       ) : null}
@@ -345,7 +345,7 @@ export function DesktopSubscriptionWorkspace({
                       className="h-14 w-14 shrink-0 rounded-[10px] border border-[color:var(--border-faint)] object-cover"
                     />
                   ) : (
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[10px] text-[color:var(--text-dim)]">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] text-[10px] text-[color:var(--text-dim)]">
                       {t(msg`文章`)}
                     </div>
                   )}
@@ -458,9 +458,9 @@ function ReaderStatusPane({
           className={cn(
             "mx-auto inline-flex rounded-full px-2.5 py-0.5 text-[10px]",
             tone === "danger"
-              ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+              ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
               : tone === "loading"
-                ? "bg-[rgba(15,23,42,0.05)] text-[color:var(--text-secondary)]"
+                ? "bg-[color:var(--border-faint)] text-[color:var(--text-secondary)]"
                 : "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--brand-primary)]",
           )}
         >
@@ -469,7 +469,7 @@ function ReaderStatusPane({
         <div className="mt-4 text-[18px] font-medium text-[color:var(--text-primary)]">
           {title}
         </div>
-        <p className="mx-auto mt-3 max-w-[28rem] text-[13px] leading-7 text-[color:var(--text-secondary)]">
+        <p className="mx-auto mt-3 max-w-[28rem] text-[length:var(--text-caption)] leading-7 text-[color:var(--text-secondary)]">
           {description}
         </p>
       </div>
@@ -487,9 +487,9 @@ function ReaderInlineStatus({
   return (
     <div
       className={cn(
-        "rounded-[16px] border px-4 py-3 text-[13px] leading-6",
+        "rounded-[var(--radius-md)] border px-4 py-3 text-[length:var(--text-caption)] leading-6",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[rgba(254,242,242,0.9)] text-[color:var(--state-danger-text)]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
       )}
     >
@@ -515,7 +515,7 @@ function SidebarStatusPane({
         "rounded-[18px] border px-4 py-5 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
-          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
         className,
       )}
     >
@@ -523,18 +523,18 @@ function SidebarStatusPane({
         <div className="flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
       <div
         className={cn(
-          "font-medium text-[13px] text-[color:var(--text-primary)]",
+          "font-medium text-[length:var(--text-caption)] text-[color:var(--text-primary)]",
           tone === "loading" ? "mt-3" : undefined,
         )}
       >
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[15rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[15rem] text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
         {description}
       </p>
     </div>
@@ -553,10 +553,10 @@ function SidebarInlineStatus({
   return (
     <div
       className={cn(
-        "rounded-[14px] border px-3 py-2 text-[12px] leading-6 shadow-none",
+        "rounded-[14px] border px-3 py-2 text-[length:var(--text-caption)] leading-6 shadow-none",
         tone === "danger"
-          ? "border-[rgba(220,38,38,0.18)] bg-[rgba(255,245,245,0.96)] text-[color:var(--state-danger-text)]"
-          : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[color:var(--text-secondary)]",
+          ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] text-[color:var(--text-secondary)]",
         className,
       )}
     >

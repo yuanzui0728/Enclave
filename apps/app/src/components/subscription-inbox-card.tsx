@@ -40,7 +40,7 @@ export function SubscriptionInboxCard({
           className={cn(
             "flex shrink-0 items-center justify-center text-white shadow-[var(--shadow-soft)]",
             variant === "desktop"
-              ? "h-11 w-11 rounded-[12px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))]"
+              ? "h-11 w-11 rounded-[var(--radius-sm)] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))]"
               : "h-12 w-12 rounded-xl bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))]",
           )}
         >

@@ -340,8 +340,8 @@ function SelectionModeActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-1 text-[11px] font-medium transition active:bg-[color:var(--surface-card-hover)] disabled:bg-[color:var(--bg-canvas)] disabled:text-[#b8b8b8] ${
-        danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]"
+      className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-1 text-[length:var(--text-eyebrow)] font-medium transition active:bg-[color:var(--surface-card-hover)] disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-dim)] ${
+        danger ? "text-[color:var(--state-danger-text)]" : "text-[color:var(--text-primary)]"
       }`}
     >
       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-current shadow-[0_1px_2px_rgba(60, 40, 110, 0.04)]">
@@ -3589,8 +3589,8 @@ export function ChatMessageList({
             disabled={!onLoadOlderMessages || loadingOlderMessages}
             className={
               isDesktop
-                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[12px] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
+                ? "inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
+                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
             {loadingOlderMessages ? t(msg`正在加载更早消息...`) : t(msg`查看更多消息`)}
@@ -3599,7 +3599,7 @@ export function ChatMessageList({
       ) : null}
       {selectionMode ? (
         isDesktop ? (
-          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 backdrop-blur">
+          <div className="sticky top-0 z-20 flex items-center justify-between gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 backdrop-blur">
             <div>
               <div className="text-sm text-[color:var(--text-primary)]">
                 {t(msg`已选择 ${selectedMessageIds.length} 条消息`)}
@@ -3670,7 +3670,7 @@ export function ChatMessageList({
                 onClick={() => {
                   void handleDeleteSelectedMessages();
                 }}
-                className="rounded-full text-[#d74b45]"
+                className="rounded-full text-[color:var(--state-danger-text)]"
               >
                 {selectionActionPending === "delete"
                   ? t(msg`删除中...`)
@@ -3683,11 +3683,11 @@ export function ChatMessageList({
             <button
               type="button"
               onClick={resetSelectionMode}
-              className="flex h-9 min-w-14 items-center justify-start rounded-[12px] px-2.5 text-[15px] text-[color:var(--text-secondary)] transition active:bg-white/80"
+              className="flex h-9 min-w-14 items-center justify-start rounded-[var(--radius-sm)] px-2.5 text-[length:var(--text-base)] text-[color:var(--text-secondary)] transition active:bg-white/80"
             >
               {t(msg`取消`)}
             </button>
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`已选 ${selectedMessageIds.length} 条`)}
             </div>
             <button
@@ -3696,7 +3696,7 @@ export function ChatMessageList({
                 !visibleMessages.length || selectionActionPending !== null
               }
               onClick={handleToggleSelectAllMessages}
-              className="flex h-9 min-w-16 items-center justify-end rounded-[12px] px-2.5 text-[15px] font-medium text-[color:var(--brand-primary)] transition active:bg-white/80 disabled:text-[#b8b8b8]"
+              className="flex h-9 min-w-16 items-center justify-end rounded-[var(--radius-sm)] px-2.5 text-[length:var(--text-base)] font-medium text-[color:var(--brand-primary)] transition active:bg-white/80 disabled:text-[color:var(--text-dim)]"
             >
               {allVisibleSelected ? t(msg`全不选`) : t(msg`全选`)}
             </button>
@@ -3825,8 +3825,8 @@ export function ChatMessageList({
                   id={`chat-message-${message.id}`}
                   className={`mx-auto max-w-[84%] text-center text-[color:var(--text-muted)] ${
                     isDesktop
-                      ? "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1.5 text-[11px]"
-                      : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
+                      ? "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1.5 text-[length:var(--text-eyebrow)]"
+                      : "rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-1 text-[10px] leading-5 shadow-none"
                   } ${isHighlighted ? "ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] ring-offset-2 ring-offset-transparent" : ""}`}
                   tone="muted"
                 >
@@ -3887,7 +3887,7 @@ export function ChatMessageList({
               onPointerCancel={clearLongPressTimer}
               onPointerMove={handleMobileMessagePointerMove}
               data-yj-msg-bubble={isDesktop ? undefined : "1"}
-              className={`rounded-[16px] transition-[background-color,box-shadow] duration-300 ${
+              className={`rounded-[var(--radius-md)] transition-[background-color,box-shadow] duration-300 ${
                 isDesktop
                   ? "space-y-1.5 px-2 py-1.5"
                   : `yj-no-callout ${
@@ -3957,8 +3957,8 @@ export function ChatMessageList({
                           ? "mb-1 inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-medium"
                           : "mb-0.5 inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-medium",
                         isUser
-                          ? "bg-[rgba(148,163,184,0.18)] text-[color:var(--text-secondary)]"
-                          : "bg-[rgba(60, 40, 110, 0.06)] text-[color:var(--text-secondary)]",
+                          ? "bg-[color:var(--state-info-bg)] text-[color:var(--text-secondary)]"
+                          : "bg-[color:var(--border-faint)] text-[color:var(--text-secondary)]",
                       )}
                     >
                       {t(msg`聊天记录`)}
@@ -4200,14 +4200,14 @@ export function ChatMessageList({
                     />
                   ) : (
                     <div
-                      className={`px-3.5 py-2 text-[15px] leading-6 ${
+                      className={`px-3.5 py-2 text-[length:var(--text-base)] leading-6 ${
                         isUser
                           ? isDesktop
-                            ? "rounded-[16px] bg-[#95ec69] text-[color:var(--text-primary)] shadow-none"
-                            : "rounded-[20px] rounded-br-[6px] bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
+                            ? "rounded-[var(--radius-md)] bg-[color:var(--state-success-bg)] text-[color:var(--text-primary)] shadow-none"
+                            : "rounded-[var(--radius-lg)] rounded-br-[6px] bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[color:var(--text-primary)] [animation:bubble-in_220ms_cubic-bezier(0.22,1,0.36,1)] shadow-none"
                           : isDesktop
-                            ? "rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-none"
-                            : "rounded-[20px] rounded-bl-[6px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
+                            ? "rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-none"
+                            : "rounded-[var(--radius-lg)] rounded-bl-[6px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                       } whitespace-pre-wrap break-words`}
                     >
                       {renderTextWithMentions(displayText)}
@@ -4217,7 +4217,7 @@ export function ChatMessageList({
                     <div
                       className={`px-1 text-[color:var(--text-muted)] ${
                         isDesktop
-                          ? "mt-1 text-[11px]"
+                          ? "mt-1 text-[length:var(--text-eyebrow)]"
                           : "mt-px px-0.5 text-[10px]"
                       }`}
                     >
@@ -4227,9 +4227,9 @@ export function ChatMessageList({
                   {isUser && !selectionMode && message.localStatus === "failed" ? (
                     <div
                       className={cn(
-                        "flex items-center gap-1.5 px-1 text-[#d74b45]",
+                        "flex items-center gap-1.5 px-1 text-[color:var(--state-danger-text)]",
                         isDesktop
-                          ? "mt-1 text-[11px]"
+                          ? "mt-1 text-[length:var(--text-eyebrow)]"
                           : "mt-px px-0.5 text-[10px]",
                       )}
                     >
@@ -4241,7 +4241,7 @@ export function ChatMessageList({
                             event.stopPropagation();
                             void handleRetryMessage(message);
                           }}
-                          className="rounded-full px-1.5 font-medium text-[#d74b45] transition hover:bg-[#fdeceb] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[rgba(215,75,69,0.22)]"
+                          className="rounded-full px-1.5 font-medium text-[color:var(--state-danger-text)] transition hover:bg-[color:var(--state-danger-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--state-danger-bg)]"
                         >
                           {t(msg`重试`)}
                         </button>
@@ -4952,7 +4952,7 @@ function UnreadMarkerDivider({
       <div
         className={
           isDesktop
-            ? "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1 text-[11px] font-medium text-[#7f7f7f]"
+            ? "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]"
             : "rounded-full border border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
         }
       >
@@ -4990,7 +4990,7 @@ function MessageTimestampDivider({
         onClick={onToggle}
         className={
           isDesktop
-            ? "inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1 text-[11px] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-card)]"
+            ? "inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-card)]"
             : "inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-0.5 text-[10px] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-card-hover)]"
         }
         aria-label={
@@ -5137,8 +5137,8 @@ function SharedHistorySummaryNotice({
       className={cn(
         "mx-auto max-w-[84%] border text-center",
         isDesktop
-          ? "rounded-[16px] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#fafafa,#f2f2f2)] px-4 py-3"
-          : "rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3.5 py-2.5",
+          ? "rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#fafafa,#f2f2f2)] px-4 py-3"
+          : "rounded-[var(--radius-md)] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3.5 py-2.5",
         highlighted
           ? "ring-2 ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] ring-offset-2 ring-offset-transparent"
           : "",
@@ -5147,7 +5147,7 @@ function SharedHistorySummaryNotice({
       <div
         className={cn(
           "flex items-center justify-center gap-2 font-medium text-[color:var(--text-primary)]",
-          isDesktop ? "text-[12px]" : "text-[11px]",
+          isDesktop ? "text-[length:var(--text-caption)]" : "text-[length:var(--text-eyebrow)]",
         )}
       >
         <span
@@ -5164,7 +5164,7 @@ function SharedHistorySummaryNotice({
         className={cn(
           "text-[color:var(--text-muted)]",
           isDesktop
-            ? "mt-1.5 text-[11px] leading-5"
+            ? "mt-1.5 text-[length:var(--text-eyebrow)] leading-5"
             : "mt-1 text-[10px] leading-[18px]",
         )}
       >
@@ -5970,17 +5970,17 @@ function ReplyQuoteCard({
       className={`w-full overflow-hidden border text-left transition ${
         align === "right"
           ? isDesktop
-            ? "mb-2 rounded-[12px] border-[rgba(124, 91, 217, 0.24)] bg-[rgba(237,248,223,0.96)] px-3 py-2 text-[color:var(--text-primary)]"
-            : "mb-1.5 rounded-[12px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
+            ? "mb-2 rounded-[var(--radius-sm)] border-[color:var(--brand-soft)] bg-[color:var(--state-success-bg)] px-3 py-2 text-[color:var(--text-primary)]"
+            : "mb-1.5 rounded-[var(--radius-sm)] border-[color:var(--state-success-bg)] bg-[color:var(--surface-card)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
           : isDesktop
-            ? "mb-2 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[color:var(--text-primary)]"
-            : "mb-1.5 rounded-[12px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
+            ? "mb-2 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[color:var(--text-primary)]"
+            : "mb-1.5 rounded-[var(--radius-sm)] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-2.5 py-1.5 text-[color:var(--text-primary)]"
       } ${disabled ? "cursor-default opacity-90" : "hover:opacity-90"}`}
     >
       <div className={`flex items-center ${isDesktop ? "gap-2" : "gap-1.5"}`}>
         <div
           className={`truncate font-medium text-[color:var(--text-secondary)] ${
-            isDesktop ? "text-[11px]" : "text-[10px]"
+            isDesktop ? "text-[length:var(--text-eyebrow)]" : "text-[10px]"
           }`}
         >
           {translateRuntimeMessage(msg`回复`)} {senderName}
@@ -5998,8 +5998,8 @@ function ReplyQuoteCard({
       <div
         className={`line-clamp-2 text-[color:var(--text-muted)] ${
           isDesktop
-            ? "mt-1 text-[12px] leading-5"
-            : "mt-0.5 text-[11px] leading-[18px]"
+            ? "mt-1 text-[length:var(--text-caption)] leading-5"
+            : "mt-0.5 text-[length:var(--text-eyebrow)] leading-[18px]"
         }`}
       >
         {renderTextWithMentions(previewText)}
@@ -6080,8 +6080,8 @@ function ImageMessage({
       <div
         className={`flex items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
           isDesktop
-            ? "h-28 w-28 rounded-[24px] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
-            : "h-24 w-24 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
+            ? "h-28 w-28 rounded-[var(--radius-xl)] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
+            : "h-24 w-24 rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
         }`}
       >
         {label || translateRuntimeMessage(msg`[图片]`)}
@@ -6099,8 +6099,8 @@ function ImageMessage({
       onLoad={onMediaReady}
       className={`bg-[color:var(--surface-card)] object-cover shadow-none ${
         isDesktop
-          ? "rounded-[16px] border border-[color:var(--border-faint)]"
-          : "rounded-[12px] border border-[color:var(--border-subtle)]"
+          ? "rounded-[var(--radius-md)] border border-[color:var(--border-faint)]"
+          : "rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)]"
       }`}
       style={imageStyle}
       loading="lazy"
@@ -6211,8 +6211,8 @@ function ContactCardMessage({
     <div
       className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[220px] rounded-[16px] border border-[color:var(--border-faint)] p-3"
-          : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
+          ? "w-[220px] rounded-[var(--radius-md)] border border-[color:var(--border-faint)] p-3"
+          : "w-[204px] rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
       {recommendation ? (
@@ -6233,14 +6233,14 @@ function ContactCardMessage({
         <div className="min-w-0 flex-1">
           <div
             className={`truncate font-medium text-[color:var(--text-primary)] ${
-              isDesktop ? "text-sm" : "text-[13px]"
+              isDesktop ? "text-sm" : "text-[length:var(--text-caption)]"
             }`}
           >
             {attachment.name}
           </div>
           <div
             className={`truncate text-[color:var(--text-muted)] ${
-              isDesktop ? "mt-0.5 text-xs" : "mt-px text-[11px]"
+              isDesktop ? "mt-0.5 text-xs" : "mt-px text-[length:var(--text-eyebrow)]"
             }`}
           >
             {attachment.relationship || translateRuntimeMessage(msg`世界联系人`)}
@@ -6251,8 +6251,8 @@ function ContactCardMessage({
         <div
           className={`line-clamp-2 text-[color:var(--text-secondary)] ${
             isDesktop
-              ? "mt-2 text-[12px] leading-5"
-              : "mt-2 text-[11px] leading-4.5"
+              ? "mt-2 text-[length:var(--text-caption)] leading-5"
+              : "mt-2 text-[length:var(--text-eyebrow)] leading-4.5"
           }`}
         >
           {recommendation.reasonSummary}
@@ -6260,7 +6260,7 @@ function ContactCardMessage({
       ) : null}
       <div
         className={`flex items-center gap-2 uppercase tracking-[0.12em] text-[color:var(--text-muted)] ${
-          isDesktop ? "mt-3 text-[11px]" : "mt-2.5 text-[10px]"
+          isDesktop ? "mt-3 text-[length:var(--text-eyebrow)]" : "mt-2.5 text-[10px]"
         }`}
       >
         <ContactRound size={12} />
@@ -6355,8 +6355,8 @@ function NoteCardMessage({
     <div
       className={`overflow-hidden bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[248px] rounded-[16px] border border-[color:var(--border-faint)]"
-          : "w-[220px] rounded-[12px] border border-[color:var(--border-subtle)]"
+          ? "w-[248px] rounded-[var(--radius-md)] border border-[color:var(--border-faint)]"
+          : "w-[220px] rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)]"
       }`}
     >
       {previewImageSrc ? (
@@ -6385,9 +6385,9 @@ function NoteCardMessage({
           }`}
         >
           <div
-            className={`rounded-[16px] border border-[rgba(60, 40, 110, 0.08)] bg-white/88 text-[color:var(--text-muted)] shadow-[var(--shadow-soft)] ${
+            className={`rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-white/88 text-[color:var(--text-muted)] shadow-[var(--shadow-soft)] ${
               isDesktop
-                ? "px-3 py-2 text-[11px] tracking-[0.16em]"
+                ? "px-3 py-2 text-[length:var(--text-eyebrow)] tracking-[0.16em]"
                 : "px-2.5 py-1.5 text-[10px] tracking-[0.14em]"
             }`}
           >
@@ -6402,19 +6402,19 @@ function NoteCardMessage({
       >
         <div
           className={`line-clamp-2 font-medium text-[color:var(--text-primary)] ${
-            isDesktop ? "text-sm leading-6" : "text-[13px] leading-5"
+            isDesktop ? "text-sm leading-6" : "text-[length:var(--text-caption)] leading-5"
           }`}
         >
           {title}
         </div>
         <div
           className={`line-clamp-3 text-[color:var(--text-muted)] ${
-            isDesktop ? "text-xs leading-5" : "text-[11px] leading-[18px]"
+            isDesktop ? "text-xs leading-5" : "text-[length:var(--text-eyebrow)] leading-[18px]"
           }`}
         >
           {excerpt || translateRuntimeMessage(msg`点击查看完整笔记`)}
         </div>
-        <div className="flex items-center justify-between gap-3 border-t border-[rgba(60, 40, 110, 0.06)] pt-2.5">
+        <div className="flex items-center justify-between gap-3 border-t border-[color:var(--border-faint)] pt-2.5">
           <div className="flex min-w-0 flex-wrap gap-1.5">
             {tags.slice(0, 2).map((tag) => (
               <span
@@ -6517,8 +6517,8 @@ function FeedPostCardMessage({
     <div
       className={`overflow-hidden bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[260px] rounded-[16px] border border-[color:var(--border-faint)]"
-          : "w-[228px] rounded-[12px] border border-[color:var(--border-subtle)]"
+          ? "w-[260px] rounded-[var(--radius-md)] border border-[color:var(--border-faint)]"
+          : "w-[228px] rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)]"
       }`}
     >
       {cover && !coverFailed ? (
@@ -6559,7 +6559,7 @@ function FeedPostCardMessage({
       <div className={isDesktop ? "space-y-2 px-3.5 py-3" : "space-y-1.5 px-3 py-3"}>
         <div
           className={`line-clamp-2 font-medium text-[color:var(--text-primary)] ${
-            isDesktop ? "text-sm leading-5" : "text-[13px] leading-5"
+            isDesktop ? "text-sm leading-5" : "text-[length:var(--text-caption)] leading-5"
           }`}
         >
           {attachment.title?.trim() ||
@@ -6567,8 +6567,8 @@ function FeedPostCardMessage({
             translateRuntimeMessage(msg`视频号动态`)}
         </div>
         <div
-          className={`flex items-center justify-between gap-3 border-t border-[rgba(60, 40, 110, 0.06)] pt-2 text-[color:var(--text-muted)] ${
-            isDesktop ? "text-[11px]" : "text-[10px]"
+          className={`flex items-center justify-between gap-3 border-t border-[color:var(--border-faint)] pt-2 text-[color:var(--text-muted)] ${
+            isDesktop ? "text-[length:var(--text-eyebrow)]" : "text-[10px]"
           }`}
         >
           <span className="truncate">
@@ -6612,16 +6612,16 @@ function FileAttachmentMessage({
     <div
       className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[220px] rounded-[16px] border border-[color:var(--border-faint)] p-3"
-          : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
+          ? "w-[220px] rounded-[var(--radius-md)] border border-[color:var(--border-faint)] p-3"
+          : "w-[204px] rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
       <div className={`flex items-center ${isDesktop ? "gap-3" : "gap-2.5"}`}>
         <div
           className={`flex items-center justify-center text-[color:var(--text-secondary)] ${
             isDesktop
-              ? "h-12 w-12 rounded-[16px] bg-[color:var(--surface-secondary)]"
-              : "h-10 w-10 rounded-[12px] bg-[color:var(--surface-console)]"
+              ? "h-12 w-12 rounded-[var(--radius-md)] bg-[color:var(--surface-secondary)]"
+              : "h-10 w-10 rounded-[var(--radius-sm)] bg-[color:var(--surface-console)]"
           }`}
         >
           <FileText size={isDesktop ? 20 : 18} />
@@ -6629,14 +6629,14 @@ function FileAttachmentMessage({
         <div className="min-w-0 flex-1">
           <div
             className={`truncate font-medium text-[color:var(--text-primary)] ${
-              isDesktop ? "text-sm" : "text-[13px]"
+              isDesktop ? "text-sm" : "text-[length:var(--text-caption)]"
             }`}
           >
             {attachment.fileName}
           </div>
           <div
             className={`text-[color:var(--text-muted)] ${
-              isDesktop ? "mt-1 text-xs" : "mt-0.5 text-[11px]"
+              isDesktop ? "mt-1 text-xs" : "mt-0.5 text-[length:var(--text-eyebrow)]"
             }`}
           >
             {formatFileSize(attachment.size)}
@@ -6645,7 +6645,7 @@ function FileAttachmentMessage({
       </div>
       <div
         className={`uppercase tracking-[0.12em] text-[color:var(--text-muted)] ${
-          isDesktop ? "mt-3 text-[11px]" : "mt-2.5 text-[10px]"
+          isDesktop ? "mt-3 text-[length:var(--text-eyebrow)]" : "mt-2.5 text-[10px]"
         }`}
       >
         {translateRuntimeMessage(msg`文件`)}
@@ -6683,13 +6683,13 @@ function LocationCardMessage({
     <div
       className={`bg-[color:var(--surface-card)] shadow-none ${
         isDesktop
-          ? "w-[220px] rounded-[16px] border border-[color:var(--border-faint)] p-3"
-          : "w-[204px] rounded-[12px] border border-[color:var(--border-subtle)] p-2.5"
+          ? "w-[220px] rounded-[var(--radius-md)] border border-[color:var(--border-faint)] p-3"
+          : "w-[204px] rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] p-2.5"
       }`}
     >
       <div
         className={`flex items-center gap-2 uppercase tracking-[0.12em] text-[color:var(--text-muted)] ${
-          isDesktop ? "text-[11px]" : "text-[10px]"
+          isDesktop ? "text-[length:var(--text-eyebrow)]" : "text-[10px]"
         }`}
       >
         <MapPin size={12} />
@@ -6697,7 +6697,7 @@ function LocationCardMessage({
       </div>
       <div
         className={`font-medium text-[color:var(--text-primary)] ${
-          isDesktop ? "mt-3 text-sm" : "mt-2.5 text-[13px]"
+          isDesktop ? "mt-3 text-sm" : "mt-2.5 text-[length:var(--text-caption)]"
         }`}
       >
         {attachment.title}
@@ -6707,7 +6707,7 @@ function LocationCardMessage({
           className={`text-[color:var(--text-muted)] ${
             isDesktop
               ? "mt-1 text-xs leading-5"
-              : "mt-0.5 text-[11px] leading-[18px]"
+              : "mt-0.5 text-[length:var(--text-eyebrow)] leading-[18px]"
           }`}
         >
           {attachment.subtitle}
@@ -6745,7 +6745,7 @@ function GiftMessage({
   return (
     <div
       className={`overflow-hidden shadow-none ${
-        isDesktop ? "w-[228px] rounded-[16px]" : "w-[208px] rounded-[14px]"
+        isDesktop ? "w-[228px] rounded-[var(--radius-md)]" : "w-[208px] rounded-[14px]"
       }`}
       style={{ background: "linear-gradient(135deg,var(--brand-primary),var(--brand-primary))" }}
     >
@@ -6759,18 +6759,18 @@ function GiftMessage({
             className="h-7 w-7 rounded-[8px] object-cover"
           />
         ) : (
-          <span className="text-[22px] leading-none">🎁</span>
+          <span className="text-[length:var(--text-section)] leading-none">🎁</span>
         )}
         <div className="min-w-0 flex-1">
           <div
             className={`truncate font-medium text-white ${
-              isDesktop ? "text-sm" : "text-[13px]"
+              isDesktop ? "text-sm" : "text-[length:var(--text-caption)]"
             }`}
           >
             {attachment.goodsName}
             {qty}
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-[rgba(255,255,255,0.85)]">
+          <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[rgba(255,255,255,0.85)]">
             {note || translateRuntimeMessage(msg`送你一份礼物`)}
           </div>
         </div>
@@ -6819,7 +6819,7 @@ function RedPacketMessage({
   const card = (
     <div
       className={`overflow-hidden shadow-none ${
-        isDesktop ? "w-[228px] rounded-[16px]" : "w-[208px] rounded-[14px]"
+        isDesktop ? "w-[228px] rounded-[var(--radius-md)]" : "w-[208px] rounded-[14px]"
       }`}
       style={{ background: settled ? "#dcab7d" : "#f0654f" }}
     >
@@ -6828,16 +6828,16 @@ function RedPacketMessage({
           isDesktop ? "py-3" : "py-2.5"
         }`}
       >
-        <span className="text-[22px] leading-none">🧧</span>
+        <span className="text-[length:var(--text-section)] leading-none">🧧</span>
         <div className="min-w-0 flex-1">
           <div
             className={`truncate font-medium text-white ${
-              isDesktop ? "text-sm" : "text-[13px]"
+              isDesktop ? "text-sm" : "text-[length:var(--text-caption)]"
             }`}
           >
             {greeting}
           </div>
-          <div className="mt-0.5 text-[11px] text-[rgba(255,255,255,0.85)]">
+          <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[rgba(255,255,255,0.85)]">
             {statusLabel}
             {showAmount ? ` · ${amountText}` : ""}
           </div>
@@ -6946,11 +6946,11 @@ function VoiceMessage({
       } ${
         own
           ? isDesktop
-            ? "bg-[#95ec69] text-[color:var(--text-primary)]"
-            : "bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[#4d2f00]"
+            ? "bg-[color:var(--state-success-bg)] text-[color:var(--text-primary)]"
+            : "bg-[linear-gradient(160deg,#ffe08a,#ffbe33)] text-[color:var(--text-primary)]"
           : isDesktop
-            ? "rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
-            : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+            ? "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+            : "rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
       }`}
     >
       <button
@@ -6976,22 +6976,22 @@ function VoiceMessage({
       >
         <span
           className={`${isDesktop ? "h-2.5 w-1" : "h-2 w-1"} rounded-full ${playing ? "animate-pulse" : ""} ${
-            own ? "bg-[#3d7f1a]" : "bg-[#9ca3af]"
+            own ? "bg-[color:var(--state-success-bg)]" : "bg-[#9ca3af]"
           }`}
         />
         <span
           className={`${isDesktop ? "h-4 w-1" : "h-3.5 w-1"} rounded-full ${playing ? "animate-pulse [animation-delay:90ms]" : ""} ${
-            own ? "bg-[#4a8f24]" : "bg-[#6b7280]"
+            own ? "bg-[color:var(--state-success-bg)]" : "bg-[#6b7280]"
           }`}
         />
         <span
           className={`${isDesktop ? "h-6 w-1" : "h-5 w-1"} rounded-full ${playing ? "animate-pulse [animation-delay:180ms]" : ""} ${
-            own ? "bg-[#5aa72c]" : "bg-[#4b5563]"
+            own ? "bg-[color:var(--state-success-bg)]" : "bg-[color:var(--state-info-bg)]"
           }`}
         />
       </div>
       <span
-        className={`shrink-0 tabular-nums text-black/60 ${isDesktop ? "text-xs" : "text-[11px]"}`}
+        className={`shrink-0 tabular-nums text-black/60 ${isDesktop ? "text-xs" : "text-[length:var(--text-eyebrow)]"}`}
       >
         {durationLabel}
       </span>
@@ -7072,16 +7072,16 @@ function GroupRelaySummaryMessage({
       className={`border shadow-none ${
         isDesktop
           ? own
-            ? "w-[252px] rounded-[20px] border-[rgba(124, 91, 217, 0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
-            : "w-[252px] rounded-[20px] border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[252px] rounded-[var(--radius-lg)] border-[color:var(--brand-soft)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[252px] rounded-[var(--radius-lg)] border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,251,235,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[236px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
-            : "w-[236px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3"
+            ? "w-[236px] rounded-[var(--radius-md)] border-[color:var(--state-success-bg)] bg-[color:var(--surface-card)] px-3 py-3"
+            : "w-[236px] rounded-[var(--radius-md)] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3"
       }`}
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
             {translateRuntimeMessage(msg`群接龙`)}
           </div>
           <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
@@ -7185,8 +7185,8 @@ function GroupRelaySummaryMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[16px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
+                ? "rounded-[var(--radius-md)] bg-white/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -7203,13 +7203,13 @@ function GroupRelaySummaryMessage({
           }`}
         >
           <div
-            className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[11px] leading-5" : "text-[10px] leading-[18px]"}`}
+            className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[length:var(--text-eyebrow)] leading-5" : "text-[10px] leading-[18px]"}`}
           >
             {ctaCopy.description}
           </div>
           <div
             className={cn(
-              isDesktop ? "text-[11px] font-medium" : "text-[10px] font-medium",
+              isDesktop ? "text-[length:var(--text-eyebrow)] font-medium" : "text-[10px] font-medium",
               resolveResultCardFooterActionClassName(ctaCopy.tone),
             )}
           >
@@ -7366,7 +7366,7 @@ function CallLogMessage({
   return (
     <div
       className={cn(
-        "inline-flex max-w-[280px] items-center gap-2.5 rounded-[16px] border px-3 py-2 text-[12px] leading-[18px]",
+        "inline-flex max-w-[280px] items-center gap-2.5 rounded-[var(--radius-md)] border px-3 py-2 text-[length:var(--text-caption)] leading-[18px]",
         tone === "warning"
           ? "border-[color:var(--brand-primary)]/20 bg-[color:var(--brand-primary)]/8 text-[color:var(--text-primary)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]",
@@ -7498,16 +7498,16 @@ function GroupCallInviteMessage({
         "border shadow-none",
         isDesktop
           ? own
-            ? "w-[264px] rounded-[20px] border-[rgba(124, 91, 217, 0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
-            : "w-[264px] rounded-[20px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[264px] rounded-[var(--radius-lg)] border-[color:var(--brand-soft)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[264px] rounded-[var(--radius-lg)] border-[color:var(--state-info-bg)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
-            : "w-[238px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
+            ? "w-[238px] rounded-[var(--radius-md)] border-[color:var(--state-success-bg)] bg-[color:var(--surface-card)] px-3 py-3"
+            : "w-[238px] rounded-[var(--radius-md)] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
       )}
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
             {translateRuntimeMessage(invite.kind === "voice" ? msg`群语音通话` : msg`群视频通话`)}
           </div>
           <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
@@ -7545,8 +7545,8 @@ function GroupCallInviteMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[16px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
+                ? "rounded-[var(--radius-md)] bg-white/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -7562,13 +7562,13 @@ function GroupCallInviteMessage({
         }`}
       >
         <div
-          className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[11px] leading-5" : "text-[10px] leading-[18px]"}`}
+          className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[length:var(--text-eyebrow)] leading-5" : "text-[10px] leading-[18px]"}`}
         >
           {footerCopy.description}
         </div>
         <div
           className={cn(
-            isDesktop ? "text-[11px] font-medium" : "text-[10px] font-medium",
+            isDesktop ? "text-[length:var(--text-eyebrow)] font-medium" : "text-[10px] font-medium",
             resolveResultCardFooterActionClassName(footerCopy.tone),
           )}
         >
@@ -7608,8 +7608,8 @@ function ResultCardMetric({
     <div
       className={
         isDesktop
-          ? "rounded-[16px] bg-white/72 px-3 py-2"
-          : "rounded-[12px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5"
+          ? "rounded-[var(--radius-md)] bg-white/72 px-3 py-2"
+          : "rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas)] px-2.5 py-1.5"
       }
     >
       <div
@@ -7621,7 +7621,7 @@ function ResultCardMetric({
       </div>
       <div
         className={`font-medium text-[color:var(--text-primary)] ${
-          isDesktop ? "mt-1 text-[13px]" : "mt-0.5 text-[12px]"
+          isDesktop ? "mt-1 text-[length:var(--text-caption)]" : "mt-0.5 text-[length:var(--text-caption)]"
         }`}
       >
         {value}
@@ -7660,16 +7660,16 @@ function DirectCallInviteMessage({
         "border shadow-none",
         isDesktop
           ? own
-            ? "w-[264px] rounded-[20px] border-[rgba(124, 91, 217, 0.22)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
-            : "w-[264px] rounded-[20px] border-[rgba(59,130,246,0.16)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            ? "w-[264px] rounded-[var(--radius-lg)] border-[color:var(--brand-soft)] bg-[linear-gradient(180deg,rgba(237,248,223,0.98),rgba(255,255,255,0.94))] px-4 py-4"
+            : "w-[264px] rounded-[var(--radius-lg)] border-[color:var(--state-info-bg)] bg-[linear-gradient(180deg,rgba(239,246,255,0.98),rgba(255,255,255,0.94))] px-4 py-4"
           : own
-            ? "w-[238px] rounded-[16px] border-[rgba(22,163,74,0.14)] bg-[color:var(--surface-card)] px-3 py-3"
-            : "w-[238px] rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
+            ? "w-[238px] rounded-[var(--radius-md)] border-[color:var(--state-success-bg)] bg-[color:var(--surface-card)] px-3 py-3"
+            : "w-[238px] rounded-[var(--radius-md)] border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 py-3",
       )}
     >
       <div className="flex items-center justify-between gap-3">
         <div>
-          <div className="text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
             {translateRuntimeMessage(invite.kind === "voice" ? msg`语音通话` : msg`视频通话`)}
           </div>
           <div className="mt-1 text-sm font-medium text-[color:var(--text-primary)]">
@@ -7701,8 +7701,8 @@ function DirectCallInviteMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[16px] bg-white/72 px-3 py-2 text-[13px] leading-6 text-[color:var(--text-secondary)]"
-                : "rounded-[12px] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]"
+                ? "rounded-[var(--radius-md)] bg-white/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
+                : "rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
             {line}
@@ -7718,13 +7718,13 @@ function DirectCallInviteMessage({
         }`}
       >
         <div
-          className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[11px] leading-5" : "text-[10px] leading-[18px]"}`}
+          className={`text-[color:var(--text-muted)] ${isDesktop ? "text-[length:var(--text-eyebrow)] leading-5" : "text-[10px] leading-[18px]"}`}
         >
           {footerCopy.description}
         </div>
         <div
           className={cn(
-            isDesktop ? "text-[11px] font-medium" : "text-[10px] font-medium",
+            isDesktop ? "text-[length:var(--text-eyebrow)] font-medium" : "text-[10px] font-medium",
             resolveResultCardFooterActionClassName(footerCopy.tone),
           )}
         >
@@ -7785,7 +7785,7 @@ function StickerMessage({
 
   if (loadFailed) {
     return (
-      <div className="flex h-24 w-24 items-center justify-center rounded-[24px] border border-white/80 bg-white/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
+      <div className="flex h-24 w-24 items-center justify-center rounded-[var(--radius-xl)] border border-white/80 bg-white/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
         {label || translateRuntimeMessage(msg`[表情包]`)}
       </div>
     );
@@ -7813,7 +7813,7 @@ function StickerMessage({
       // 图片链接当文字；drop 到桌面则触发"保存这张表情到桌面"。和兄弟
       // sticker 同款 draggable={false} 防御。
       draggable={false}
-      className="rounded-[20px] bg-white/70 object-contain shadow-none"
+      className="rounded-[var(--radius-lg)] bg-white/70 object-contain shadow-none"
       style={stickerStyle}
     />
   );
@@ -7974,7 +7974,7 @@ function ImageViewerOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={translateRuntimeMessage(msg`图片查看器`)}
-      className="fixed inset-0 z-50 bg-[rgba(15,23,42,0.86)] backdrop-blur-sm"
+      className="fixed inset-0 z-50 bg-[color:var(--state-info-bg)] backdrop-blur-sm"
     >
       <button
         type="button"
@@ -8072,7 +8072,7 @@ function ImageViewerOverlay({
             </div>
           ) : null}
 
-          <div className="absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-[rgba(15,23,42,0.58)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
+          <div className="absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-[color:var(--state-info-bg)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
             <div className="flex items-center justify-center gap-3">
               <ViewerActionButton
                 compact
@@ -8141,7 +8141,7 @@ function ImageViewerOverlay({
           decoding="async"
           draggable={false}
           className={`max-h-full max-w-full object-contain shadow-[0_32px_80px_rgba(0,0,0,0.34)] ${
-            isDesktop ? "rounded-[20px]" : "rounded-[16px]"
+            isDesktop ? "rounded-[var(--radius-lg)]" : "rounded-[var(--radius-md)]"
           }`}
         />
       </div>
@@ -8212,7 +8212,7 @@ function LocationViewerOverlay({
       role="dialog"
       aria-modal="true"
       aria-label={translateRuntimeMessage(msg`位置查看器`)}
-      className="fixed inset-0 z-50 bg-[rgba(5,10,20,0.88)] backdrop-blur-md"
+      className="fixed inset-0 z-50 bg-[color:var(--state-info-bg)] backdrop-blur-md"
     >
       <button
         type="button"
@@ -8232,7 +8232,7 @@ function LocationViewerOverlay({
       <div className="relative flex h-full flex-col">
         <div className="flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-white">
           <div>
-            <div className="text-[12px] uppercase tracking-[0.18em] text-white/60">
+            <div className="text-[length:var(--text-caption)] uppercase tracking-[0.18em] text-white/60">
               {translateRuntimeMessage(msg`聊天位置`)}
             </div>
             <div className="mt-1 text-[18px] font-medium">
@@ -8259,17 +8259,17 @@ function LocationViewerOverlay({
           }}
         >
           <div
-            className={`relative h-full overflow-hidden rounded-[24px] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
+            className={`relative h-full overflow-hidden rounded-[var(--radius-xl)] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
               isDesktop ? "mx-auto max-w-4xl" : ""
             }`}
           >
             <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(236,253,245,0.24),rgba(187,247,208,0.1)),linear-gradient(180deg,rgba(148,163,184,0.12),rgba(60, 40, 110, 0.3))]" />
             <div className="absolute inset-0 opacity-50 [background-image:linear-gradient(rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:36px_36px]" />
-            <div className="absolute inset-x-[14%] top-[18%] h-24 rounded-full bg-[rgba(74,222,128,0.12)] blur-3xl" />
-            <div className="absolute right-[18%] top-[30%] h-20 w-20 rounded-full bg-[rgba(59,130,246,0.12)] blur-3xl" />
+            <div className="absolute inset-x-[14%] top-[18%] h-24 rounded-full bg-[color:var(--state-success-bg)] blur-3xl" />
+            <div className="absolute right-[18%] top-[30%] h-20 w-20 rounded-full bg-[color:var(--state-info-bg)] blur-3xl" />
 
             <div className="relative flex h-full flex-col justify-between p-5">
-              <div className="self-start rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[11px] tracking-[0.12em] text-white/72">
+              <div className="self-start rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-white/72">
                 {translateRuntimeMessage(msg`来自聊天中的位置卡片`)}
               </div>
 
@@ -8280,16 +8280,16 @@ function LocationViewerOverlay({
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-white/12 bg-[rgba(10,15,28,0.56)] p-4 text-white shadow-[0_18px_48px_rgba(0,0,0,0.2)]">
+              <div className="rounded-[var(--radius-xl)] border border-white/12 bg-[color:var(--state-info-bg)] p-4 text-white shadow-[0_18px_48px_rgba(0,0,0,0.2)]">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-full bg-[rgba(74,222,128,0.18)] p-2 text-[#bbf7d0]">
+                  <div className="mt-0.5 rounded-full bg-[color:var(--state-success-bg)] p-2 text-[color:var(--state-success-text)]">
                     <LocateFixed size={16} />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="text-[18px] font-medium leading-7">
                       {attachment.title}
                     </div>
-                    <div className="mt-1 text-[13px] leading-6 text-white/72">
+                    <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-white/72">
                       {attachment.subtitle?.trim() ||
                         translateRuntimeMessage(msg`这条位置消息来自当前聊天场景，可继续回到消息定位。`)}
                     </div>
@@ -8434,7 +8434,7 @@ function NoteViewerOverlay({
         >
           <ArrowLeft size={18} />
         </Button>
-        <div className="flex-1 text-center text-[16px] font-medium tracking-normal">
+        <div className="flex-1 text-center text-[length:var(--text-title)] font-medium tracking-normal">
           {translateRuntimeMessage(msg`笔记`)}
         </div>
         <Button
@@ -8452,35 +8452,35 @@ function NoteViewerOverlay({
       <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-card)]">
         {noteMissing ? (
           <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {translateRuntimeMessage(msg`笔记已被删除或不可见`)}
             </div>
-            <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+            <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
               {translateRuntimeMessage(msg`该笔记可能已经被发送者删除，或你不再有查看权限。`)}
             </div>
           </div>
         ) : (
           <div className="px-5 pb-10 pt-5">
-            <div className="text-[22px] font-semibold leading-8 text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-section)] font-semibold leading-8 text-[color:var(--text-primary)]">
               {title}
             </div>
-            <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {translateRuntimeMessage(msg`编辑于`)} {updatedAtLabel}
             </div>
 
             <div className="mt-4">
               {noteQuery.isLoading && !document ? (
                 <div className="space-y-2.5">
-                  <div className="h-4 w-3/4 rounded bg-[rgba(60, 40, 110, 0.06)]" />
-                  <div className="h-4 w-full rounded bg-[rgba(60, 40, 110, 0.06)]" />
-                  <div className="h-4 w-5/6 rounded bg-[rgba(60, 40, 110, 0.06)]" />
+                  <div className="h-4 w-3/4 rounded bg-[color:var(--border-faint)]" />
+                  <div className="h-4 w-full rounded bg-[color:var(--border-faint)]" />
+                  <div className="h-4 w-5/6 rounded bg-[color:var(--border-faint)]" />
                 </div>
               ) : hasContentHtml ? (
                 <div
                   className={cn(
-                    "text-[15px] leading-7 text-[color:var(--text-primary)]",
-                    "[&_a[data-note-file='true']]:my-1.5 [&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(60, 40, 110, 0.08)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
-                    "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(60, 40, 110, 0.08)]",
+                    "text-[length:var(--text-base)] leading-7 text-[color:var(--text-primary)]",
+                    "[&_a[data-note-file='true']]:my-1.5 [&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[var(--radius-sm)] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[color:var(--border-subtle)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[length:var(--text-caption)] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+                    "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[var(--radius-md)] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[color:var(--border-subtle)]",
                     "[&_[data-note-checkbox='false']]:cursor-default [&_[data-note-checkbox='true']]:cursor-default [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
                   )}
                   dangerouslySetInnerHTML={{
@@ -8505,10 +8505,10 @@ function NoteViewerOverlay({
                       // 整段滚动手势被吞，drag URL 还可能被释放到桌面意外触发
                       // "下载该图到桌面"。和姊妹 viewer img 一致挂 draggable={false}。
                       draggable={false}
-                      className="my-2 max-h-[60vw] w-full rounded-[16px] border border-[rgba(60, 40, 110, 0.08)] object-cover"
+                      className="my-2 max-h-[60vw] w-full rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] object-cover"
                     />
                   ) : null}
-                  <div className="text-[15px] leading-7 text-[color:var(--text-primary)]">
+                  <div className="text-[length:var(--text-base)] leading-7 text-[color:var(--text-primary)]">
                     {attachment.excerpt?.trim() || translateRuntimeMessage(msg`这条笔记暂时没有正文内容。`)}
                   </div>
                   {imageAssetsFallback
@@ -8531,7 +8531,7 @@ function NoteViewerOverlay({
                         // 任一张内嵌图上轻微 drag 都被浏览器接管成 native drag，
                         // 干扰滚动手势。
                         draggable={false}
-                        className="my-2 max-h-[60vw] w-full rounded-[16px] border border-[rgba(60, 40, 110, 0.08)] object-cover"
+                        className="my-2 max-h-[60vw] w-full rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] object-cover"
                       />
                     ))}
                   {fileAssets.map((asset) => (
@@ -8542,7 +8542,7 @@ function NoteViewerOverlay({
                       href={resolveAppMediaUrl(asset.url)}
                       target="_blank"
                       rel="noreferrer"
-                      className="my-1.5 inline-flex items-center gap-2 rounded-[12px] border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[13px] text-[color:var(--text-primary)] no-underline"
+                      className="my-1.5 inline-flex items-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--text-primary)] no-underline"
                     >
                       <FileText size={14} />
                       <span className="max-w-[60vw] truncate">
@@ -8559,7 +8559,7 @@ function NoteViewerOverlay({
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center rounded-full bg-[color:var(--brand-soft)] px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
+                    className="inline-flex items-center rounded-full bg-[color:var(--brand-soft)] px-3 py-1 text-[length:var(--text-caption)] text-[color:var(--brand-primary)]"
                   >
                     #{tag}
                   </span>
@@ -8637,7 +8637,7 @@ function NoteDetailActionSheet({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[60] bg-[rgba(60, 40, 110, 0.14)]">
+    <div className="fixed inset-0 z-[60] bg-[color:var(--border-strong)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -8655,7 +8655,7 @@ function NoteDetailActionSheet({
         // 闭路径不受影响。
         tabIndex={-1}
       />
-      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]">
+      <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1 rounded-t-[var(--radius-lg)] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]">
         <div className="flex justify-center pb-2">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
@@ -8663,7 +8663,7 @@ function NoteDetailActionSheet({
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center gap-3 rounded-[12px] px-4 py-3 text-left text-[15px] text-[color:var(--text-primary)] transition active:bg-black/[0.04]"
+            className="flex items-center gap-3 rounded-[var(--radius-sm)] px-4 py-3 text-left text-[length:var(--text-base)] text-[color:var(--text-primary)] transition active:bg-black/[0.04]"
           >
             <span className="flex h-7 w-7 items-center justify-center text-[color:var(--text-secondary)]">
               <Pencil size={16} />
@@ -8674,7 +8674,7 @@ function NoteDetailActionSheet({
         <button
           type="button"
           onClick={onShareOrCopy}
-          className="flex items-center gap-3 rounded-[12px] px-4 py-3 text-left text-[15px] text-[color:var(--text-primary)] transition active:bg-black/[0.04]"
+          className="flex items-center gap-3 rounded-[var(--radius-sm)] px-4 py-3 text-left text-[length:var(--text-base)] text-[color:var(--text-primary)] transition active:bg-black/[0.04]"
         >
           <span className="flex h-7 w-7 items-center justify-center text-[color:var(--text-secondary)]">
             {shareIcon}
@@ -8684,7 +8684,7 @@ function NoteDetailActionSheet({
         <button
           type="button"
           onClick={onLocate}
-          className="flex items-center gap-3 rounded-[12px] px-4 py-3 text-left text-[15px] text-[color:var(--text-primary)] transition active:bg-black/[0.04]"
+          className="flex items-center gap-3 rounded-[var(--radius-sm)] px-4 py-3 text-left text-[length:var(--text-base)] text-[color:var(--text-primary)] transition active:bg-black/[0.04]"
         >
           <span className="flex h-7 w-7 items-center justify-center text-[color:var(--text-secondary)]">
             <LocateFixed size={16} />
@@ -8694,7 +8694,7 @@ function NoteDetailActionSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-1 rounded-[12px] bg-[color:var(--surface-card)] px-4 py-3 text-center text-[15px] font-medium text-[color:var(--text-primary)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]"
+          className="mt-1 rounded-[var(--radius-sm)] bg-[color:var(--surface-card)] px-4 py-3 text-center text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]"
         >
           {translateRuntimeMessage(msg`取消`)}
         </button>

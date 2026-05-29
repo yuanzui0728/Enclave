@@ -55,10 +55,10 @@ export function OfficialMessageEntryRow({
       className={cn(
         isDesktop
           ? active
-            ? "flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-3 py-2.5 text-left shadow-[0_8px_22px_rgba(60, 40, 110, 0.04)]"
+            ? "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-3 py-2.5 text-left shadow-[0_8px_22px_rgba(60, 40, 110, 0.04)]"
             : contextMenuOpen
-              ? "flex w-full items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5 text-left"
-              : "flex w-full items-center gap-3 rounded-[12px] border border-transparent bg-transparent px-3 py-2.5 text-left transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-white/80"
+              ? "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5 text-left"
+              : "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border border-transparent bg-transparent px-3 py-2.5 text-left transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-white/80"
           : active
             ? "flex w-full items-center gap-2.5 bg-[color:var(--brand-primary)]/7 px-4 py-2.5 text-left"
             : "flex w-full items-center gap-2.5 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left",
@@ -74,14 +74,14 @@ export function OfficialMessageEntryRow({
               className={cn(
                 "truncate",
                 isDesktop
-                  ? "text-[14px] font-medium"
-                  : "text-[14px] font-normal leading-[1.25]",
+                  ? "text-[length:var(--text-body)] font-medium"
+                  : "text-[length:var(--text-body)] font-normal leading-[1.25]",
               )}
             >
               {title}
             </span>
           </div>
-          <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
+          <div className="shrink-0 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {timestampLabel}
           </div>
         </div>
@@ -89,7 +89,7 @@ export function OfficialMessageEntryRow({
           <div
             className={cn(
               "min-w-0 truncate text-[color:var(--text-secondary)]",
-              isDesktop ? "text-[12px]" : "text-[11px] leading-[1.35]",
+              isDesktop ? "text-[length:var(--text-caption)]" : "text-[length:var(--text-eyebrow)] leading-[1.35]",
             )}
           >
             {preview}
@@ -125,7 +125,7 @@ export function OfficialMessageEntryRow({
                   role="img"
                   className={cn(
                     "rounded-full",
-                    isDesktop ? "h-2 w-2 bg-[#fa5151]" : "h-2 w-2 bg-[#b8b8b8]",
+                    isDesktop ? "h-2 w-2 bg-[color:var(--state-danger-bg)]" : "h-2 w-2 bg-[#b8b8b8]",
                   )}
                   aria-label={
                     unreadCount > 99
@@ -147,10 +147,10 @@ export function OfficialMessageEntryRow({
                 <div
                   role="img"
                   className={cn(
-                    "flex items-center justify-center rounded-full bg-[#fa5151] text-center text-white",
+                    "flex items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] text-center text-white",
                     isDesktop
                       ? "min-w-5 px-1.5 py-0.5 text-[10px]"
-                      : "min-h-[18px] min-w-[18px] px-1 text-[11px] leading-none shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
+                      : "min-h-[18px] min-w-[18px] px-1 text-[length:var(--text-eyebrow)] leading-none shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
                     unreadCount > 9 ? "min-w-[22px]" : undefined,
                   )}
                   aria-label={

@@ -256,15 +256,15 @@ export function DeleteAccountPanel() {
           {t(msg`注销账号`)}
         </Button>
       ) : (
-        <div className="space-y-3 rounded-2xl border border-[color:var(--border-danger)] bg-[rgba(255,241,241,0.5)] p-4">
-          <p className="text-[13px] leading-relaxed text-[color:var(--text-secondary)]">
+        <div className="space-y-3 rounded-2xl border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] p-4">
+          <p className="text-[length:var(--text-caption)] leading-relaxed text-[color:var(--text-secondary)]">
             {t(
               msg`为确认是你本人操作，我们会向你的手机或绑定邮箱发送验证码。输入验证码并勾选确认后，账号将被注销。`,
             )}
           </p>
 
           <label className="block space-y-2">
-            <span className="text-[12px] font-medium text-[color:var(--text-secondary)]">
+            <span className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)]">
               {channel === "phone" ? t(msg`手机验证码`) : t(msg`验证码`)}
             </span>
             <div className="flex items-center gap-3">
@@ -318,7 +318,7 @@ export function DeleteAccountPanel() {
               }}
               className="mt-0.5 h-4 w-4 shrink-0 accent-[color:var(--state-danger-text)]"
             />
-            <span className="text-[12px] leading-relaxed text-[color:var(--text-secondary)]">
+            <span className="text-[length:var(--text-caption)] leading-relaxed text-[color:var(--text-secondary)]">
               {t(msg`我已了解：注销后账号无法登录，数据将被永久归档且不可恢复；重新注册不会找回原有数据。`)}
             </span>
           </label>

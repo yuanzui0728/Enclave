@@ -162,7 +162,7 @@ function MobileAvatarEncounterPage() {
         // 分身相遇是跨用户功能，必须登录云账号。本地 world / 未登云的用户在这里
         // 友好提示，而不是点「开始相遇」后拿到一句英文 401。
         <InlineNotice
-          className="rounded-[12px] px-3 py-2.5 text-[12px] leading-5 shadow-none"
+          className="rounded-[var(--radius-sm)] px-3 py-2.5 text-[length:var(--text-caption)] leading-5 shadow-none"
           tone="info"
           role="status"
         >
@@ -185,7 +185,7 @@ function MobileAvatarEncounterPage() {
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                "flex-1 rounded-[10px] px-3 py-2 text-[13px] font-medium transition-colors",
+                "flex-1 rounded-[10px] px-3 py-2 text-[length:var(--text-caption)] font-medium transition-colors",
                 active
                   ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                   : "text-[color:var(--text-secondary)]",
@@ -307,7 +307,7 @@ function DiscoverTab({
             disabled={startDisabled}
             aria-busy={startMutation.isPending || undefined}
             className={cn(
-              "flex h-12 w-full items-center justify-center gap-2 rounded-[16px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[14px] font-semibold text-white transition-opacity active:opacity-90",
+              "flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[length:var(--text-body)] font-semibold text-white transition-opacity active:opacity-90",
               startDisabled && "opacity-60",
             )}
           >
@@ -330,15 +330,15 @@ function DiscoverTab({
                 size={22}
                 className="mx-auto animate-spin text-[color:var(--brand-primary)]"
               />
-              <div className="mt-2 text-[13px] text-[color:var(--text-secondary)]">
+              <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                 {t(msg`你的分身正在替你相遇…`)}
               </div>
-              <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {t(msg`生成对话可能需要一点时间，请耐心等待。`)}
               </div>
             </div>
           ) : (
-            <div className="text-center text-[12px] leading-5 text-[color:var(--text-muted)]">
+            <div className="text-center text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
               {remainingCredits !== null
                 ? t(msg`每次相遇会消耗 1 次额度，今日剩余 ${remainingCredits} 次。`)
                 : t(msg`每次相遇会消耗 1 次额度。`)}
@@ -347,7 +347,7 @@ function DiscoverTab({
 
           {dailyLimitHit || creditsExhausted ? (
             <InlineNotice
-              className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+              className="rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
               tone="warning"
               role="status"
               aria-live="polite"
@@ -403,7 +403,7 @@ function DiscoverTab({
 
           {/* 本轮已落子但还没结束（等对方）：引导去「我的相遇」回看进展。 */}
           {effective.myRoundChoice && !isDecidedStatus(effective.status) ? (
-            <div className="rounded-[12px] bg-[color:var(--surface-soft)] px-3 py-2.5 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+            <div className="rounded-[var(--radius-sm)] bg-[color:var(--surface-soft)] px-3 py-2.5 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
               {effective.myRoundChoice === "continue"
                 ? t(
                     msg`等对方也选择继续，就会生成下一轮对话。稍后可在「我的相遇」里查看进展。`,
@@ -440,7 +440,7 @@ function DiscoverTab({
                 startMutation.reset();
                 startMutation.mutate();
               }}
-              className="w-full rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[13px] font-medium text-[color:var(--text-secondary)] transition-colors active:bg-black/[0.04]"
+              className="w-full rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)] transition-colors active:bg-black/[0.04]"
             >
               {creditsExhausted ? t(msg`回到发现`) : t(msg`再相遇一次`)}
             </button>
@@ -469,7 +469,7 @@ function StartErrorNotice({
     error.message;
   return (
     <InlineNotice
-      className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+      className="rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
       tone="danger"
       role="alert"
     >
@@ -478,7 +478,7 @@ function StartErrorNotice({
         <button
           type="button"
           onClick={onRetry}
-          className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+          className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
         >
           {t(msg`再试一次`)}
         </button>
@@ -531,13 +531,13 @@ function ReceivedTab({
   return (
     <div className="space-y-3">
       {inboxQuery.isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-[color:var(--text-muted)]">
+        <div className="flex items-center justify-center gap-2 py-8 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           <LoaderCircle size={16} className="animate-spin" />
           {t(msg`正在加载我的相遇…`)}
         </div>
       ) : inboxQuery.isError && inboxQuery.error instanceof Error ? (
         <InlineNotice
-          className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+          className="rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
           tone="danger"
           role="alert"
         >
@@ -546,12 +546,12 @@ function ReceivedTab({
             : null) ?? inboxQuery.error.message}
         </InlineNotice>
       ) : items.length === 0 ? (
-        <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-10 text-center">
+        <div className="rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-10 text-center">
           <Inbox size={26} className="mx-auto text-[color:var(--text-dim)]" />
-          <div className="mt-2 text-[13px] text-[color:var(--text-secondary)]">
+          <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
             {t(msg`还没有相遇记录`)}
           </div>
-          <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+          <div className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {t(msg`你发起的、以及别人和你分身的相遇都会出现在这里。`)}
           </div>
         </div>
@@ -638,19 +638,19 @@ function ReceivedDetail({
       <button
         type="button"
         onClick={onBack}
-        className="text-[13px] font-medium text-[color:var(--brand-primary)] active:opacity-80"
+        className="text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)] active:opacity-80"
       >
         {t(msg`‹ 返回我的相遇`)}
       </button>
 
       {viewQuery.isLoading ? (
-        <div className="flex items-center justify-center gap-2 py-8 text-[13px] text-[color:var(--text-muted)]">
+        <div className="flex items-center justify-center gap-2 py-8 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           <LoaderCircle size={16} className="animate-spin" />
           {t(msg`正在加载这次相遇…`)}
         </div>
       ) : viewQuery.isError && viewQuery.error instanceof Error ? (
         <InlineNotice
-          className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+          className="rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
           tone="danger"
           role="alert"
         >
@@ -684,7 +684,7 @@ function ReceivedDetail({
 
           {/* 选「继续聊」触发续写时要等对方 world 生成下一轮（可能十几秒），给个明确提示。 */}
           {decideMutation.isPending && decideMutation.variables === "continue" ? (
-            <div className="flex items-center justify-center gap-2 rounded-[12px] bg-[color:var(--surface-soft)] px-3 py-2.5 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+            <div className="flex items-center justify-center gap-2 rounded-[var(--radius-sm)] bg-[color:var(--surface-soft)] px-3 py-2.5 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
               <LoaderCircle size={14} className="animate-spin" />
               {t(msg`正在生成下一轮对话，请稍候…`)}
             </div>
@@ -718,7 +718,7 @@ function RoundIndicator({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <div className="text-center text-[11px] font-medium text-[color:var(--text-muted)]">
+    <div className="text-center text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
       {t(msg`第 ${currentRound} / ${maxRounds} 轮对话`)}
     </div>
   );
@@ -740,7 +740,7 @@ function EncounterDecideError({ error }: { error: unknown }) {
   if (contactRequired) {
     return (
       <InlineNotice
-        className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+        className="rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
         tone="warning"
         role="alert"
       >
@@ -760,7 +760,7 @@ function EncounterDecideError({ error }: { error: unknown }) {
   }
   return (
     <InlineNotice
-      className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+      className="rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
       tone="danger"
       role="alert"
     >
@@ -785,18 +785,18 @@ function MatchedContactBlock({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <div className="rounded-[16px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-4 py-3.5">
-      <div className="flex items-center gap-1.5 text-[12px] font-medium text-[color:var(--brand-primary)]">
+    <div className="rounded-[var(--radius-md)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-4 py-3.5">
+      <div className="flex items-center gap-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)]">
         <Phone size={13} />
         {t(msg`对方的联系方式`)}
       </div>
       <div className="mt-2 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[11px] text-[color:var(--text-muted)]">
+          <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {contactKindLabel(contact.kind)}
           </div>
           <div
-            className="truncate text-[15px] font-semibold text-[color:var(--text-primary)]"
+            className="truncate text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]"
             data-i18n-skip="true"
           >
             {contact.value}
@@ -805,7 +805,7 @@ function MatchedContactBlock({
         <button
           type="button"
           onClick={onCopy}
-          className="flex shrink-0 items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[12px] font-medium text-white active:opacity-90"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[length:var(--text-caption)] font-medium text-white active:opacity-90"
         >
           <Copy size={13} />
           {copied ? t(msg`已复制`) : t(msg`复制`)}

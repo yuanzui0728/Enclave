@@ -440,17 +440,17 @@ export function ChannelsForwardPicker({
         // 焦点 trap 兜底用：无 focusable child（极端 loading 态）时也能把焦点
         // 拉进来不漏。
         tabIndex={-1}
-        className="relative max-h-[80vh] w-full max-w-[420px] overflow-hidden rounded-t-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)] sm:rounded-[20px]"
+        className="relative max-h-[80vh] w-full max-w-[420px] overflow-hidden rounded-t-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)] sm:rounded-[var(--radius-lg)]"
       >
         <div className="flex items-center justify-between px-5 pb-2 pt-5">
           <div>
-            <div id="channels-forward-picker-title" className="text-[16px] font-medium text-[color:var(--text-primary)]">
+            <div id="channels-forward-picker-title" className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
               {t(msg`转发到聊天`)}
             </div>
             {postExcerpt ? (
               <div
                 id="channels-forward-picker-excerpt"
-                className="mt-1 line-clamp-1 text-[12px] text-[color:var(--text-muted)]"
+                className="mt-1 line-clamp-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
               >
                 {postExcerpt}
               </div>
@@ -474,7 +474,7 @@ export function ChannelsForwardPicker({
           // 高，必须打断当前播报告知用户。
           <div
             role="alert"
-            className="mx-5 mb-2 rounded-[12px] border border-[color:var(--border-danger,#FCA5A5)] bg-[color:var(--surface-danger,#FEF2F2)] px-3 py-2 text-[12px] text-[color:var(--text-danger,#B91C1C)]"
+            className="mx-5 mb-2 rounded-[var(--radius-sm)] border border-[color:var(--border-danger,#FCA5A5)] bg-[color:var(--surface-danger,#FEF2F2)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--text-danger,#B91C1C)]"
           >
             {errorMessage}
           </div>
@@ -491,7 +491,7 @@ export function ChannelsForwardPicker({
             // "正在加载好友列表"。
             <div
               role="status"
-              className="py-10 text-center text-[13px] text-[color:var(--text-muted)]"
+              className="py-10 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
             >
               {t(msg`正在加载好友列表…`)}
             </div>
@@ -507,7 +507,7 @@ export function ChannelsForwardPicker({
             // 下来" 这条错。挂 role="alert" 立即播报。
             <div
               role="alert"
-              className="py-10 text-center text-[13px] text-[color:var(--text-muted)]"
+              className="py-10 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
             >
               <div>{t(msg`好友列表暂时拉不下来，请稍后重试。`)}</div>
               <button
@@ -516,7 +516,7 @@ export function ChannelsForwardPicker({
                   void friendsQuery.refetch();
                 }}
                 disabled={friendsQuery.isFetching}
-                className="mt-3 inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-1 text-[12px] font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-subtle,#F4F4F5)] disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-3 inline-flex items-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-1 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-subtle,#F4F4F5)] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {friendsQuery.isFetching
                   ? t(msg`重试中...`)
@@ -524,7 +524,7 @@ export function ChannelsForwardPicker({
               </button>
             </div>
           ) : friendList.length === 0 ? (
-            <div className="py-10 text-center text-[13px] text-[color:var(--text-muted)]">
+            <div className="py-10 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`还没有可转发的好友。`)}
             </div>
           ) : (
@@ -540,17 +540,17 @@ export function ChannelsForwardPicker({
                       onClick={() => {
                         void handlePick(friend);
                       }}
-                      className="flex w-full items-center gap-3 rounded-[12px] px-3 py-3 text-left transition hover:bg-[color:var(--surface-subtle,#F4F4F5)] disabled:opacity-60"
+                      className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-3 text-left transition hover:bg-[color:var(--surface-subtle,#F4F4F5)] disabled:opacity-60"
                     >
                       <AvatarChip
                         name={character.name}
                         src={character.avatar ?? undefined}
                       />
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+                        <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                           {character.name}
                         </div>
-                        <div className="truncate text-[12px] text-[color:var(--text-muted)]">
+                        <div className="truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                           {character.relationship ?? ""}
                         </div>
                       </div>

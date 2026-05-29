@@ -92,7 +92,7 @@ export function WarehouseSheet({ state, open, onClose }: WarehouseSheetProps) {
                       {t(msg`存量`)} {count}
                     </span>
                   </div>
-                  <div className="mt-0.5 text-[11px] text-stone-500">
+                  <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-500">
                     🪙 {def.sellPrice} {t(msg`/ 个`)}
                   </div>
                 </div>

@@ -106,18 +106,18 @@ export function FeatureUnavailableDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full max-w-[360px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[360px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
       >
         <div className="px-6 pb-2 pt-6 text-center">
           <div
             id={titleId}
-            className="text-[16px] font-medium text-[color:var(--text-primary)]"
+            className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]"
           >
             {title}
           </div>
           <div
             id={descId}
-            className="mt-3 text-[13px] leading-6 text-[color:var(--text-muted)]"
+            className="mt-3 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]"
           >
             {description}
           </div>
@@ -127,7 +127,7 @@ export function FeatureUnavailableDialog({
             type="button"
             variant="primary"
             onClick={onClose}
-            className="w-full rounded-[12px] bg-[color:var(--brand-primary)] py-2 text-white shadow-none hover:opacity-95"
+            className="w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] py-2 text-white shadow-none hover:opacity-95"
           >
             {resolvedConfirmLabel}
           </Button>

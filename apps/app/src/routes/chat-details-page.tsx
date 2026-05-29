@@ -1149,7 +1149,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
         <div className="px-2.5">
           <InlineNotice
             tone={notice.tone}
-            className="flex items-center justify-between gap-2.5 rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            className="flex items-center justify-between gap-2.5 rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
             <span>{notice.message}</span>
             {notice.actionLabel && notice.onAction ? (
@@ -1242,19 +1242,19 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 size="wechat"
               />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[15px] text-[color:var(--text-primary)]">
+                <div className="truncate text-[length:var(--text-base)] text-[color:var(--text-primary)]">
                   {contactDisplayName}
                 </div>
-                <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+                <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                   {contactProfileSubtitle}
                 </div>
                 {contactIdentifier ? (
-                  <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+                  <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                     {contactIdentifier}
                   </div>
                 ) : null}
               </div>
-              <ChevronRight size={18} className="shrink-0 text-[#c7c7cc]" />
+              <ChevronRight size={18} className="shrink-0 text-[color:var(--text-dim)]" />
             </button>
             {contactSummary && !isSelfMirror ? (
               // self 镜像：分享 URL 是 /character/char-default-self，对方点开
@@ -1424,7 +1424,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1439,7 +1439,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1454,7 +1454,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1469,7 +1469,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1485,7 +1485,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1500,7 +1500,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1515,7 +1515,7 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
             <div className="px-2.5">
               <InlineNotice
                 tone="danger"
-                className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1664,7 +1664,7 @@ function MobileChatDetailsStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -1674,7 +1674,7 @@ function MobileChatDetailsStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -1684,13 +1684,13 @@ function MobileChatDetailsStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

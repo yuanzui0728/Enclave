@@ -187,7 +187,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
       type="button"
       variant="secondary"
       size="sm"
-      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
       onClick={() => {
         if (navigateToRouteStateReturn()) {
           return;
@@ -721,7 +721,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
             role="status"
             aria-live="polite"
             tone="info"
-            className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
           >
             {notice.showBackAction ||
             (notice.actionLabel && notice.onAction) ? (
@@ -765,7 +765,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
               <button
                 type="button"
                 onClick={() => setMemberGridExpanded((current) => !current)}
-                className="flex min-h-10 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[13px] text-[color:var(--brand-primary)]"
+                className="flex min-h-10 w-full items-center justify-center border-t border-[color:var(--border-faint)] px-4 text-[length:var(--text-caption)] text-[color:var(--brand-primary)]"
               >
                 {memberGridExpanded
                   ? t(msg`收起群成员`)
@@ -938,7 +938,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -959,7 +959,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -979,7 +979,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -999,7 +999,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1019,7 +1019,7 @@ function MobileGroupChatDetailsPage({ groupId }: { groupId: string }) {
                 // 以为操作生效转身离开。role="alert"+assertive 立刻播报错误。
                 role="alert"
                 tone="danger"
-                className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+                className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
               >
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 flex-1">
@@ -1171,7 +1171,7 @@ function MobileGroupDetailsStatusCard({
         tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
       }
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -1181,7 +1181,7 @@ function MobileGroupDetailsStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -1191,13 +1191,13 @@ function MobileGroupDetailsStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

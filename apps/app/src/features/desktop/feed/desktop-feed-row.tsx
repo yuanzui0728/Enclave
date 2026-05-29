@@ -231,7 +231,7 @@ function DesktopFeedRowInner({
   return (
     <article
       id={`desktop-feed-post-${post.id}`}
-      className="rounded-[16px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)]"
+      className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)]"
     >
       <div className="flex items-start gap-3">
         {handleSelectAuthor ? (
@@ -264,12 +264,12 @@ function DesktopFeedRowInner({
                 <button
                   type="button"
                   onClick={handleSelectAuthor}
-                  className="truncate text-left text-[15px] font-semibold text-[color:var(--text-primary)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] focus-visible:ring-offset-1"
+                  className="truncate text-left text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)] hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color-mix(in_srgb,var(--brand-primary)_34%,transparent)] focus-visible:ring-offset-1"
                 >
                   {post.authorName}
                 </button>
               ) : (
-                <div className="truncate text-[15px] font-semibold text-[color:var(--text-primary)]">
+                <div className="truncate text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
                   {post.authorName}
                 </div>
               )}
@@ -291,14 +291,14 @@ function DesktopFeedRowInner({
                   : t(msg`世界主人`)}
               </span>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               <span>{formatTimestamp(post.createdAt)}</span>
               <span>{t(msg`居民公开可见`)}</span>
             </div>
           </div>
 
           {hasText ? (
-            <div className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7 text-[color:var(--text-primary)]">
+            <div className="mt-3 whitespace-pre-wrap break-words text-[length:var(--text-base)] leading-7 text-[color:var(--text-primary)]">
               {displayText}
             </div>
           ) : null}
@@ -313,7 +313,7 @@ function DesktopFeedRowInner({
           ) : null}
 
           <div className="mt-3 flex items-center justify-between gap-4">
-            <div className="text-[12px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {(() => {
                 // 走查 R2：旧逻辑 likeCount/commentCount 任一 > 0 就 unconditional
                 // 渲染两段 → 点赞 0 评论 3 渲成 "0 赞 · 3 评论"，反过来同样尴尬。
@@ -340,7 +340,7 @@ function DesktopFeedRowInner({
                 onClick={handleLike}
                 title={liked ? t(msg`再点一次取消赞`) : undefined}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[12px] transition-[background-color,color,border-color] disabled:opacity-55",
+                  "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[length:var(--text-caption)] transition-[background-color,color,border-color] disabled:opacity-55",
                   liked
                     ? "border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] text-[color:var(--brand-primary)]"
                     : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
@@ -357,7 +357,7 @@ function DesktopFeedRowInner({
                 type="button"
                 onClick={focusComposer}
                 aria-label={t(msg`评论`)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
               >
                 <MessageCircle size={14} />
                 {t(msg`评论`)}
@@ -366,9 +366,9 @@ function DesktopFeedRowInner({
                 type="button"
                 onClick={handleToggleFavorite}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[12px] transition-[background-color,color,border-color]",
+                  "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[length:var(--text-caption)] transition-[background-color,color,border-color]",
                   favorite
-                    ? "border-[#ead9a6] bg-[#fbf7e8] text-amber-700"
+                    ? "border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-amber-700"
                     : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                 )}
               >
@@ -380,7 +380,7 @@ function DesktopFeedRowInner({
                   type="button"
                   onClick={handleShare}
                   aria-label={t(msg`生成分享图卡`)}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                  className="inline-flex h-8 items-center gap-1.5 rounded-xl border border-[color:var(--border-faint)] px-2.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition-[background-color,color,border-color] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                 >
                   <Share2 size={14} />
                   {t(msg`分享图卡`)}
@@ -391,11 +391,11 @@ function DesktopFeedRowInner({
 
           <div className="mt-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[12px] font-medium text-[color:var(--text-primary)]">
+              <div className="flex items-center gap-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 <MessageCircle size={13} />
                 {t(msg`评论`)}
               </div>
-              <span className="text-[11px] text-[color:var(--text-muted)]">
+              <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {t(msg`${post.commentCount} 条`)}
               </span>
             </div>
@@ -413,7 +413,7 @@ function DesktopFeedRowInner({
             ) : null}
 
             {expandedAllFiltered ? (
-              <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {t(msg`评论暂时无法显示`)}
               </div>
             ) : null}
@@ -441,7 +441,7 @@ function DesktopFeedRowInner({
                     return (
                       <div
                         key={comment.id}
-                        className="rounded-[10px] px-2 py-1.5 text-[13px] leading-6"
+                        className="rounded-[10px] px-2 py-1.5 text-[length:var(--text-caption)] leading-6"
                       >
                         <CommentLine
                           authorName={comment.authorName}
@@ -483,7 +483,7 @@ function DesktopFeedRowInner({
                         }
                       }}
                       className={cn(
-                        "block w-full cursor-pointer rounded-[10px] px-2 py-1.5 text-left text-[13px] leading-6 transition-colors",
+                        "block w-full cursor-pointer rounded-[10px] px-2 py-1.5 text-left text-[length:var(--text-caption)] leading-6 transition-colors",
                         isActiveReply
                           ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
                           : "hover:bg-white",
@@ -505,7 +505,7 @@ function DesktopFeedRowInner({
               // commentCount > 0 但 commentsForDisplay 全空只说明 preview 全是
               // 脏评论；这时另有 showLoadMore 让用户翻全量 + expandedAllFiltered
               // 兜底，不要再喊"还没有评论"。
-              <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {t(msg`还没有评论，你可以成为第一个回应的人。`)}
               </div>
             ) : null}
@@ -521,7 +521,7 @@ function DesktopFeedRowInner({
                    这里只需补 disabled 给 UI 反馈和无障碍语义；error 状态保持
                    可点（=「重试读取全部评论」）。 */
                 disabled={detailLoading}
-                className="mt-3 text-[12px] font-medium text-[color:var(--brand-primary)] disabled:cursor-default disabled:opacity-60"
+                className="mt-3 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)] disabled:cursor-default disabled:opacity-60"
               >
                 {detailLoading
                   ? t(msg`正在读取...`)
@@ -536,7 +536,7 @@ function DesktopFeedRowInner({
             ) : null}
 
             {activeReply ? (
-              <div className="mt-3 flex items-start justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]">
+              <div className="mt-3 flex items-start justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                 <div className="min-w-0 flex-1 space-y-1">
                   <div className="truncate">
                     {t(msg`正在回复 ${activeReply.authorName}`)}
@@ -572,7 +572,7 @@ function DesktopFeedRowInner({
                     ? t(msg`回复 ${activeReply.authorName}...`)
                     : t(msg`写评论...`)
                 }
-                inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
+                inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[length:var(--text-caption)] shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
                 buttonClassName="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
               />
             </div>

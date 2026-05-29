@@ -242,7 +242,7 @@ function MobileSubscriptionInboxPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryInbox}
                   >
                     {t(msg`重试读取`)}
@@ -251,7 +251,7 @@ function MobileSubscriptionInboxPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`打开公众号列表`)}
@@ -264,7 +264,7 @@ function MobileSubscriptionInboxPage() {
         {markReadMutation.isError && markReadMutation.error instanceof Error ? (
           <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <InlineNotice
-              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
               tone="danger"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -276,7 +276,7 @@ function MobileSubscriptionInboxPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryMarkRead}
                   >
                     {t(msg`重试同步`)}
@@ -285,7 +285,7 @@ function MobileSubscriptionInboxPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                    className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`打开公众号列表`)}
@@ -300,7 +300,7 @@ function MobileSubscriptionInboxPage() {
           inboxQuery.data.groups.map((group) => (
             <section
               key={group.account.id}
-              className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
+              className="mx-3.5 mt-3 overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
             >
               <button
                 type="button"
@@ -314,7 +314,7 @@ function MobileSubscriptionInboxPage() {
                     }),
                   });
                 }}
-                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(60, 40, 110, 0.02)]"
+                className="flex w-full items-center gap-3 border-b border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[color:var(--border-faint)]"
               >
                 <AvatarChip
                   name={group.account.name}
@@ -322,7 +322,7 @@ function MobileSubscriptionInboxPage() {
                   size="wechat"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                  <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                     {group.account.name}
                   </div>
                   <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
@@ -332,7 +332,7 @@ function MobileSubscriptionInboxPage() {
                   </div>
                 </div>
                 {group.unreadCount > 0 ? (
-                  <span className="rounded-full bg-[#fa5151] px-1.5 py-0.5 text-[10px] leading-none text-white">
+                  <span className="rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-[10px] leading-none text-white">
                     {group.unreadCount}
                   </span>
                 ) : null}
@@ -367,7 +367,7 @@ function MobileSubscriptionInboxPage() {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                   onClick={handleStatusBack}
                 >
                   {safeReturnPath ? t(msg`返回上一页`) : t(msg`打开公众号列表`)}
@@ -398,7 +398,7 @@ function MobileSubscriptionArticleRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[rgba(60, 40, 110, 0.03)]"
+      className="flex w-full items-start gap-3 border-t border-[color:var(--border-faint)] px-4 py-3 text-left active:bg-[color:var(--border-faint)]"
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2 text-[10px] text-[color:var(--text-muted)]">
@@ -409,10 +409,10 @@ function MobileSubscriptionArticleRow({
           ) : null}
           <span>{publishedLabel}</span>
         </div>
-        <div className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-5 text-[color:var(--text-primary)]">
+        <div className="mt-1.5 line-clamp-2 text-[length:var(--text-body)] font-medium leading-5 text-[color:var(--text-primary)]">
           {delivery.article.title}
         </div>
-        <div className="mt-1.5 line-clamp-2 text-[11px] leading-[1.2rem] text-[color:var(--text-secondary)]">
+        <div className="mt-1.5 line-clamp-2 text-[length:var(--text-eyebrow)] leading-[1.2rem] text-[color:var(--text-secondary)]">
           {delivery.article.summary}
         </div>
       </div>
@@ -420,10 +420,10 @@ function MobileSubscriptionArticleRow({
         <img
           src={delivery.article.coverImage}
           alt={delivery.article.title}
-          className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
+          className="h-[4.5rem] w-[4.5rem] shrink-0 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] object-cover"
         />
       ) : (
-        <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[10px] text-[color:var(--text-dim)]">
+        <div className="flex h-[4.5rem] w-[4.5rem] shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[10px] text-[color:var(--text-dim)]">
           {t(msg`文章`)}
         </div>
       )}
@@ -447,7 +447,7 @@ function MobileSubscriptionInboxStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -457,7 +457,7 @@ function MobileSubscriptionInboxStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -467,13 +467,13 @@ function MobileSubscriptionInboxStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

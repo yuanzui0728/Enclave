@@ -104,7 +104,7 @@ export function MessageQuoteSelectionSheet({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(60, 40, 110, 0.14)]">
+    <div className="fixed inset-0 z-50 bg-[color:var(--border-strong)]">
       <button
         type="button"
         aria-label={t(msg`关闭部分引用面板`)}
@@ -133,8 +133,8 @@ export function MessageQuoteSelectionSheet({
         aria-labelledby={titleId}
         className={`absolute ${
           isDesktop
-            ? "left-1/2 top-1/2 w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[24px] bg-[color:var(--surface-card)] p-5 shadow-[0_24px_60px_rgba(60, 40, 110, 0.18)]"
-            : "inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
+            ? "left-1/2 top-1/2 w-[min(32rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-xl)] bg-[color:var(--surface-card)] p-5 shadow-[0_24px_60px_rgba(60, 40, 110, 0.18)]"
+            : "inset-x-0 bottom-0 overflow-hidden rounded-t-[var(--radius-lg)] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
         }`}
       >
         {isDesktop ? null : (
@@ -144,11 +144,11 @@ export function MessageQuoteSelectionSheet({
         )}
 
         <div className={isDesktop ? "" : "px-1 pb-0.5"}>
-          <div id={titleId} className="text-center text-[12px] text-[color:var(--text-muted)]">
+          <div id={titleId} className="text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {t(msg`部分引用`)}
           </div>
           <div
-            className={`mt-1.5 text-center text-[12px] leading-5 text-[color:var(--text-secondary)] ${
+            className={`mt-1.5 text-center text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)] ${
               isDesktop ? "" : "px-3"
             }`}
           >
@@ -157,7 +157,7 @@ export function MessageQuoteSelectionSheet({
         </div>
 
         <div
-          className={`mt-4 rounded-[16px] ${
+          className={`mt-4 rounded-[var(--radius-md)] ${
             isDesktop
               ? "border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] p-4"
               : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-3"
@@ -166,7 +166,7 @@ export function MessageQuoteSelectionSheet({
           <div
             className={`mb-2 font-medium uppercase text-[color:var(--text-dim)] ${
               isDesktop
-                ? "text-[11px] tracking-[0.14em]"
+                ? "text-[length:var(--text-eyebrow)] tracking-[0.14em]"
                 : "text-[10px] tracking-[0.1em]"
             }`}
           >
@@ -188,21 +188,21 @@ export function MessageQuoteSelectionSheet({
             aria-label={t(msg`原消息内容`)}
             className={`w-full resize-none bg-transparent text-[color:var(--text-primary)] outline-none ${
               isDesktop
-                ? "min-h-[164px] text-[15px] leading-7"
-                : // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport
+                ? "min-h-[164px] text-[length:var(--text-base)] leading-7"
+                : // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport
                   // zoom-in，readOnly 也不豁免。用户点 textarea 选文字也算
                   // focus → 页面突然放大。
-                  "min-h-[152px] rounded-[12px] text-[16px] leading-6"
+                  "min-h-[152px] rounded-[var(--radius-sm)] text-[length:var(--text-title)] leading-6"
             }`}
           />
         </div>
 
         <div
-          className={`mt-3 rounded-[16px] px-3 py-2 text-[12px] leading-5 ${
+          className={`mt-3 rounded-[var(--radius-md)] px-3 py-2 text-[length:var(--text-caption)] leading-5 ${
             selectedText
               ? isDesktop
-                ? "bg-[color:var(--brand-primary)]/10 text-[#11925a]"
-                : "bg-[color:var(--brand-primary)]/10 text-[#11925a]"
+                ? "bg-[color:var(--brand-primary)]/10 text-[color:var(--state-success-text)]"
+                : "bg-[color:var(--brand-primary)]/10 text-[color:var(--state-success-text)]"
               : isDesktop
                 ? "bg-[color:var(--surface-card)] text-[color:var(--text-muted)]"
                 : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]"
@@ -223,7 +223,7 @@ export function MessageQuoteSelectionSheet({
             className={
               isDesktop
                 ? "rounded-full"
-                : "h-11 flex-1 rounded-[16px] border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] active:bg-[color:var(--surface-card-hover)]"
+                : "h-11 flex-1 rounded-[var(--radius-md)] border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[length:var(--text-base)] active:bg-[color:var(--surface-card-hover)]"
             }
           >
             {t(msg`取消`)}
@@ -240,7 +240,7 @@ export function MessageQuoteSelectionSheet({
             className={
               isDesktop
                 ? "rounded-full"
-                : "h-11 flex-1 rounded-[16px] text-[15px]"
+                : "h-11 flex-1 rounded-[var(--radius-md)] text-[length:var(--text-base)]"
             }
           >
             {t(msg`引用所选文字`)}

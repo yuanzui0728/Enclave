@@ -162,7 +162,7 @@ export function MobileDiscoverToolShell({
       <div className="space-y-2.5 px-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3">
         {shareNotice ? (
           <InlineNotice
-            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             tone={shareNotice.tone}
           >
             {shareNotice.tone === "info" ? (
@@ -173,7 +173,7 @@ export function MobileDiscoverToolShell({
                     <button
                       type="button"
                       onClick={shareNotice.onAction}
-                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {shareNotice.actionLabel}
                     </button>
@@ -181,7 +181,7 @@ export function MobileDiscoverToolShell({
                   <button
                     type="button"
                     onClick={onBack}
-                    className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                    className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                   >
                     {t(msg`返回上一页`)}
                   </button>
@@ -192,23 +192,23 @@ export function MobileDiscoverToolShell({
             )}
           </InlineNotice>
         ) : null}
-        <section className="relative overflow-hidden rounded-[20px] border border-[color:var(--brand-primary)]/12 bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
+        <section className="relative overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--brand-primary)]/12 bg-[linear-gradient(180deg,rgba(248,255,250,0.98),rgba(255,255,255,0.98))] px-4 py-5">
           <div className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-[color:var(--brand-primary)]/8 blur-3xl" />
           <div className="relative flex items-start gap-4">
             <div className="min-w-0 flex-1">
-              <div className="inline-flex rounded-full bg-[color:var(--brand-primary)]/12 px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+              <div className="inline-flex rounded-full bg-[color:var(--brand-primary)]/12 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
                 {resolvedHeroBadge}
               </div>
-              <div className="mt-3 text-[22px] font-semibold leading-tight text-[color:var(--text-primary)]">
+              <div className="mt-3 text-[length:var(--text-section)] font-semibold leading-tight text-[color:var(--text-primary)]">
                 {heroTitle}
               </div>
               {heroDescription ? (
-                <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+                <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
                   {heroDescription}
                 </div>
               ) : null}
             </div>
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[20px] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-[var(--radius-lg)] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
               {heroVisual}
             </div>
           </div>

@@ -505,17 +505,17 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
               <span
                 className={
                   isOwner
-                    ? "rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] px-2 py-0.5 text-[10px] text-[#15803d]"
+                    ? "rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] px-2 py-0.5 text-[10px] text-[color:var(--state-success-text)]"
                     : "rounded-full bg-[rgba(0,0,0,0.045)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]"
                 }
               >
                 {secondaryLabel}
               </span>
             </div>
-            <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
+            <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
               {subtitle}
             </div>
-            <p className="mt-2 line-clamp-3 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+            <p className="mt-2 line-clamp-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
               {signature}
             </p>
           </div>
@@ -566,7 +566,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         ) : null}
 
         {!isOwner && !characterQuery.isError && characterQuery.isLoading ? (
-          <div className="rounded-[14px] bg-[rgba(247,247,247,0.9)] px-3 py-2 text-[12px] text-[color:var(--text-muted)]">
+          <div className="rounded-[14px] bg-[color:var(--surface-soft)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {t(msg`正在读取资料...`)}
           </div>
         ) : null}
@@ -574,7 +574,7 @@ export function DesktopMessageAvatarPopover(props: DesktopMessageAvatarPopoverPr
         {metaRows.map((item) => (
           <div
             key={item.label}
-            className="flex items-start gap-3 text-[12px] leading-5"
+            className="flex items-start gap-3 text-[length:var(--text-caption)] leading-5"
           >
             <div className="w-14 shrink-0 text-[color:var(--text-dim)]">
               {item.label}

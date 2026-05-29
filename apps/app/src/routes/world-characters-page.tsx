@@ -375,7 +375,7 @@ function MobileWorldCharactersPage() {
         }
       >
         <div className="pt-1.5">
-          <label className="flex h-9 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
+          <label className="flex h-9 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
             <Search aria-hidden="true" size={14} className="shrink-0" />
             <input
               type="search"
@@ -391,10 +391,10 @@ function MobileWorldCharactersPage() {
               autoCapitalize="off"
               spellCheck={false}
               enterKeyHint="search"
-              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+              // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in，用户敲一下"搜索"立刻整页放大、回弹时还要双指捏才能回到
               // 正常视窗。跟 mobile-add-friend-page 已修过的搜索框对齐。
-              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              className="min-w-0 flex-1 bg-transparent text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
             {searchText ? (
               <button
@@ -434,7 +434,7 @@ function MobileWorldCharactersPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryWorldCharacters}
                   >
                     {t(msg`重试读取`)}
@@ -443,7 +443,7 @@ function MobileWorldCharactersPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看新的朋友`)}
@@ -466,7 +466,7 @@ function MobileWorldCharactersPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryWorldCharacters}
                   >
                     {t(msg`重试读取`)}
@@ -475,7 +475,7 @@ function MobileWorldCharactersPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看新的朋友`)}
@@ -510,7 +510,7 @@ function MobileWorldCharactersPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={() => setSearchText("")}
                   >
                     {t(msg`清空搜索`)}
@@ -520,7 +520,7 @@ function MobileWorldCharactersPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看新的朋友`)}
@@ -535,7 +535,7 @@ function MobileWorldCharactersPage() {
           <section className="mt-1 overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] bg-[image:var(--surface-card-gradient)]">
             {sectionsWithAnchors.map((section) => (
               <div key={section.key} id={section.scopedAnchorId}>
-                <div className="flex items-center gap-1.5 bg-[color:var(--surface-overlay)] px-4 py-1 text-[11px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
+                <div className="flex items-center gap-1.5 bg-[color:var(--surface-overlay)] px-4 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
                   <span
                     aria-hidden
                     className="inline-block h-2.5 w-[3px] rounded-full bg-[color:var(--accent-dot)]"
@@ -602,7 +602,7 @@ const WorldCharacterListRow = memo(function WorldCharacterListRow({
         size="wechat"
       />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
           {/* W2R2 bidi 防御：character.name 可能含 U+202E 类控制字符；
               getFriendDisplayName/buildAddFriendSearchResults 已经做过同
               处理，世界角色目录这一处也对齐。 */}
@@ -638,7 +638,7 @@ function MobileWorldCharactersStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -648,7 +648,7 @@ function MobileWorldCharactersStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -658,13 +658,13 @@ function MobileWorldCharactersStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

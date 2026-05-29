@@ -2554,7 +2554,7 @@ export function ChannelsPage() {
                 // aria-selected。
                 onClick={() => handleSectionChange(section.key)}
                 className={cn(
-                  "inline-flex h-9 items-center rounded-full px-3 text-[11px] transition",
+                  "inline-flex h-9 items-center rounded-full px-3 text-[length:var(--text-eyebrow)] transition",
                   selected
                     ? "bg-[color:var(--brand-primary)]/12 font-medium text-[color:var(--brand-primary)]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-muted)]",
@@ -2583,7 +2583,7 @@ export function ChannelsPage() {
         >
         {notice ? (
           <InlineNotice
-            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
             {noticeTone === "info" &&
@@ -2596,7 +2596,7 @@ export function ChannelsPage() {
                     <button
                       type="button"
                       onClick={noticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -2609,7 +2609,7 @@ export function ChannelsPage() {
                     <button
                       type="button"
                       onClick={handleStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {t(msg`返回上一页`)}
                     </button>
@@ -2632,7 +2632,7 @@ export function ChannelsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                   onClick={handleRetryLoad}
                 >
                   {t(msg`重试读取`)}
@@ -2641,7 +2641,7 @@ export function ChannelsPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {t(msg`返回上一页`)}
@@ -2987,12 +2987,12 @@ function MobileChannelMediaSurface({
       <div className="relative flex h-full min-h-[calc(100dvh-12rem)] w-full items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10] pb-8 pl-8 pr-[4.25rem] pt-8">
         <div className="max-w-[22rem] text-center text-white">
           {post.title?.trim() ? (
-            <div className="text-[22px] font-semibold leading-[1.6]">
+            <div className="text-[length:var(--text-section)] font-semibold leading-[1.6]">
               {post.title}
             </div>
           ) : null}
           {textContent.trim() && textContent !== post.title ? (
-            <div className="mt-3 text-[14px] leading-[1.7] text-white/82 line-clamp-[8]">
+            <div className="mt-3 text-[length:var(--text-body)] leading-[1.7] text-white/82 line-clamp-[8]">
               {textContent}
             </div>
           ) : null}
@@ -3008,10 +3008,10 @@ function MobileChannelMediaSurface({
   return (
     <div className="flex min-h-[calc(100dvh-12rem)] w-full items-center justify-center bg-black pb-6 pl-6 pr-[4.25rem] pt-6 text-center">
       <div>
-        <div className="text-[16px] font-semibold text-white">
+        <div className="text-[length:var(--text-title)] font-semibold text-white">
           {t(msg`暂无可播放内容`)}
         </div>
-        <div className="mt-2 text-[13px] leading-6 text-white/72">
+        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-white/72">
           {t(msg`稍后再来看看`)}
         </div>
       </div>
@@ -3792,7 +3792,7 @@ function ChannelsPullToRefreshIndicator({
       : t(msg`下拉刷新`);
   return (
     <div
-      className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[color:var(--text-muted)]"
+      className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
       style={{
         top: 0,
         height: `${state.offset || 60}px`,
@@ -3821,7 +3821,7 @@ function MobileChannelsStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -3831,7 +3831,7 @@ function MobileChannelsStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -3841,13 +3841,13 @@ function MobileChannelsStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 rounded-full bg-black/15 animate-pulse" />
           <span className="h-2 w-2 rounded-full bg-black/25 animate-pulse [animation-delay:120ms]" />
-          <span className="h-2 w-2 rounded-full bg-[#8ecf9d] animate-pulse [animation-delay:240ms]" />
+          <span className="h-2 w-2 rounded-full bg-[color:var(--state-success-bg)] animate-pulse [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
@@ -4341,7 +4341,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
     <article
       ref={setCardRef}
       data-post-id={post.id}
-      className="snap-start scroll-mt-2 overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] shadow-none"
+      className="snap-start scroll-mt-2 overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] shadow-none"
     >
       <div className="relative min-h-[calc(100dvh-12rem)] bg-[#0f1115]">
         <MobileChannelMediaSurface
@@ -4354,7 +4354,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />
 
         <div className="absolute left-3.5 top-3.5 flex items-center gap-1.5">
-          <div className="rounded-full bg-[rgba(15,23,42,0.62)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-white">
+          <div className="rounded-full bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-white">
             {getChannelsSectionBadge(activeSection, t)}
           </div>
         </div>
@@ -4443,10 +4443,10 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                   size="wechat"
                 />
                 <div className="min-w-0 flex-1 text-white">
-                  <div className="truncate text-[12px] font-medium">
+                  <div className="truncate text-[length:var(--text-caption)] font-medium">
                     {post.authorName}
                   </div>
-                  <div className="mt-0.5 text-[11px] text-white/70">
+                  <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-white/70">
                     {t(
                       msg`${formatTimestamp(post.createdAt)} · 视频号动态`,
                     )}
@@ -4509,7 +4509,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
               出来当 caption。
             */}
             {hasUsableMedia && post.title ? (
-              <div className="mt-2 text-[13px] font-medium text-white">
+              <div className="mt-2 text-[length:var(--text-caption)] font-medium text-white">
                 {post.title}
               </div>
             ) : null}
@@ -4525,8 +4525,8 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                     <ExpandableText
                       text={cleanText}
                       className="mt-1"
-                      textClassName="text-[12px] leading-[1.35rem] text-white"
-                      toggleClassName="text-[11px] text-white/82"
+                      textClassName="text-[length:var(--text-caption)] leading-[1.35rem] text-white"
+                      toggleClassName="text-[length:var(--text-eyebrow)] text-white/82"
                     />
                   );
                 })()
@@ -4546,7 +4546,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
             <div className="mt-2 text-[9px] text-white/65">
               {formatChannelMeta(post, t)}
             </div>
-            <div className="mt-2 rounded-[16px] bg-[color:var(--surface-card)] px-2.5 py-2 text-[10px] leading-4 text-white/86 backdrop-blur">
+            <div className="mt-2 rounded-[var(--radius-md)] bg-[color:var(--surface-card)] px-2.5 py-2 text-[10px] leading-4 text-white/86 backdrop-blur">
               {(() => {
                 // 走查 2026-05-18 R2（本轮）：commentsPreview 里偶尔混入纯
                 // AI thinking-prose 评论（库里至少 eb9c88ce 等帖各有 1 条
@@ -4635,7 +4635,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
           variant="secondary"
           size="sm"
           onClick={onOpenComments}
-          className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px] text-[color:var(--text-primary)] shadow-none"
+          className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)] shadow-none"
         >
           {t(msg`打开评论`)}
         </Button>
@@ -4675,7 +4675,7 @@ function ActionRailButton({
     >
       <span
         className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,23,42,0.62)] backdrop-blur transition-colors",
+          "flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--state-info-bg)] backdrop-blur transition-colors",
           active && "bg-[color:var(--brand-primary)] shadow-[0_10px_24px_color-mix(in_srgb,var(--brand-primary)_14%,transparent)]",
         )}
       >
@@ -4738,8 +4738,8 @@ const CommentItemView = memo(function CommentItemView({
   const { comment, cleanText, replyTargetName } = entry;
   const isAuthor = Boolean(postAuthorId && comment.authorId === postAuthorId);
   const avatarSize = isRoot ? "sm" : "xs";
-  const nameSize = isRoot ? "text-[13px]" : "text-[12px]";
-  const bodySize = isRoot ? "text-[15px] leading-[22px]" : "text-[14px] leading-[20px]";
+  const nameSize = isRoot ? "text-[length:var(--text-caption)]" : "text-[length:var(--text-caption)]";
+  const bodySize = isRoot ? "text-[length:var(--text-base)] leading-[22px]" : "text-[length:var(--text-body)] leading-[20px]";
 
   return (
     <div
@@ -4784,7 +4784,7 @@ const CommentItemView = memo(function CommentItemView({
             ) : null}
             {cleanText}
           </div>
-          <div className="mt-1.5 flex items-center gap-3 text-[12px] text-[#b2b2b2]">
+          <div className="mt-1.5 flex items-center gap-3 text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
             <span>{formatWeChatCommentTime(comment.createdAt)}</span>
             <button
               type="button"
@@ -4806,7 +4806,7 @@ const CommentItemView = memo(function CommentItemView({
           className={cn(
             "flex shrink-0 flex-col items-center gap-0.5 pl-1 pt-0.5 transition disabled:cursor-not-allowed",
             comment.likedByOwner
-              ? "text-[#fa5151]"
+              ? "text-[color:var(--state-danger-text)]"
               : "text-[color:var(--text-muted)] active:text-[color:var(--text-primary)]",
           )}
         >
@@ -4816,7 +4816,7 @@ const CommentItemView = memo(function CommentItemView({
             strokeWidth={1.6}
           />
           {comment.likeCount > 0 ? (
-            <span className="text-[11px] leading-none">
+            <span className="text-[length:var(--text-eyebrow)] leading-none">
               {comment.likeCount}
             </span>
           ) : null}
@@ -5413,7 +5413,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={() => toggleExpandReplies(rootComment.id)}
-                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[color:var(--brand-primary)] active:opacity-60"
+                      className="self-start pl-0 pt-0.5 text-left text-[length:var(--text-caption)] text-[color:var(--brand-primary)] active:opacity-60"
                     >
                       {t(msg`—— 展开 ${hiddenCount} 条回复 ∨`)}
                     </button>
@@ -5421,7 +5421,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={() => toggleExpandReplies(rootComment.id)}
-                      className="self-start pl-0 pt-0.5 text-left text-[12px] text-[color:var(--brand-primary)] active:opacity-60"
+                      className="self-start pl-0 pt-0.5 text-left text-[length:var(--text-caption)] text-[color:var(--brand-primary)] active:opacity-60"
                     >
                       {t(msg`—— 收起 ∧`)}
                     </button>
@@ -5453,7 +5453,7 @@ function MobileChannelCommentsSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(60, 40, 110, 0.14)]">
+    <div className="fixed inset-0 z-50 bg-[color:var(--border-strong)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -5477,7 +5477,7 @@ function MobileChannelCommentsSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-channels-comments-sheet-title"
-        className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
+        className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-[var(--radius-lg)] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.25rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
       >
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
@@ -5492,7 +5492,7 @@ function MobileChannelCommentsSheet({
           <div className="w-8 shrink-0" aria-hidden />
           <div
             id="mobile-channels-comments-sheet-title"
-            className="min-w-0 flex-1 truncate text-center text-[14px] font-medium text-[color:var(--text-primary)]"
+            className="min-w-0 flex-1 truncate text-center text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]"
           >
             {post.commentCount > 0
               ? t(msg`${post.commentCount} 条评论`)
@@ -5524,7 +5524,7 @@ function MobileChannelCommentsSheet({
             <div className="px-4 pt-3">
               <InlineNotice
                 tone="warning"
-                className="rounded-[16px] border-[color:var(--border-danger)] bg-[color:var(--surface-card)]"
+                className="rounded-[var(--radius-md)] border-[color:var(--border-danger)] bg-[color:var(--surface-card)]"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 flex-1">{errorMessage}</span>
@@ -5533,7 +5533,7 @@ function MobileChannelCommentsSheet({
                       <button
                         type="button"
                         onClick={onErrorAction}
-                        className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                        className="rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                       >
                         {errorActionLabel}
                       </button>
@@ -5541,7 +5541,7 @@ function MobileChannelCommentsSheet({
                     <button
                       type="button"
                       onClick={onClose}
-                      className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-muted)]"
+                      className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-muted)]"
                     >
                       {t(msg`返回视频号`)}
                     </button>
@@ -5551,7 +5551,7 @@ function MobileChannelCommentsSheet({
             </div>
           ) : null}
           {isLoading && !comments.length ? (
-            <div className="px-4 py-6 text-center text-[12px] text-[#b2b2b2]">
+            <div className="px-4 py-6 text-center text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
               {t(msg`正在读取评论...`)}
             </div>
           ) : null}
@@ -5574,7 +5574,7 @@ function MobileChannelCommentsSheet({
           */}
           {!isLoading && !comments.length && !errorMessage ? (
             (post?.commentCount ?? 0) > 0 ? (
-              <div className="px-4 py-6 text-center text-[12px] text-[#b2b2b2]">
+              <div className="px-4 py-6 text-center text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
                 {t(msg`正在读取最近评论...`)}
               </div>
             ) : (
@@ -5584,7 +5584,7 @@ function MobileChannelCommentsSheet({
                   strokeWidth={1.2}
                   className="text-[color:var(--text-dim)]"
                 />
-                <span className="text-[14px] text-[color:var(--text-dim)]">
+                <span className="text-[length:var(--text-body)] text-[color:var(--text-dim)]">
                   {t(msg`还没有评论，快来抢沙发`)}
                 </span>
               </div>
@@ -5596,12 +5596,12 @@ function MobileChannelCommentsSheet({
         {/*
           微信视频号 tap-to-open 输入条：默认收起成 pill，点击展开为 textarea+
           发送按钮。reply mode / 已有 draft 时强制展开，让用户能看到自己写到一半
-          的内容。textarea text-[16px] 防 iOS viewport zoom；maxLength=500 跟服务端
+          的内容。textarea text-[length:var(--text-title)] 防 iOS viewport zoom；maxLength=500 跟服务端
           assertCommentText 对齐；IME composing 时按 Enter 不误发。
         */}
         <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 pt-2">
           {replyTarget ? (
-            <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[color:var(--brand-primary)]/8 px-2.5 py-1.5 text-[11px] text-[#166534]">
+            <div className="mb-1.5 flex items-center justify-between gap-3 rounded-[8px] bg-[color:var(--brand-primary)]/8 px-2.5 py-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--state-success-text)]">
               {/*
                 走查 R1（本轮）：原 truncate 没有 min-w-0 + flex-1，flex item 默认
                 min-width:auto，超长 authorName（比如用户用户名 yuanzui0728_5999 +
@@ -5619,7 +5619,7 @@ function MobileChannelCommentsSheet({
                   onCancelReply();
                   setInputExpanded(false);
                 }}
-                className="shrink-0 text-[#166534] transition active:opacity-70"
+                className="shrink-0 text-[color:var(--state-success-text)] transition active:opacity-70"
               >
                 {t(msg`取消`)}
               </button>
@@ -5627,7 +5627,7 @@ function MobileChannelCommentsSheet({
           ) : null}
           {inputExpanded ? (
             <div className="flex items-end gap-2 py-1.5">
-              <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[15px] text-[color:var(--text-primary)]">
+              <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-base)] text-[color:var(--text-primary)]">
                 <textarea
                   ref={inputTextareaRef}
                   value={draft}
@@ -5660,7 +5660,7 @@ function MobileChannelCommentsSheet({
                     event.preventDefault();
                     handleSubmitClick();
                   }}
-                  className="block w-full resize-none border-0 bg-transparent text-[16px] leading-[22px] outline-none placeholder:text-[#b0b0b0]"
+                  className="block w-full resize-none border-0 bg-transparent text-[length:var(--text-title)] leading-[22px] outline-none placeholder:text-[color:var(--text-dim)]"
                 />
               </div>
               <button
@@ -5668,10 +5668,10 @@ function MobileChannelCommentsSheet({
                 disabled={!draft.trim() || submitPending}
                 onClick={handleSubmitClick}
                 className={cn(
-                  "h-9 shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
+                  "h-9 shrink-0 rounded-full px-4 text-[length:var(--text-body)] font-medium transition-colors",
                   draft.trim() && !submitPending
                     ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
-                    : "bg-[color:var(--surface-secondary)] text-[#b0b0b0]",
+                    : "bg-[color:var(--surface-secondary)] text-[color:var(--text-dim)]",
                 )}
               >
                 {submitPending ? t(msg`发送中`) : t(msg`发送`)}
@@ -5681,7 +5681,7 @@ function MobileChannelCommentsSheet({
             <button
               type="button"
               onClick={() => setInputExpanded(true)}
-              className="flex h-9 w-full items-center justify-between rounded-[20px] bg-[color:var(--surface-secondary)] px-4 text-left text-[14px] text-[#b0b0b0] transition active:bg-[color:var(--surface-secondary)]"
+              className="flex h-9 w-full items-center justify-between rounded-[var(--radius-lg)] bg-[color:var(--surface-secondary)] px-4 text-left text-[length:var(--text-body)] text-[color:var(--text-dim)] transition active:bg-[color:var(--surface-secondary)]"
             >
               <span className="truncate">
                 {replyTarget

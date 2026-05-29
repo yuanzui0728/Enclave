@@ -107,7 +107,7 @@ export function DesktopFeedList({
       {isLoading ? (
         <LoadingBlock
           label={t(msg`正在读取广场动态...`)}
-          className="rounded-[20px] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
+          className="rounded-[var(--radius-lg)] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
         />
       ) : null}
 

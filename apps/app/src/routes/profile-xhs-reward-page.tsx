@@ -294,7 +294,7 @@ export function ProfileXhsRewardPage() {
 
       <div className="mx-auto flex max-w-3xl flex-col gap-4">
         {/* 规则说明 */}
-        <AppSection className="overflow-hidden rounded-[24px] border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#fff7ed,#ffffff)] px-6 py-6 shadow-none">
+        <AppSection className="overflow-hidden rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(135deg,#fff7ed,#ffffff)] px-6 py-6 shadow-none">
           {isDesktopLayout ? (
             <h1 className="text-2xl font-semibold text-[color:var(--text-primary)]">
               {summary.title || t(msg`发小红书赢会员`)}
@@ -321,7 +321,7 @@ export function ProfileXhsRewardPage() {
         {summary.enabled ? (
           <>
             {/* 文案区（opt-in 生成，可自写） */}
-            <AppSection className="rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
+            <AppSection className="rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                   {t(msg`第一步 · 准备文案`)}
@@ -346,7 +346,7 @@ export function ProfileXhsRewardPage() {
                       key={index}
                       type="button"
                       onClick={() => setCopyText(option)}
-                      className="block w-full rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-left text-xs leading-6 text-[color:var(--text-secondary)] active:bg-black/[0.04]"
+                      className="block w-full rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-left text-xs leading-6 text-[color:var(--text-secondary)] active:bg-black/[0.04]"
                     >
                       {option}
                     </button>
@@ -362,7 +362,7 @@ export function ProfileXhsRewardPage() {
                 onChange={(event) => setCopyText(event.target.value)}
                 rows={6}
                 placeholder={t(msg`在这里写你的小红书文案，或点「帮我生成文案」。`)}
-                className="mt-3 w-full rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm leading-6 text-[color:var(--text-primary)] outline-none"
+                className="mt-3 w-full rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm leading-6 text-[color:var(--text-primary)] outline-none"
               />
               <div className="mt-2 flex justify-end">
                 <Button
@@ -377,7 +377,7 @@ export function ProfileXhsRewardPage() {
             </AppSection>
 
             {/* 配图区（独立 opt-in） */}
-            <AppSection className="rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
+            <AppSection className="rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                   {t(msg`第二步 · 生成配图（可选）`)}
@@ -399,7 +399,7 @@ export function ProfileXhsRewardPage() {
                   <img
                     src={generatedImageUrl}
                     alt={t(msg`生成的配图`)}
-                    className="max-h-[320px] rounded-[16px] border border-[color:var(--border-faint)]"
+                    className="max-h-[320px] rounded-[var(--radius-md)] border border-[color:var(--border-faint)]"
                   />
                   <a
                     href={generatedImageUrl}
@@ -415,7 +415,7 @@ export function ProfileXhsRewardPage() {
             </AppSection>
 
             {/* 提交凭证 */}
-            <AppSection className="rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
+            <AppSection className="rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
               <div className="text-sm font-semibold text-[color:var(--text-primary)]">
                 {t(msg`第三步 · 提交发帖凭证`)}
               </div>
@@ -430,7 +430,7 @@ export function ProfileXhsRewardPage() {
                 value={postUrl}
                 onChange={(event) => setPostUrl(event.target.value)}
                 placeholder={t(msg`粘贴你发布的小红书帖子链接`)}
-                className="mt-1 w-full rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none"
+                className="mt-1 w-full rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-primary)] outline-none"
               />
 
               <label className="mt-4 block text-xs text-[color:var(--text-muted)]">
@@ -448,7 +448,7 @@ export function ProfileXhsRewardPage() {
                   <img
                     src={screenshotPreview}
                     alt={t(msg`截图预览`)}
-                    className="h-16 w-16 rounded-[12px] border border-[color:var(--border-faint)] object-cover"
+                    className="h-16 w-16 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] object-cover"
                   />
                 ) : null}
               </div>
@@ -476,7 +476,7 @@ export function ProfileXhsRewardPage() {
         ) : null}
 
         {/* 审核状态列表 */}
-        <AppSection className="rounded-[24px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
+        <AppSection className="rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-6 shadow-none">
           <div className="text-sm font-semibold text-[color:var(--text-primary)]">
             {t(msg`我的提交记录`)}
           </div>
@@ -509,7 +509,7 @@ function ClaimList({ claims }: { claims: XhsRewardClaimSummary[] }) {
       {claims.map((claim) => (
         <div
           key={claim.id}
-          className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
+          className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 text-sm text-[color:var(--text-secondary)]"
         >
           <div className="flex items-center justify-between gap-2">
             <a

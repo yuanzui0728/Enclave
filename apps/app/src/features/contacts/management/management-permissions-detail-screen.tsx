@@ -175,7 +175,7 @@ export function ManagementPermissionsDetailScreen({
     const stillLoading = friendsQuery.isLoading || charactersQuery.isLoading;
     if (stillLoading) {
       return (
-        <div className="px-4 py-8 text-center text-[12px] text-[color:var(--text-muted)]">
+        <div className="px-4 py-8 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {t(msg`正在读取联系人...`)}
         </div>
       );
@@ -185,10 +185,10 @@ export function ManagementPermissionsDetailScreen({
         <div className="mx-auto inline-flex rounded-full bg-[color:var(--surface-secondary)] px-3 py-1 text-[10px] font-medium text-[color:var(--text-muted)]">
           {t(msg`朋友权限`)}
         </div>
-        <div className="mt-3 text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="mt-3 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
           {t(msg`联系人不存在或已被移除`)}
         </div>
-        <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <p className="mx-auto mt-2 max-w-[18rem] text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
           {t(msg`请返回上一页选择其他联系人。`)}
         </p>
       </div>
@@ -197,7 +197,7 @@ export function ManagementPermissionsDetailScreen({
 
   return (
     <div className="px-3 py-3">
-      <div className="flex items-center gap-3 rounded-[12px] bg-[color:var(--surface-card)] px-3 py-3 shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
+      <div className="flex items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--surface-card)] px-3 py-3 shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
         {/* 通讯录 mobile 走查 R3：朋友权限详情头卡：character.name / remarkName /
             relationship 三处都是用户输入端，避免 U+202E 把开关行 layout 反转 →
             用户误开关。跟 friend-row / blacklist row 同口径补 strip。 */}
@@ -209,12 +209,12 @@ export function ManagementPermissionsDetailScreen({
           size="wechat"
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
             {stripBidiControl(
               friendship?.remarkName?.trim() || character.name,
             )}
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {stripBidiControl(character.relationship) || t(msg`保持联系`)}
           </div>
         </div>
@@ -226,13 +226,13 @@ export function ManagementPermissionsDetailScreen({
         // mutation.error。
         <InlineNotice
           tone="danger"
-          className="mt-3 rounded-[12px] px-2.5 py-1.5 text-[11px] leading-4 shadow-none"
+          className="mt-3 rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-4 shadow-none"
         >
           {mutation.error.message || t(msg`权限修改失败，请稍后再试。`)}
         </InlineNotice>
       ) : null}
 
-      <ul className="mt-3 overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
+      <ul className="mt-3 overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
         {/* R2 走查：mutation.isPending 时锁住三个 switch。原写法没锁，
             用户连点 hideMine on / off / on 时多次 mutate 并发起飞，server
             可能乱序完成；如果其中一条失败，单条 onError 用 setX(!next.X) 朴素
@@ -303,14 +303,14 @@ function SwitchRow({
         <div className="min-w-0 flex-1">
           <div
             id={labelId}
-            className="text-[14px] text-[color:var(--text-primary)]"
+            className="text-[length:var(--text-body)] text-[color:var(--text-primary)]"
           >
             {label}
           </div>
           {description ? (
             <div
               id={descId}
-              className="mt-0.5 text-[11px] leading-4 text-[color:var(--text-muted)]"
+              className="mt-0.5 text-[length:var(--text-eyebrow)] leading-4 text-[color:var(--text-muted)]"
             >
               {description}
             </div>
@@ -326,7 +326,7 @@ function SwitchRow({
           onClick={() => onChange(!checked)}
           className={cn(
             "relative inline-flex h-[26px] w-[44px] shrink-0 items-center rounded-full transition-colors",
-            checked ? "bg-[color:var(--brand-primary)]" : "bg-[#e0e0e0]",
+            checked ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--surface-soft)]",
             disabled ? "opacity-60" : undefined,
           )}
         >

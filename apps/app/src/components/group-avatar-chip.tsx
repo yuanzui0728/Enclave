@@ -33,10 +33,10 @@ export const GroupAvatarChip = memo(function GroupAvatarChip({
 }) {
   const frameClassName =
     size === "sm"
-      ? "h-9 w-9 rounded-[16px] p-[2px]"
+      ? "h-9 w-9 rounded-[var(--radius-md)] p-[2px]"
       : size === "wechat"
         ? "h-12 w-12 rounded-xl p-[3px]"
-        : "h-11 w-11 rounded-[20px] p-[2px]";
+        : "h-11 w-11 rounded-[var(--radius-lg)] p-[2px]";
   const cellClassName =
     size === "sm"
       ? "rounded-[6px]"

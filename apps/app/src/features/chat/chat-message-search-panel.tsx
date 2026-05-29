@@ -437,7 +437,7 @@ export function ChatMessageSearchPanel({
     >
       <ChatDetailsSection title={t(msg`搜索`)} variant="wechat">
         <div className="px-4 py-3">
-          <label className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5">
+          <label className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2.5">
             <Search
               size={16}
               className="shrink-0 text-[color:var(--text-dim)]"
@@ -456,10 +456,10 @@ export function ChatMessageSearchPanel({
               // 本面板同时给单聊 (chat-message-search-page) 和群聊
               // (group-message-search-page) 路径用，一处修复双端受益。
               aria-label={t(msg`搜索聊天记录`)}
-              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               // 这是查找聊天记录的输入框，进来就 auto focus（line 175-177）—
               // 字号偏小直接触发 zoom，整页搜索 panel 抖一下。
-              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              className="min-w-0 flex-1 bg-transparent text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               // 走查 R1：和兄弟搜索框 group-contacts-page / group-member-picker-page
               // / create-group-page 同款补四件套。单聊/群聊"查找聊天记录"是 ChatMessageSearchPanel
               // 共用 panel，搜的多半是聊天里出现过的 ASCII / 英文片段（"discord"、
@@ -494,9 +494,9 @@ export function ChatMessageSearchPanel({
             ) : null}
           </div>
           {activeFilterLabels.length ? (
-            <div className="mt-2.5 rounded-[12px] bg-[color:var(--surface-panel)] px-3 py-2.5">
+            <div className="mt-2.5 rounded-[var(--radius-sm)] bg-[color:var(--surface-panel)] px-3 py-2.5">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[11px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`已筛选 ${activeFilterLabels.length} 项`)}
                 </div>
                 <Button
@@ -516,7 +516,7 @@ export function ChatMessageSearchPanel({
               </div>
             </div>
           ) : null}
-          <div className="mt-2.5 space-y-3 rounded-[12px] bg-[color:var(--surface-panel)] px-3 py-3">
+          <div className="mt-2.5 space-y-3 rounded-[var(--radius-sm)] bg-[color:var(--surface-panel)] px-3 py-3">
             <div>
               <div className="text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 {t(msg`时间`)}
@@ -562,7 +562,7 @@ export function ChatMessageSearchPanel({
               enableSenderFilter ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1"
             }`}
           >
-            <label className="flex min-w-0 flex-col gap-1 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
+            <label className="flex min-w-0 flex-col gap-1 rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
               <span className="text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
                 {t(msg`指定日期`)}
               </span>
@@ -575,21 +575,21 @@ export function ChatMessageSearchPanel({
                     setDateFilter("all");
                   }
                 }}
-                // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-                className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none"
+                // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+                className="min-w-0 flex-1 bg-transparent text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none"
               />
             </label>
             {enableSenderFilter ? (
-              <label className="flex min-w-0 flex-col gap-1 rounded-[12px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
+              <label className="flex min-w-0 flex-col gap-1 rounded-[var(--radius-sm)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2">
                 <span className="text-[10px] font-medium tracking-[0.06em] text-[color:var(--text-muted)]">
                   {t(msg`成员`)}
                 </span>
                 <select
                   value={senderFilter}
                   onChange={(event) => setSenderFilter(event.target.value)}
-                  // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in，
+                  // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in，
                   // 对 select 同样适用。
-                  className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none"
+                  className="min-w-0 flex-1 bg-transparent text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none"
                 >
                   <option value="all">{t(msg`全部成员`)}</option>
                   {senderOptions.map((option) => (
@@ -697,16 +697,16 @@ export function ChatMessageSearchPanel({
                         <Icon size={17} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+                        <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                           {category.label}
                         </div>
-                        <div className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-muted)]">
+                        <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-muted)]">
                           {category.description}
                         </div>
                       </div>
                     </div>
                     <div className="shrink-0 text-right">
-                      <div className="text-[16px] font-semibold leading-none text-[color:var(--text-primary)]">
+                      <div className="text-[length:var(--text-title)] font-semibold leading-none text-[color:var(--text-primary)]">
                         {categoryCounts[category.id]}
                       </div>
                       <div
@@ -881,7 +881,7 @@ export function ChatMessageSearchPanel({
                           className="block w-full px-4 py-2.5 text-left transition active:bg-[color:var(--surface-card-hover)]"
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                            <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                               {trimmedKeyword
                                 ? renderHighlightedText(
                                     item.message.senderName ||
@@ -890,13 +890,13 @@ export function ChatMessageSearchPanel({
                                   )
                                 : item.message.senderName || unknownSenderLabel}
                             </div>
-                            <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
+                            <div className="shrink-0 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                               {formatDetailedMessageTimestamp(
                                 item.message.createdAt,
                               )}
                             </div>
                           </div>
-                          <div className="mt-0.5 text-[13px] leading-5 text-[color:var(--text-secondary)]">
+                          <div className="mt-0.5 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
                             {trimmedKeyword
                               ? renderHighlightedText(
                                   buildSearchPreview(
@@ -907,12 +907,12 @@ export function ChatMessageSearchPanel({
                                 )
                               : item.previewText}
                           </div>
-                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
+                          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                             <span className="rounded-full bg-[color:var(--surface-panel)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
                               {item.typeLabel}
                             </span>
                             {item.reminderAt ? (
-                              <span className="rounded-full bg-[rgba(59,130,246,0.08)] px-2 py-0.5 text-[10px] text-[#2563eb]">
+                              <span className="rounded-full bg-[color:var(--state-info-bg)] px-2 py-0.5 text-[10px] text-[color:var(--state-info-text)]">
                                 {t(
                                   msg`提醒 · ${formatMessageTimestamp(item.reminderAt)}`,
                                 )}
@@ -937,7 +937,7 @@ export function ChatMessageSearchPanel({
                   </section>
                 ))}
                 {isPartialResult ? (
-                  <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 py-2.5 text-[11px] text-[color:var(--text-muted)]">
+                  <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 py-2.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                     {t(
                       msg`当前仅展示前 ${MAX_VISIBLE_RESULTS} 条结果，请继续缩小范围查找。`,
                     )}
@@ -1345,7 +1345,7 @@ function MobileSearchStatusCard({
         tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
       }
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -1355,7 +1355,7 @@ function MobileSearchStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -1365,13 +1365,13 @@ function MobileSearchStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
@@ -1392,7 +1392,7 @@ function SearchStatPill({
         "rounded-full px-2.5 py-1 text-[10px] leading-none",
         tone === "brand" &&
           "bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]",
-        tone === "blue" && "bg-[rgba(59,130,246,0.08)] text-[#2563eb]",
+        tone === "blue" && "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
         tone === "active" && "bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]",
         tone === "neutral" &&
           "bg-[color:var(--surface-panel)] text-[color:var(--text-muted)]",
@@ -1417,7 +1417,7 @@ function SearchFilterChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-full border px-3 py-1.5 text-[11px] leading-none transition",
+        "rounded-full border px-3 py-1.5 text-[length:var(--text-eyebrow)] leading-none transition",
         active
           ? "border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",

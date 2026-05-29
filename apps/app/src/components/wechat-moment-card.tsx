@@ -439,7 +439,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                 event.stopPropagation();
                 onAuthorTap?.();
               }}
-              className="block max-w-full truncate text-left text-[15px] font-medium leading-[20px]"
+              className="block max-w-full truncate text-left text-[length:var(--text-base)] font-medium leading-[20px]"
               style={{ color: WECHAT_LINK_COLOR }}
             >
               {moment.authorName}
@@ -449,7 +449,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
           {hasText ? (
             <div
               className={cn(
-                "whitespace-pre-wrap break-words text-[16px] leading-[24px]",
+                "whitespace-pre-wrap break-words text-[length:var(--text-title)] leading-[24px]",
                 hideAuthor ? "" : "mt-1.5",
               )}
               style={{ color: WECHAT_TEXT_COLOR }}
@@ -475,7 +475,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
 
           {moment.location ? (
             <div
-              className="mt-2 inline-flex max-w-full items-center gap-0.5 truncate text-[12px]"
+              className="mt-2 inline-flex max-w-full items-center gap-0.5 truncate text-[length:var(--text-caption)]"
               style={{ color: WECHAT_LINK_COLOR }}
             >
               <MapPin size={11} className="shrink-0" />
@@ -484,7 +484,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
           ) : null}
 
           <div
-            className="mt-2 flex items-center justify-between gap-2 text-[12px]"
+            className="mt-2 flex items-center justify-between gap-2 text-[length:var(--text-caption)]"
             style={{ color: WECHAT_TIMESTAMP_COLOR }}
           >
             <div className="flex min-w-0 items-center gap-2">
@@ -517,7 +517,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                   type="button"
                   onClick={handleListenTap}
                   aria-label={t(msg`朗读这条朋友圈`)}
-                  className="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-[color:var(--surface-secondary)] text-[#4C4C4C] active:bg-[#E5E5E5] disabled:opacity-50"
+                  className="inline-flex h-6 w-6 items-center justify-center rounded-[3px] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-soft)] disabled:opacity-50"
                   data-no-doubletap
                   disabled={narrationLoading}
                   title={
@@ -537,7 +537,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                   type="button"
                   onClick={openMoreMenu}
                   aria-label={t(msg`更多操作`)}
-                  className="inline-flex h-6 w-7 items-center justify-center rounded-[3px] bg-[color:var(--surface-secondary)] text-[#4C4C4C] active:bg-[#E5E5E5]"
+                  className="inline-flex h-6 w-7 items-center justify-center rounded-[3px] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-soft)]"
                   data-no-doubletap
                   // 走查移动端朋友圈/Round 3 R1：让 WeChatActionBubble 的 pointerdown
                   // capture handler 把这颗按钮排除掉，二次点 ⋯ 才能关菜单（否则
@@ -570,7 +570,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
             // share-card-modal / wechat-comment-bar 错误条）一致。
             <div
               role="alert"
-              className="mt-2 rounded-[4px] bg-[rgba(250,81,81,0.08)] px-2.5 py-1.5 text-[12px] leading-[18px] text-[#fa5151]"
+              className="mt-2 rounded-[4px] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[length:var(--text-caption)] leading-[18px] text-[color:var(--state-danger-text)]"
             >
               {narrationError}
             </div>
@@ -579,7 +579,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
           {showFooterBlock ? (
             <div className="mt-2 overflow-hidden rounded-[3px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]">
               {hasLikes ? (
-                <div className="flex flex-wrap items-start gap-1 px-2.5 py-1.5 text-[13px] leading-[20px]">
+                <div className="flex flex-wrap items-start gap-1 px-2.5 py-1.5 text-[length:var(--text-caption)] leading-[20px]">
                   <Heart
                     size={13}
                     className="mt-1 shrink-0 fill-[#576B95] text-[#576B95]"
@@ -624,7 +624,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
               ) : null}
 
               {hasComments ? (
-                <div className="space-y-0.5 px-2.5 py-1.5 text-[13px] leading-[22px]">
+                <div className="space-y-0.5 px-2.5 py-1.5 text-[length:var(--text-caption)] leading-[22px]">
                   {visibleComments.map((comment) => {
                     const replyToName = comment.replyToCommentId
                       ? commentAuthorById.get(comment.replyToCommentId) ?? null
@@ -719,7 +719,7 @@ function FloatingHeart({ liked }: { liked: boolean }) {
         className={cn(
           "drop-shadow-[0_4px_12px_rgba(0,0,0,0.18)]",
           liked
-            ? "fill-[#FA5151] text-[#FA5151]"
+            ? "fill-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "fill-white/0 text-white/90",
         )}
         style={style}

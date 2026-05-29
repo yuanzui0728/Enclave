@@ -333,10 +333,10 @@ export function DesktopOfficialArticleWindowPage() {
             <ArrowLeft size={16} />
           </StandaloneActionButton>
           <div className="min-w-0">
-            <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
               {article?.account.name ?? t(msg`公众号文章`)}
             </div>
-            <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {article?.title ?? routeState.title ?? t(msg`正在读取文章`)}
             </div>
           </div>
@@ -440,25 +440,25 @@ function DesktopArticleWindowStatusPane({
           "w-full rounded-[22px] border px-8 py-10 text-center shadow-none",
           tone === "danger"
             ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
-            : "border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)]",
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
         )}
       >
         {tone === "loading" ? (
           <div className="flex items-center justify-center gap-1.5">
             <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
             <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
           </div>
         ) : null}
         <div
           className={cn(
-            "font-medium text-[16px] text-[color:var(--text-primary)]",
+            "font-medium text-[length:var(--text-title)] text-[color:var(--text-primary)]",
             tone === "loading" ? "mt-4" : undefined,
           )}
         >
           {title}
         </div>
-        <p className="mx-auto mt-2 max-w-[26rem] text-[13px] leading-7 text-[color:var(--text-secondary)]">
+        <p className="mx-auto mt-2 max-w-[26rem] text-[length:var(--text-caption)] leading-7 text-[color:var(--text-secondary)]">
           {description}
         </p>
         {action ? <div className="mt-6 flex justify-center">{action}</div> : null}
@@ -475,7 +475,7 @@ function DesktopArticleWindowInlineStatus({
   return (
     <div className="mx-auto max-w-[720px] px-8 pt-6">
       <InlineNotice
-        className="rounded-[16px] border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.72)] text-[13px] leading-6"
+        className="rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] text-[length:var(--text-caption)] leading-6"
         tone="info"
       >
         {message}

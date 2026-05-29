@@ -384,7 +384,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryArticle}
                   >
                     {t(msg`重试读取`)}
@@ -393,7 +393,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {statusBackLabel}
@@ -417,7 +417,7 @@ function MobileOfficialAccountArticlePage({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                      className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                       onClick={handleRetryMarkRead}
                     >
                       {t(msg`重试同步`)}
@@ -427,7 +427,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {statusBackLabel}
@@ -440,7 +440,7 @@ function MobileOfficialAccountArticlePage({
         {shareNotice ? (
           <div className="mx-auto max-w-[24rem] px-4 pt-2">
             <InlineNotice
-              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
               tone={shareNotice.tone}
             >
               {shareNotice.tone === "info" ? (
@@ -452,7 +452,7 @@ function MobileOfficialAccountArticlePage({
                         type="button"
                         variant="secondary"
                         size="sm"
-                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                         onClick={shareNotice.onAction}
                       >
                         {shareNotice.actionLabel}
@@ -462,7 +462,7 @@ function MobileOfficialAccountArticlePage({
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                       onClick={handleStatusBack}
                     >
                       {statusBackLabel}
@@ -487,7 +487,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryArticle}
                   >
                     {t(msg`重试读取`)}
@@ -496,7 +496,7 @@ function MobileOfficialAccountArticlePage({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {statusBackLabel}
@@ -561,7 +561,7 @@ function MobileOfficialArticleStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -571,7 +571,7 @@ function MobileOfficialArticleStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -581,13 +581,13 @@ function MobileOfficialArticleStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

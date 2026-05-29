@@ -179,7 +179,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                   key={to}
                   to={to}
                   className={cn(
-                    "flex flex-col items-center gap-1 rounded-[12px] px-2 py-1.5 text-[11px] font-medium transition-[color,background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                    "flex flex-col items-center gap-1 rounded-[var(--radius-sm)] px-2 py-1.5 text-[length:var(--text-eyebrow)] font-medium transition-[color,background-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     active
                       ? "text-[color:var(--brand-primary)]"
                       : "text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)]",
@@ -191,17 +191,17 @@ export function MobileShell({ children }: PropsWithChildren) {
                       "relative flex h-8 w-8 items-center justify-center transition-[background-color,color,transform] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                       active
                         ? "-translate-y-0.5 rounded-full bg-[color:var(--brand-soft)]"
-                        : "rounded-[12px] bg-transparent",
+                        : "rounded-[var(--radius-sm)] bg-transparent",
                     )}
                   >
                     <Icon size={18} />
                     {badgeCount > 0 ? (
                       <span
                         className={cn(
-                          "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[11px] leading-none text-white",
+                          "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[length:var(--text-eyebrow)] leading-none text-white",
                           showReminderBadge
                             ? "bg-[color:var(--brand-primary)]"
-                            : "bg-[#fa5151]",
+                            : "bg-[color:var(--state-danger-bg)]",
                         )}
                       >
                         {badgeCount > 99 ? "99+" : badgeCount}

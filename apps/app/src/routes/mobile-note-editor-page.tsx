@@ -1228,7 +1228,7 @@ function MobileNoteEditor({
   ) {
     return (
       <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
-        <div className="w-full max-w-md rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-6 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-6 shadow-[var(--shadow-card)]">
           <ErrorBlock
             message={
               noteQuery.error instanceof Error
@@ -1240,7 +1240,7 @@ function MobileNoteEditor({
             <Button
               variant="secondary"
               onClick={() => void leaveEditor()}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
+              className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
             >
               {t(msg`回到来源`)}
             </Button>
@@ -1266,7 +1266,7 @@ function MobileNoteEditor({
         title={
           // 顶栏标题改成受控 input：用户点击直接编辑；不填走 placeholder 展示派生
           // 标题，保存时 buildNoteMutationPayload 把 title 带过去（空串→后端派生）。
-          // text-[16px]: iOS Safari focus 时 <16px 强制 viewport zoom-in；
+          // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 强制 viewport zoom-in；
           // enterKeyHint="done" + Enter preventDefault 避免 IME 候选回车顺带跑掉
           // 焦点（外层 contentEditable 没有 form，但部分 IME 仍会触发 default
           // submit-like 行为）。maxLength={32} 与后端截断长度一致。
@@ -1285,12 +1285,12 @@ function MobileNoteEditor({
             enterKeyHint="done"
             aria-label={t(msg`笔记标题`)}
             disabled={noteQuery.isLoading}
-            className="w-full bg-transparent text-[16px] font-medium tracking-normal text-[color:var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--text-secondary)] disabled:cursor-default"
+            className="w-full bg-transparent text-[length:var(--text-title)] font-medium tracking-normal text-[color:var(--text-primary)] outline-none placeholder:font-normal placeholder:text-[color:var(--text-secondary)] disabled:cursor-default"
           />
         }
         titleAlign="left"
         className="mx-0 mb-0 mt-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-1.5 pt-1.5 text-[color:var(--text-primary)] shadow-none"
-        titleClassName="text-[16px] font-medium tracking-normal"
+        titleClassName="text-[length:var(--text-title)] font-medium tracking-normal"
         leftActions={
           <Button
             type="button"
@@ -1350,17 +1350,17 @@ function MobileNoteEditor({
                 isExistingNoteNotReady ||
                 attachmentPending
               }
-              className="h-8 rounded-[12px] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
+              className="h-8 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
             >
               <Save size={14} />
-              <span className="ml-1 text-[12px]">
+              <span className="ml-1 text-[length:var(--text-caption)]">
                 {saveMutation.isPending ? t(msg`保存中`) : t(msg`保存`)}
               </span>
             </Button>
           </div>
         }
       >
-        <div className="text-[11px] text-[color:var(--text-muted)]">
+        <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
           {saveMutation.isPending
             ? t(msg`正在保存到收藏...`)
             : isDirty
@@ -1382,7 +1382,7 @@ function MobileNoteEditor({
           {editorState.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-flex items-center gap-1 rounded-full bg-[color:var(--brand-primary)]/8 px-3 py-1 text-[12px] text-[color:var(--brand-primary)]"
+              className="inline-flex items-center gap-1 rounded-full bg-[color:var(--brand-primary)]/8 px-3 py-1 text-[length:var(--text-caption)] text-[color:var(--brand-primary)]"
             >
               <span>#{tag}</span>
               <button
@@ -1408,13 +1408,13 @@ function MobileNoteEditor({
                   handleTagCommit();
                 }}
                 placeholder={t(msg`输入标签后回车`)}
-                // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-                className="h-9 w-[160px] rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
+                // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+                className="h-9 w-[160px] rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
               />
               <Button
                 variant="secondary"
                 onClick={handleTagCommit}
-                className="h-9 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 shadow-none"
+                className="h-9 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 shadow-none"
               >
                 {t(msg`添加`)}
               </Button>
@@ -1434,7 +1434,7 @@ function MobileNoteEditor({
               已经走不到（loading 走 LoadingBlock 而不是这条 placeholder），
               一并清掉这条 dead path。*/}
           {!editorState.contentText.trim() && editorState.assets.length === 0 ? (
-            <div className="pointer-events-none absolute left-0 top-0 text-[15px] leading-7 text-[color:var(--text-dim)]">
+            <div className="pointer-events-none absolute left-0 top-0 text-[length:var(--text-base)] leading-7 text-[color:var(--text-dim)]">
               {t(msg`写点什么。支持富文本、待办、图片和文件。`)}
             </div>
           ) : null}
@@ -1446,11 +1446,11 @@ function MobileNoteEditor({
             onClick={handleEditorClick}
             className={cn(
               "min-h-[60vh] outline-none",
-              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
               // contentEditable 也算 focusable form control，同样受影响。
-              "text-[16px] leading-7 text-[color:var(--text-primary)]",
-              "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[12px] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[rgba(60, 40, 110, 0.08)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[13px] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
-              "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[16px] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[rgba(60, 40, 110, 0.08)]",
+              "text-[length:var(--text-title)] leading-7 text-[color:var(--text-primary)]",
+              "[&_a[data-note-file='true']]:inline-flex [&_a[data-note-file='true']]:items-center [&_a[data-note-file='true']]:rounded-[var(--radius-sm)] [&_a[data-note-file='true']]:border [&_a[data-note-file='true']]:border-[color:var(--border-subtle)] [&_a[data-note-file='true']]:bg-[color:var(--surface-secondary)] [&_a[data-note-file='true']]:px-3 [&_a[data-note-file='true']]:py-2 [&_a[data-note-file='true']]:text-[length:var(--text-caption)] [&_a[data-note-file='true']]:text-[color:var(--text-primary)] [&_a[data-note-file='true']]:no-underline",
+              "[&_img[data-note-image='true']]:my-2 [&_img[data-note-image='true']]:max-h-[60vw] [&_img[data-note-image='true']]:max-w-full [&_img[data-note-image='true']]:rounded-[var(--radius-md)] [&_img[data-note-image='true']]:border [&_img[data-note-image='true']]:border-[color:var(--border-subtle)]",
               "[&_[data-note-checkbox='false']]:cursor-pointer [&_[data-note-checkbox='true']]:cursor-pointer [&_[data-note-checkbox='true']]:text-[color:var(--brand-primary)]",
             )}
           />
@@ -1511,7 +1511,7 @@ function MobileNoteEditor({
           <Tag size={15} />
         </ToolbarButton>
         {attachmentPending ? (
-          <span className="rounded-full bg-[color:var(--brand-primary)]/8 px-2.5 py-1 text-[11px] text-[color:var(--brand-primary)]">
+          <span className="rounded-full bg-[color:var(--brand-primary)]/8 px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]">
             {t(msg`附件上传中...`)}
           </span>
         ) : null}
@@ -1590,7 +1590,7 @@ function ToolbarButton({
       onMouseDown={(event) => event.preventDefault()}
       onClick={onClick}
       className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-[12px] border px-2.5 text-[12px] transition",
+        "inline-flex h-9 items-center gap-1.5 rounded-[var(--radius-sm)] border px-2.5 text-[length:var(--text-caption)] transition",
         active
           ? "border-[color:var(--brand-primary)]/16 bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]"
           : "border-transparent bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-black/5",
@@ -1641,10 +1641,10 @@ function ConfirmSheet({
       />
       <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(60, 40, 110, 0.16)]">
         <div className="px-5 pb-5 pt-6">
-          <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
             {title}
           </div>
-          <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+          <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
             {description}
           </div>
         </div>
@@ -1653,7 +1653,7 @@ function ConfirmSheet({
             variant={danger ? "danger" : "primary"}
             onClick={onConfirm}
             disabled={pending}
-            className="h-11 rounded-[12px] text-[15px]"
+            className="h-11 rounded-[var(--radius-sm)] text-[length:var(--text-base)]"
           >
             {pending ? pendingLabel : confirmLabel}
           </Button>
@@ -1661,7 +1661,7 @@ function ConfirmSheet({
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] shadow-none"
+            className="h-11 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[length:var(--text-base)] shadow-none"
           >
             {t(msg`取消`)}
           </Button>
@@ -1701,16 +1701,16 @@ function UnsavedSheet({
       />
       <div className="relative rounded-t-[22px] bg-[color:var(--surface-card)] pb-[calc(env(safe-area-inset-bottom,0px))] shadow-[0_-12px_32px_rgba(60, 40, 110, 0.16)]">
         <div className="px-5 pb-5 pt-6">
-          <div className="text-[16px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
             {t(msg`这条笔记还没有保存`)}
           </div>
-          <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+          <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
             {t(msg`保存后会进入收藏；如果直接关闭，当前草稿改动会被丢弃。`)}
           </div>
         </div>
         <div className="flex flex-col gap-2 border-t border-[color:var(--border-faint)] px-5 py-4">
           {saveDisabled ? (
-            <div className="rounded-[12px] bg-[color:var(--brand-primary)]/8 px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+            <div className="rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)]/8 px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
               {t(msg`附件还在上传，完成后再保存或者直接放弃。`)}
             </div>
           ) : null}
@@ -1718,7 +1718,7 @@ function UnsavedSheet({
             variant="primary"
             onClick={onSave}
             disabled={pending || saveDisabled}
-            className="h-11 rounded-[12px] bg-[color:var(--brand-primary)] text-[15px] text-white hover:opacity-95"
+            className="h-11 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-[length:var(--text-base)] text-white hover:opacity-95"
           >
             {pending ? t(msg`保存中...`) : t(msg`保存并关闭`)}
           </Button>
@@ -1726,7 +1726,7 @@ function UnsavedSheet({
             variant="danger"
             onClick={onDiscard}
             disabled={pending}
-            className="h-11 rounded-[12px] text-[15px]"
+            className="h-11 rounded-[var(--radius-sm)] text-[length:var(--text-base)]"
           >
             {t(msg`不保存`)}
           </Button>
@@ -1734,7 +1734,7 @@ function UnsavedSheet({
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] shadow-none"
+            className="h-11 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[length:var(--text-base)] shadow-none"
           >
             {t(msg`继续编辑`)}
           </Button>

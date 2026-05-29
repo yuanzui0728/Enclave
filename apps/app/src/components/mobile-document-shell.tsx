@@ -171,7 +171,7 @@ export function MobileDocumentShell({
                       <button
                         type="button"
                         onClick={notice.onAction}
-                        className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                        className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                       >
                         {notice.actionLabel}
                       </button>
@@ -192,7 +192,7 @@ export function MobileDocumentShell({
                             : "/tabs/profile",
                         )
                       }
-                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {t(msg`返回上一页`)}
                     </button>
@@ -205,13 +205,13 @@ export function MobileDocumentShell({
           </div>
         ) : null}
         <section className="border-y border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4">
-          <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[color:var(--brand-primary)]">
+          <div className="text-[length:var(--text-eyebrow)] font-medium uppercase tracking-[0.18em] text-[color:var(--brand-primary)]">
             {eyebrow}
           </div>
-          <div className="mt-2 text-[16px] font-medium text-[color:var(--text-primary)]">
+          <div className="mt-2 text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
             {title}
           </div>
-          <p className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+          <p className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
             {summary}
           </p>
         </section>
@@ -221,14 +221,14 @@ export function MobileDocumentShell({
             key={section.title}
             className="border-y border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4"
           >
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {section.title}
             </div>
             <div className="mt-3 space-y-3">
               {section.paragraphs.map((paragraph) => (
                 <p
                   key={paragraph}
-                  className="text-[14px] leading-7 text-[color:var(--text-secondary)]"
+                  className="text-[length:var(--text-body)] leading-7 text-[color:var(--text-secondary)]"
                 >
                   {paragraph}
                 </p>

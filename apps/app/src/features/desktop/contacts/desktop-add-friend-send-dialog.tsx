@@ -100,7 +100,7 @@ export function DesktopAddFriendSendDialog({
     // 听不到「发送添加朋友申请」title），backdrop <button> 也没 tabIndex={-1}
     // （键盘用户 Tab 进 dialog 焦点先落到这张不可见 backdrop → Enter 秒关，
     // 草稿验证信息一并丢）。一次性补齐双 a11y。
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--state-info-bg)] p-6 backdrop-blur-[2px]">
       <button
         type="button"
         aria-label={t(msg`关闭发送好友申请弹层`)}
@@ -117,12 +117,12 @@ export function DesktopAddFriendSendDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-[460px] overflow-hidden rounded-[10px] border border-[rgba(15,23,42,0.10)] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[460px] overflow-hidden rounded-[10px] border border-[color:var(--border-strong)] bg-white shadow-[var(--shadow-overlay)]"
       >
-        <div className="border-b border-[rgba(15,23,42,0.06)] bg-[#f7f7f7] px-6 py-4">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-4">
           <div
             id={titleId}
-            className="text-center text-[17px] font-medium text-[color:var(--text-primary)]"
+            className="text-center text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]"
           >
             {t(msg`发送添加朋友申请`)}
           </div>
@@ -138,24 +138,24 @@ export function DesktopAddFriendSendDialog({
         </div>
 
         <div className="px-6 py-5">
-          <div className="flex items-center gap-3 rounded-[8px] bg-[#f7f7f7] px-4 py-3">
+          <div className="flex items-center gap-3 rounded-[8px] bg-[color:var(--surface-card)] px-4 py-3">
             <AvatarChip name={character.name} src={character.avatar} size="wechat" />
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                 {character.name}
               </div>
-              <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {identifier}
               </div>
             </div>
           </div>
 
-          <div className="mt-4 text-[13px] leading-6 text-[color:var(--text-muted)]">
+          <div className="mt-4 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
             {t(msg`你需要发送验证申请，等待对方通过。`)}
           </div>
 
           <div className="mt-4">
-            <div className="mb-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+            <div className="mb-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
               {t(msg`验证信息`)}
             </div>
             <textarea
@@ -165,22 +165,22 @@ export function DesktopAddFriendSendDialog({
               onChange={(event) => setGreeting(event.target.value)}
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
-              className="min-h-[128px] w-full resize-none rounded-[8px] border border-[rgba(15,23,42,0.10)] bg-white px-4 py-3 text-[14px] leading-7 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[color-mix(in_srgb,var(--brand-primary)_42%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
+              className="min-h-[128px] w-full resize-none rounded-[8px] border border-[color:var(--border-strong)] bg-white px-4 py-3 text-[length:var(--text-body)] leading-7 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[color-mix(in_srgb,var(--brand-primary)_42%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
             />
-            <div className="mt-2 flex items-center justify-between text-[11px] text-[color:var(--text-dim)]">
+            <div className="mt-2 flex items-center justify-between text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
               <span>{t(msg`支持按 \`Ctrl/Cmd + Enter\` 直接发送`)}</span>
               <span>{greeting.length}/60</span>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-[rgba(15,23,42,0.06)] bg-[#f7f7f7] px-6 py-3.5">
+        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-3.5">
           <Button
             type="button"
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="rounded-[8px] border-[rgba(15,23,42,0.10)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[color:var(--border-strong)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`取消`)}
           </Button>

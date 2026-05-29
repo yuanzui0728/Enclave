@@ -35,11 +35,11 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
         paddingLeft: "max(1rem, env(safe-area-inset-left, 0px))",
       }}
     >
-      <div className="w-full max-w-md rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-8 py-10 shadow-none">
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-primary)]/16 bg-[color:var(--brand-primary)]/8 px-3 py-1 text-[11px] uppercase tracking-[0.34em] text-[color:var(--brand-primary)]">
+      <div className="w-full max-w-md rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-8 py-10 shadow-none">
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-primary)]/16 bg-[color:var(--brand-primary)]/8 px-3 py-1 text-[length:var(--text-eyebrow)] uppercase tracking-[0.34em] text-[color:var(--brand-primary)]">
           Beyond Reality
         </div>
-        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[24px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-secondary))] text-2xl font-semibold text-white shadow-none">
+        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[var(--radius-xl)] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-secondary))] text-2xl font-semibold text-white shadow-none">
           {t(msg`隐界`)}
         </div>
         <h1 className="mt-6 text-4xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">
@@ -50,24 +50,24 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
         </p>
 
         <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+          <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
+            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 1
             </div>
             <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
               {t(msg`确认入口`)}
             </div>
           </div>
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+          <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
+            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 2
             </div>
             <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
               {t(msg`同步世界主人`)}
             </div>
           </div>
-          <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
-            <div className="text-[11px] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
+          <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-3 shadow-none">
+            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-muted)]">
               Step 3
             </div>
             <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -76,7 +76,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
           </div>
         </div>
 
-        <div className="mt-6 rounded-[24px] border border-[color:var(--brand-primary)]/12 bg-[color:var(--brand-primary)]/6 px-4 py-3 text-left text-sm leading-7 text-[color:var(--text-secondary)]">
+        <div className="mt-6 rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/12 bg-[color:var(--brand-primary)]/6 px-4 py-3 text-left text-sm leading-7 text-[color:var(--text-secondary)]">
           {message ??
             t(msg`正在整理这次进入世界的路径，马上带你回到上次停留的地方。`)}
         </div>

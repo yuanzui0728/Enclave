@@ -103,7 +103,7 @@ export function DesktopGamesWorkspace({
       {/* Left: list panel */}
       <aside className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
-          <span className="text-[16px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`游戏`)}
           </span>
           <button
@@ -218,15 +218,15 @@ export function DesktopGamesWorkspace({
       </aside>
 
       {/* Right: detail */}
-      <section className="flex min-w-0 flex-1 flex-col bg-[#f5f5f5]">
+      <section className="flex min-w-0 flex-1 flex-col bg-[color:var(--surface-card)]">
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-white px-6 py-3">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {selectedGame.name}
           </span>
           <button
             type="button"
             onClick={() => onCopyGameToMobile(selectedGame.id)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white px-3 text-[12px] font-medium text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.02)]"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white px-3 text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.02)]"
             aria-label={
               nativeMobileShareSupported
                 ? t(msg`分享当前游戏`)
@@ -256,13 +256,13 @@ export function DesktopGamesWorkspace({
                 <div className="absolute bottom-0 left-12 h-32 w-32 rounded-full bg-black/10 blur-3xl" />
               </div>
               <div className="relative flex h-full flex-col justify-end">
-                <div className="inline-flex w-fit rounded-full border border-white/18 bg-white/15 px-2.5 py-0.5 text-[11px] font-medium tracking-[0.08em] text-white/85">
+                <div className="inline-flex w-fit rounded-full border border-white/18 bg-white/15 px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-white/85">
                   {selectedGame.badge}
                 </div>
                 <div className="mt-3 text-[24px] font-semibold leading-tight text-white">
                   {selectedGame.name}
                 </div>
-                <div className="mt-1.5 text-[14px] leading-snug text-white/85">
+                <div className="mt-1.5 text-[length:var(--text-body)] leading-snug text-white/85">
                   {selectedGame.slogan}
                 </div>
               </div>
@@ -273,7 +273,7 @@ export function DesktopGamesWorkspace({
                 {selectedGame.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-0.5 text-[11px] text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
                   >
                     {tag}
                   </span>
@@ -297,7 +297,7 @@ export function DesktopGamesWorkspace({
             </div>
 
             {!isEmbeddedActive ? (
-              <p className="text-[14px] leading-[1.65rem] text-[color:var(--text-secondary)]">
+              <p className="text-[length:var(--text-body)] leading-[1.65rem] text-[color:var(--text-secondary)]">
                 {selectedGame.description}
               </p>
             ) : null}
@@ -308,7 +308,7 @@ export function DesktopGamesWorkspace({
                   type="button"
                   variant="primary"
                   onClick={handleLaunchClick}
-                  className="h-11 rounded-full bg-[color:var(--brand-primary)] px-6 text-[14px] font-medium text-white hover:bg-[#06ad57]"
+                  className="h-11 rounded-full bg-[color:var(--brand-primary)] px-6 text-[length:var(--text-body)] font-medium text-white hover:bg-[color:var(--brand-primary)]"
                 >
                   <Play size={16} />
                   {launchLabel}
@@ -319,7 +319,7 @@ export function DesktopGamesWorkspace({
             {successNotice ? (
               <InlineNotice
                 tone={noticeTone}
-                className="rounded-[10px] px-3 py-2 text-[12px] leading-[1.4rem] shadow-none"
+                className="rounded-[10px] px-3 py-2 text-[length:var(--text-caption)] leading-[1.4rem] shadow-none"
               >
                 {noticeTone === "info" &&
                 noticeActionState &&
@@ -329,7 +329,7 @@ export function DesktopGamesWorkspace({
                     <button
                       type="button"
                       onClick={noticeActionState.onAction}
-                      className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2.5 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-white px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionState.label}
                     </button>
@@ -341,7 +341,7 @@ export function DesktopGamesWorkspace({
             ) : null}
 
             {isEmbeddedActive && activeGameId ? (
-              <div className="overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-white">
+              <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-white">
                 <EmbeddedGameSlot
                   gameId={activeGameId}
                   onExit={onDismissActiveGame}
@@ -350,8 +350,8 @@ export function DesktopGamesWorkspace({
             ) : null}
 
             {detailFriends.length > 0 ? (
-              <section className="rounded-[16px] border border-[color:var(--border-faint)] bg-white">
-                <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5 text-[13px] font-medium text-[color:var(--text-primary)]">
+              <section className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white">
+                <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`正在玩 ${selectedGame.name} 的好友`)}
                 </div>
                 <ul>
@@ -377,7 +377,7 @@ export function DesktopGamesWorkspace({
 
 function DesktopSectionHeader({ title }: { title: string }) {
   return (
-    <div className="px-4 pb-1.5 pt-4 text-[12px] font-medium text-[color:var(--text-muted)]">
+    <div className="px-4 pb-1.5 pt-4 text-[length:var(--text-caption)] font-medium text-[color:var(--text-muted)]">
       {title}
     </div>
   );
@@ -393,8 +393,8 @@ function DesktopGameAvatar({
   const tone = getGameCenterToneStyle(game.tone);
   const sizeClass =
     size === "md"
-      ? "h-10 w-10 rounded-[10px] text-[15px]"
-      : "h-8 w-8 rounded-[8px] text-[13px]";
+      ? "h-10 w-10 rounded-[10px] text-[length:var(--text-base)]"
+      : "h-8 w-8 rounded-[8px] text-[length:var(--text-caption)]";
   // 用 game.id 的首字符做 avatar，跟 locale 无关。早前 [...game.name][0]
   // 在 en/ja/ko locale 也会落到中文，因为 game.name 是模块加载时算好的。
   const initial = (game.id[0] ?? "?").toUpperCase();
@@ -439,9 +439,9 @@ function DesktopGameRow({
         {typeof rank === "number" ? (
           <span
             className={cn(
-              "w-4 shrink-0 text-center text-[12px] font-semibold tabular-nums",
+              "w-4 shrink-0 text-center text-[length:var(--text-caption)] font-semibold tabular-nums",
               rank <= 3
-                ? "text-[#d65e2f]"
+                ? "text-[color:var(--state-danger-text)]"
                 : "text-[color:var(--text-muted)]",
             )}
           >
@@ -450,11 +450,11 @@ function DesktopGameRow({
         ) : null}
         <DesktopGameAvatar game={game} size="sm" />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {game.name}
           </div>
           {showSlogan ? (
-            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {game.slogan}
             </div>
           ) : null}
@@ -494,10 +494,10 @@ function DesktopFriendListRow({
           size="sm"
         />
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {activity.friendName}
           </div>
-          <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {t(msg`正在玩 ${game.name}`)}
           </div>
         </div>
@@ -514,11 +514,11 @@ function DesktopMetricCell({
   value: string;
 }) {
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-3 py-2.5">
       <div className="text-[10px] uppercase tracking-[0.1em] text-[color:var(--text-muted)]">
         {label}
       </div>
-      <div className="mt-1 text-[13px] font-medium leading-snug text-[color:var(--text-primary)]">
+      <div className="mt-1 text-[length:var(--text-caption)] font-medium leading-snug text-[color:var(--text-primary)]">
         {value}
       </div>
     </div>
@@ -542,10 +542,10 @@ function DesktopFriendDetailRow({
         src={activity.friendAvatar}
       />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
           {activity.friendName}
         </div>
-        <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+        <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {activity.status}
         </div>
       </div>
@@ -553,10 +553,10 @@ function DesktopFriendDetailRow({
         type="button"
         onClick={onInvite}
         className={cn(
-          "h-8 shrink-0 rounded-full px-4 text-[12px] font-medium",
+          "h-8 shrink-0 rounded-full px-4 text-[length:var(--text-caption)] font-medium",
           invited
             ? "border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)]"
-            : "bg-[color:var(--brand-primary)] text-white hover:bg-[#06ad57]",
+            : "bg-[color:var(--brand-primary)] text-white hover:bg-[color:var(--brand-primary)]",
         )}
       >
         {invited ? t(msg`已邀约`) : t(msg`邀请`)}

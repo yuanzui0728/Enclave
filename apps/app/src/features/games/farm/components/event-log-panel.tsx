@@ -17,7 +17,7 @@ export function EventLogPanel({ limit = 20 }: EventLogPanelProps) {
     <section className="rounded-2xl border border-white/60 bg-white/75 p-3 shadow-md backdrop-blur-md">
       <header className="mb-2 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-stone-700">{t(msg`事件流`)}</h2>
-        <span className="text-[11px] text-stone-400">
+        <span className="text-[length:var(--text-eyebrow)] text-stone-400">
           {eventsQuery.data?.length ?? 0} {t(msg`条`)}
         </span>
       </header>
@@ -34,7 +34,7 @@ export function EventLogPanel({ limit = 20 }: EventLogPanelProps) {
           {t(msg`世界还没有动静。`)}
         </p>
       )}
-      <ul className="max-h-72 space-y-1 overflow-y-auto text-[11px] text-stone-500">
+      <ul className="max-h-72 space-y-1 overflow-y-auto text-[length:var(--text-eyebrow)] text-stone-500">
         {eventsQuery.data?.map((event) => (
           <li
             key={event.id}

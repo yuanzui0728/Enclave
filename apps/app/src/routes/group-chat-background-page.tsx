@@ -509,14 +509,14 @@ export function GroupChatBackgroundPage() {
             // 播报 pageError 内容。
             role="alert"
             tone="danger"
-            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">{pageError}</span>
               <button
                 type="button"
                 onClick={handleErrorStateAction}
-                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                className="shrink-0 rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
               >
                 {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回群聊信息`)}
               </button>
@@ -537,7 +537,7 @@ export function GroupChatBackgroundPage() {
           className={
             isDesktopLayout
               ? undefined
-              : "rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              : "rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
           }
         >
           {notice}
@@ -693,8 +693,8 @@ export function GroupChatBackgroundPage() {
               <div
                 className={
                   isDesktopLayout
-                    ? "rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]"
-                    : "rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
+                    ? "rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 text-sm text-[color:var(--text-secondary)]"
+                    : "rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-4 py-3 text-xs leading-6 text-[color:var(--text-secondary)]"
                 }
               >
                 {t(msg`当前群聊会直接沿用默认背景图。切换到"单独设置"后，可以挑选群聊专属背景。`)}
@@ -724,7 +724,7 @@ export function GroupChatBackgroundPage() {
     return (
       <AppPage className="min-h-full bg-[color:var(--bg-app)] px-4 py-4">
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
-          <div className="flex items-center justify-between rounded-[16px] border border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
             <div>
               <div className="text-xs tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`群聊背景`)}
@@ -748,7 +748,7 @@ export function GroupChatBackgroundPage() {
                     : {}),
                 });
               }}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`返回群聊信息`)}
             </Button>
@@ -809,15 +809,15 @@ function SectionCard({
     <section
       className={
         compact
-          ? "space-y-4 overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-4 py-4 shadow-none"
-          : "space-y-4 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]"
+          ? "space-y-4 overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-4 py-4 shadow-none"
+          : "space-y-4 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]"
       }
     >
       <div>
         <div
           className={
             compact
-              ? "text-[17px] font-medium text-[color:var(--text-primary)]"
+              ? "text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]"
               : "text-lg font-semibold text-[color:var(--text-primary)]"
           }
         >
@@ -835,7 +835,7 @@ function SectionCard({
         <div
           className={
             compact
-              ? "mt-3 inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-3 py-1 text-[11px] text-[color:var(--text-muted)]"
+              ? "mt-3 inline-flex rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas)] px-3 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
               : "mt-3 inline-flex rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-1 text-xs text-[color:var(--text-muted)]"
           }
         >
@@ -865,7 +865,7 @@ function PresetGrid({
           key={preset.assetId}
           type="button"
           onClick={() => onSelect(preset)}
-          className={`overflow-hidden rounded-[12px] border text-left transition ${
+          className={`overflow-hidden rounded-[var(--radius-sm)] border text-left transition ${
             preset.assetId === selectedAssetId
               ? "border-[color:var(--brand-primary)]/22 bg-[color:var(--surface-card)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
               : compact
@@ -910,7 +910,7 @@ function ModeChip({
       onClick={onClick}
       className={`border transition ${
         compact
-          ? "rounded-full px-4 py-2 text-[13px]"
+          ? "rounded-full px-4 py-2 text-[length:var(--text-caption)]"
           : "rounded-[8px] px-4 py-2 text-sm"
       } ${
         active
@@ -935,7 +935,7 @@ function EmptyPanel({
   description: string;
 }) {
   return (
-    <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-5 py-8 text-center">
+    <div className="rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-5 py-8 text-center">
       <div className="text-lg font-semibold text-[color:var(--text-primary)]">
         {title}
       </div>
@@ -971,7 +971,7 @@ function MobileGroupBackgroundStatusCard({
         tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
       }
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -981,7 +981,7 @@ function MobileGroupBackgroundStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -991,13 +991,13 @@ function MobileGroupBackgroundStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

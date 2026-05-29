@@ -56,10 +56,10 @@ export function ChatMemberGrid({
               {isAction ? (
                 <div
                   className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-[12px] border text-2xl shadow-none transition-colors",
+                    "flex h-11 w-11 items-center justify-center rounded-[var(--radius-sm)] border text-2xl shadow-none transition-colors",
                     isWechat && "h-9 w-9 rounded-[8px] text-[20px]",
                     item.kind === "remove"
-                      ? "border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.72)] text-[#d74b45]"
+                      ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
                       : isWechat
                         ? "border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-muted)]"
                         : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",
@@ -81,8 +81,8 @@ export function ChatMemberGrid({
               )}
               <span
                 className={cn(
-                  "w-full truncate text-[11px] text-[color:var(--text-secondary)]",
-                  isWechat && "text-[10px] leading-4 text-[#7a7a7a]",
+                  "w-full truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]",
+                  isWechat && "text-[10px] leading-4 text-[color:var(--text-muted)]",
                 )}
               >
                 {item.label}

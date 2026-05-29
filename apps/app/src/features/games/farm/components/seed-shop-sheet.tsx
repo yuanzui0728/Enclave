@@ -183,10 +183,10 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
                       <span className="font-medium">{def.nameZh}</span>
                       <span className="text-xs text-stone-500">🪙 {def.price}</span>
                     </div>
-                    <div className="mt-0.5 text-[11px] text-stone-500">
+                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-500">
                       {def.descriptionZh}
                     </div>
-                    <div className="mt-0.5 text-[11px] text-stone-400">
+                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-400">
                       {t(msg`库存`)} {owned} · {t(msg`已摆`)} {placeCount}
                       {locked && (
                         <span className="ml-2 text-amber-600">
@@ -251,10 +251,10 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
                         🪙 {def.price} {t(msg`/ 个`)}
                       </span>
                     </div>
-                    <div className="mt-0.5 text-[11px] text-stone-500">
+                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-500">
                       {def.descriptionZh}
                     </div>
-                    <div className="mt-0.5 text-[11px] text-stone-400">
+                    <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-stone-400">
                       {t(msg`已存`)} {owned}
                       {locked && (
                         <span className="ml-2 text-amber-600">
@@ -306,14 +306,14 @@ export function SeedShopSheet({ state, open, onClose }: SeedShopSheetProps) {
                       {crop.growHours}{t(msg`h 成熟`)}
                     </span>
                   </div>
-                  <div className="mt-0.5 flex items-center justify-between text-[11px] text-stone-500">
+                  <div className="mt-0.5 flex items-center justify-between text-[length:var(--text-eyebrow)] text-stone-500">
                     <span>
                       🪙 {crop.seedCost} {t(msg`/ 包，售价`)} {crop.sellPrice} {t(msg`/ 个`)}
                     </span>
                     <span>{t(msg`已存`)} {owned}</span>
                   </div>
                   {locked && (
-                    <div className="mt-1 text-[11px] text-amber-600">
+                    <div className="mt-1 text-[length:var(--text-eyebrow)] text-amber-600">
                       Lv.{crop.unlockLevel} {t(msg`解锁`)}
                     </div>
                   )}

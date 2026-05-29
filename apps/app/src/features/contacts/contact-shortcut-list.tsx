@@ -33,9 +33,9 @@ export function ContactShortcutList({
     <section
       className={cn(
         variant === "desktop-flat"
-          ? "overflow-hidden rounded-[16px] bg-transparent"
+          ? "overflow-hidden rounded-[var(--radius-md)] bg-transparent"
           : "overflow-hidden border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)]",
-        compact && variant !== "desktop-flat" ? "rounded-[20px]" : "rounded-none",
+        compact && variant !== "desktop-flat" ? "rounded-[var(--radius-lg)]" : "rounded-none",
         className,
       )}
     >
@@ -80,8 +80,8 @@ export function ContactShortcutList({
               className={cn(
                 "flex shrink-0 items-center justify-center text-white",
                 variant === "desktop-flat"
-                  ? "h-8 w-8 rounded-[12px]"
-                  : "rounded-[12px] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]",
+                  ? "h-8 w-8 rounded-[var(--radius-sm)]"
+                  : "rounded-[var(--radius-sm)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]",
                 variant === "desktop-flat"
                   ? undefined
                   : compact
@@ -111,18 +111,18 @@ export function ContactShortcutList({
                 className={cn(
                   "truncate text-[color:var(--text-primary)]",
                   variant === "desktop-flat"
-                    ? "text-[14px]"
+                    ? "text-[length:var(--text-body)]"
                     : compact
                       ? mobileDense
-                        ? "text-[15px]"
-                        : "text-[16px]"
-                      : "text-[15px]",
+                        ? "text-[length:var(--text-base)]"
+                        : "text-[length:var(--text-title)]"
+                      : "text-[length:var(--text-base)]",
                 )}
               >
                 {item.label}
               </div>
               {!compact && item.disabledLabel ? (
-                <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-dim)]">
+                <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                   {item.disabledLabel}
                 </div>
               ) : null}
@@ -131,9 +131,9 @@ export function ContactShortcutList({
                   className={cn(
                     "mt-0.5 truncate text-[color:var(--text-muted)]",
                     variant === "desktop-flat"
-                      ? "text-[11px]"
+                      ? "text-[length:var(--text-eyebrow)]"
                       : mobileDense
-                        ? "text-[11px]"
+                        ? "text-[length:var(--text-eyebrow)]"
                         : "text-xs",
                   )}
                 >
@@ -148,7 +148,7 @@ export function ContactShortcutList({
                       ? "text-[10px]"
                       : mobileDense
                         ? "text-[10px]"
-                        : "text-[11px]",
+                        : "text-[length:var(--text-eyebrow)]",
                   )}
                 >
                   {item.disabledLabel}
@@ -164,7 +164,7 @@ export function ContactShortcutList({
               <div
                 aria-hidden="true"
                 className={cn(
-                  "flex items-center justify-center rounded-full bg-[#e74c3c] font-medium leading-none text-white",
+                  "flex items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] font-medium leading-none text-white",
                   variant === "desktop-flat"
                     ? "min-w-4.5 px-1.5 py-0.5 text-[10px]"
                     : mobileDense

@@ -51,19 +51,19 @@ export function ChatCallFallbackNotice({
     return (
       <section
         className={cn(
-          "overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none",
+          "overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none",
           className,
         )}
       >
         <div className="flex items-start gap-3 px-4 py-3.5">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[color:var(--brand-primary)]/9 text-[color:var(--brand-primary)]">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)]/9 text-[color:var(--brand-primary)]">
             <Icon size={17} />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
               {title}
             </div>
-            <div className="mt-1 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+            <div className="mt-1 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
               {description}
             </div>
             <div className="mt-2.5 flex flex-wrap gap-2">
@@ -100,16 +100,16 @@ export function ChatCallFallbackNotice({
       aria-live="polite"
       tone="info"
       className={cn(
-        "rounded-[16px] border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 shadow-none",
+        "rounded-[var(--radius-md)] border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 shadow-none",
         className,
       )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-[11px] font-medium leading-5 text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-eyebrow)] font-medium leading-5 text-[color:var(--text-primary)]">
             {title}
           </div>
-          <div className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-secondary)]">
+          <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-secondary)]">
             {description}
           </div>
         </div>

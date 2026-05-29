@@ -55,7 +55,7 @@ export function PixelArenaGame({
   const isEnded = state.status === "ended";
   const containerCls =
     variant === "embedded"
-      ? "rounded-[16px] bg-white"
+      ? "rounded-[var(--radius-md)] bg-white"
       : "min-h-screen bg-[color:var(--bg-app)]";
   const player = getFighter(state.playerFighterId);
   const npc = getFighter(state.npcFighterId);
@@ -68,19 +68,19 @@ export function PixelArenaGame({
     <section className={cn("flex flex-col gap-3 p-3", containerCls)}>
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`像素擂台`)}
           </span>
-          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-medium text-violet-800">
+          <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-violet-800">
             {t(msg`5 回合制`)}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[12px] font-medium text-violet-800">
+          <span className="flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-violet-800">
             <Award size={12} />
             {t(msg`连胜 ${state.winStreak}`)}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[12px] font-medium text-amber-800">
+          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-amber-800">
             <Sparkles size={12} />
             ×{state.skinTokens}
           </span>
@@ -117,7 +117,7 @@ export function PixelArenaGame({
 
       {/* 最近回合 / 状态 */}
       {lastRound ? (
-        <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-center text-[12px]">
+        <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-center text-[length:var(--text-caption)]">
           {t(
             msg`第 ${lastRound.round} 回合：你${moveLabel(lastRound.playerMove)} / 对手${moveLabel(lastRound.npcMove)}`,
           )}
@@ -182,20 +182,20 @@ export function PixelArenaGame({
         <button
           type="button"
           onClick={actions.start}
-          className="flex items-center justify-center gap-1.5 rounded-full bg-violet-500 px-4 py-2 text-[13px] font-medium text-white hover:bg-violet-600"
+          className="flex items-center justify-center gap-1.5 rounded-full bg-violet-500 px-4 py-2 text-[length:var(--text-caption)] font-medium text-white hover:bg-violet-600"
         >
           <Play size={14} />
           {isEnded ? t(msg`再战一场`) : t(msg`开始对打`)}
         </button>
       ) : (
-        <div className="rounded-[12px] bg-violet-50 px-3 py-1.5 text-center text-[12px] text-violet-900">
+        <div className="rounded-[var(--radius-sm)] bg-violet-50 px-3 py-1.5 text-center text-[length:var(--text-caption)] text-violet-900">
           {t(msg`第 ${state.round} / ${ROUND_COUNT} 回合`)}
         </div>
       )}
 
       {/* 选角 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-3">
-        <div className="mb-2 text-[13px] font-medium">{t(msg`选择我的角色`)}</div>
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+        <div className="mb-2 text-[length:var(--text-caption)] font-medium">{t(msg`选择我的角色`)}</div>
         <ul className="grid grid-cols-2 gap-2">
           {FIGHTERS.map((f) => {
             const active = f.id === state.playerFighterId;
@@ -206,7 +206,7 @@ export function PixelArenaGame({
                   onClick={() => actions.selectPlayer(f.id)}
                   disabled={isFighting}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-[12px] border px-2 py-2 text-left text-[12px]",
+                    "flex w-full items-center gap-2 rounded-[var(--radius-sm)] border px-2 py-2 text-left text-[length:var(--text-caption)]",
                     active
                       ? "border-violet-400 bg-violet-50"
                       : "border-[color:var(--border-faint)] bg-white",
@@ -221,7 +221,7 @@ export function PixelArenaGame({
                         HP {f.hp} · ATK {f.atkBonus >= 0 ? `+${f.atkBonus}` : f.atkBonus} · DEF {f.defBonus}
                       </span>
                     </div>
-                    <div className="text-[11px] text-[color:var(--text-secondary)]">
+                    <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                       {f.blurb}
                     </div>
                   </div>
@@ -233,7 +233,7 @@ export function PixelArenaGame({
       </div>
 
       {/* 战绩 */}
-      <div className="grid grid-cols-3 gap-2 rounded-[12px] border border-[color:var(--border-faint)] bg-white p-3 text-center text-[12px]">
+      <div className="grid grid-cols-3 gap-2 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3 text-center text-[length:var(--text-caption)]">
         <Stat label={t(msg`总胜场`)} value={state.totalWins} />
         <Stat label={t(msg`最佳连胜`)} value={state.bestStreak} />
         <Stat label={t(msg`连胜章`)} value={state.badge} />
@@ -241,15 +241,15 @@ export function PixelArenaGame({
 
       {/* 结算 */}
       {isEnded ? (
-        <div className="rounded-[12px] border border-violet-200 bg-violet-50 p-3 text-center">
-          <p className="text-[13px] font-medium text-violet-900">
+        <div className="rounded-[var(--radius-sm)] border border-violet-200 bg-violet-50 p-3 text-center">
+          <p className="text-[length:var(--text-caption)] font-medium text-violet-900">
             {state.playerHp > state.npcHp
               ? t(msg`赢下这场！`)
               : state.playerHp < state.npcHp
                 ? t(msg`这场让对手压制了。`)
                 : t(msg`平局，下次见胜负。`)}
           </p>
-          <p className="mt-1 text-[12px] text-violet-900/80">
+          <p className="mt-1 text-[length:var(--text-caption)] text-violet-900/80">
             {t(
               msg`HP 残：你 ${state.playerHp} / 对手 ${state.npcHp} · 当前连胜 ${state.winStreak}`,
             )}
@@ -258,14 +258,14 @@ export function PixelArenaGame({
             <button
               type="button"
               onClick={actions.start}
-              className="rounded-full bg-violet-500 px-4 py-1.5 text-[13px] font-medium text-white hover:bg-violet-600"
+              className="rounded-full bg-violet-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-violet-600"
             >
               {t(msg`再战一场`)}
             </button>
             <button
               type="button"
               onClick={actions.backIdle}
-              className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[13px] text-[color:var(--text-secondary)]"
+              className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
             >
               {t(msg`回到擂台`)}
             </button>
@@ -274,13 +274,13 @@ export function PixelArenaGame({
       ) : null}
 
       {/* 日志 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`擂台日志`)}</span>
           <button
             type="button"
             onClick={actions.reset}
-            className="flex items-center gap-1 text-[11px] text-[color:var(--text-secondary)]"
+            className="flex items-center gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
           >
             <RotateCcw size={11} />
             {t(msg`重置`)}
@@ -288,7 +288,7 @@ export function PixelArenaGame({
         </div>
         <ul className="max-h-44 overflow-y-auto px-3 py-2">
           {state.log.length === 0 ? (
-            <li className="py-1 text-[12px] text-[color:var(--text-tertiary)]">
+            <li className="py-1 text-[length:var(--text-caption)] text-[color:var(--text-tertiary)]">
               {t(msg`等待开局…`)}
             </li>
           ) : (
@@ -296,7 +296,7 @@ export function PixelArenaGame({
               <li
                 key={entry.id}
                 className={cn(
-                  "py-1 text-[12px] leading-[1.5rem]",
+                  "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
                   entry.tone === "success" && "text-emerald-700",
                   entry.tone === "warn" && "text-rose-700",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",
@@ -332,19 +332,19 @@ function FighterCard({
       ? "border-violet-200 bg-violet-50"
       : "border-rose-200 bg-rose-50";
   return (
-    <div className={cn("rounded-[12px] border p-3", toneCls)}>
+    <div className={cn("rounded-[var(--radius-sm)] border p-3", toneCls)}>
       <div
         className={cn(
           "flex items-center gap-2",
           align === "right" && "flex-row-reverse text-right",
         )}
       >
-        <span className="text-[28px]">{fighter.emoji}</span>
+        <span className="text-[length:var(--text-display)]">{fighter.emoji}</span>
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {fighter.name}
           </div>
-          <div className="text-[11px] text-[color:var(--text-secondary)]">
+          <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
             HP {hp}/{maxHp}
           </div>
         </div>
@@ -392,15 +392,15 @@ function ActionButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center gap-0.5 rounded-[12px] py-3 text-white shadow-md",
+        "flex flex-col items-center justify-center gap-0.5 rounded-[var(--radius-sm)] py-3 text-white shadow-md",
         toneCls,
       )}
     >
-      <span className="flex items-center gap-1 text-[14px] font-medium">
+      <span className="flex items-center gap-1 text-[length:var(--text-body)] font-medium">
         {icon}
         {label}
       </span>
-      <span className="text-[11px] opacity-90">{hint}</span>
+      <span className="text-[length:var(--text-eyebrow)] opacity-90">{hint}</span>
     </button>
   );
 }
@@ -408,10 +408,10 @@ function ActionButton({
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div>
-      <div className="text-[16px] font-semibold text-[color:var(--text-primary)]">
+      <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
         {value}
       </div>
-      <div className="text-[11px] text-[color:var(--text-secondary)]">
+      <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
         {label}
       </div>
     </div>

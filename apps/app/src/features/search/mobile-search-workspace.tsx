@@ -81,28 +81,28 @@ const quickScopeCards: Array<{
     title: msg`联系人`,
     description: msg`搜好友、备注和世界角色`,
     icon: UsersRound,
-    iconClassName: "bg-[rgba(59,130,246,0.12)] text-[#2563eb]",
+    iconClassName: "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
   },
   {
     key: "favorites",
     title: msg`收藏`,
     description: msg`搜笔记、消息和内容收藏`,
     icon: Bookmark,
-    iconClassName: "bg-[rgba(234,179,8,0.10)] text-[#9a6b12]",
+    iconClassName: "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]",
   },
   {
     key: "moments",
     title: msg`朋友圈`,
     description: msg`搜好友动态、评论和点赞`,
     icon: Sprout,
-    iconClassName: "bg-[rgba(34,197,94,0.12)] text-[color:var(--brand-primary)]",
+    iconClassName: "bg-[color:var(--state-success-bg)] text-[color:var(--brand-primary)]",
   },
   {
     key: "feed",
     title: msg`广场动态`,
     description: msg`搜广场里公开发布的内容`,
     icon: Newspaper,
-    iconClassName: "bg-[rgba(60, 40, 110, 0.08)] text-[color:var(--text-primary)]",
+    iconClassName: "bg-[color:var(--border-subtle)] text-[color:var(--text-primary)]",
   },
 ];
 
@@ -249,9 +249,9 @@ export function MobileSearchWorkspace({
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
-              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+              // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。全局搜索是用户最常用的 entry，每次进来都 zoom 体验最差。
-              className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/18 focus:bg-[color:var(--surface-card)]"
+              className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/18 focus:bg-[color:var(--surface-card)]"
             />
             {searchText ? (
               <button
@@ -265,7 +265,7 @@ export function MobileSearchWorkspace({
                   onClearKeyword();
                   inputRef.current?.focus();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[color:var(--text-muted)]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
               >
                 {t(msg`清空`)}
               </button>
@@ -301,7 +301,7 @@ export function MobileSearchWorkspace({
                 onClick={() => setActiveCategory(item.id)}
                 aria-pressed={activeCategory === item.id}
                 className={cn(
-                  "shrink-0 rounded-full px-3 py-1.5 text-[11px] font-medium transition",
+                  "shrink-0 rounded-full px-3 py-1.5 text-[length:var(--text-eyebrow)] font-medium transition",
                   activeCategory === item.id
                     ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] text-[color:var(--text-secondary)]",
@@ -336,7 +336,7 @@ export function MobileSearchWorkspace({
             收藏 / 小程序），新到的索引数据会继续接力进来。 */}
         {!error && hasKeyword && loading ? (
           <InlineNotice
-            className="mb-2 rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="mb-2 rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             tone="info"
           >
             {t(msg`正在补全搜索范围，结果会继续完善。`)}
@@ -353,14 +353,14 @@ export function MobileSearchWorkspace({
                 <button
                   type="button"
                   onClick={onRetryLoad}
-                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px] text-[color:var(--text-primary)]"
+                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)]"
                 >
                   {t(msg`重试读取`)}
                 </button>
                 <button
                   type="button"
                   onClick={onBack}
-                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px] text-[color:var(--text-primary)]"
+                  className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)]"
                 >
                   {t(msg`返回上一页`)}
                 </button>
@@ -373,14 +373,14 @@ export function MobileSearchWorkspace({
           <div className="space-y-4">
             <section className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5">
               <div className="flex items-center justify-between gap-3">
-                <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`最近搜索`)}
                 </div>
                 {history.length ? (
                   <button
                     type="button"
                     onClick={onClearHistory}
-                    className="text-[11px] text-[color:var(--text-muted)]"
+                    className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
                   >
                     {t(msg`清空`)}
                   </button>
@@ -392,7 +392,7 @@ export function MobileSearchWorkspace({
                   {history.map((item) => (
                     <div
                       key={item.keyword}
-                      className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-console)] px-3 py-1.5 text-[11px] text-[color:var(--text-secondary)]"
+                      className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-console)] px-3 py-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
                     >
                       <button
                         type="button"
@@ -421,7 +421,7 @@ export function MobileSearchWorkspace({
                   ))}
                 </div>
               ) : (
-                <div className="mt-2.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
+                <div className="mt-2.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-muted)]">
                   {t(msg`还没有搜索记录，输入关键词后会保存在这里。`)}
                 </div>
               )}
@@ -452,17 +452,17 @@ export function MobileSearchWorkspace({
                   >
                     <div
                       className={cn(
-                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px]",
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-[var(--radius-md)]",
                         item.iconClassName,
                       )}
                     >
                       <Icon size={16} />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                      <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                         {t(item.title)}
                       </div>
-                      <div className="mt-0.5 text-[11px] leading-[1.125rem] text-[color:var(--text-muted)]">
+                      <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-[1.125rem] text-[color:var(--text-muted)]">
                         {t(item.description)}
                       </div>
                     </div>
@@ -511,7 +511,7 @@ export function MobileSearchWorkspace({
               {searchingMessages &&
               !orderedAllSections.some((section) => section.category === "messages") ? (
                 <section className="space-y-2">
-                  <div className="flex items-center gap-1.5 text-[12px] font-medium text-[color:var(--text-muted)]">
+                  <div className="flex items-center gap-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-muted)]">
                     <span>{getCategoryTitle("messages")}</span>
                     <SectionHeaderLoadingIndicator />
                   </div>
@@ -531,7 +531,7 @@ export function MobileSearchWorkspace({
 
                 return (
                   <section key={section.category} className="space-y-2">
-                    <div className="flex items-center gap-1.5 text-[12px] font-medium text-[color:var(--text-muted)]">
+                    <div className="flex items-center gap-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-muted)]">
                       <span>{getCategoryTitle(section.category)}</span>
                       {showLoadingDots ? <SectionHeaderLoadingIndicator /> : null}
                     </div>
@@ -549,7 +549,7 @@ export function MobileSearchWorkspace({
                         <button
                           type="button"
                           onClick={() => setActiveCategory(section.category)}
-                          className="flex w-full items-center justify-between gap-2 rounded-[12px] px-3 py-2 text-left text-[12px] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                          className="flex w-full items-center justify-between gap-2 rounded-[var(--radius-sm)] px-3 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--text-muted)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                         >
                           {/* 走查 R1：原文"查看更多 ${total} 条 ${分类}"。total 是
                               该分类下所有命中的总数（含已展示的 3 条），但措辞"查看更多"
@@ -576,7 +576,7 @@ export function MobileSearchWorkspace({
             // 聊天记录分类还在远端 fan-out 时也走进来：哪怕 0 命中，也要给
             // 一个表头 + 骨架行的"加载占位"，比空白屏 / 文字横幅都更直观。
             <div className="space-y-2.5">
-              <div className="flex items-center gap-1.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="flex items-center gap-1.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {/* 0 命中但还在加载时不挂「· 0 条」——0 是中间态、贴上去
                     看着像最终结果；命中真出来再加 count。 */}
                 <span>
@@ -636,7 +636,7 @@ function MobileSearchStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -647,9 +647,9 @@ function MobileSearchStatusCard({
           MobileChatListStatusCard 的 badge 一致。 */}
       <div
         className={cn(
-          "mx-auto inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium tracking-[0.04em]",
+          "mx-auto inline-flex rounded-full px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -659,13 +659,13 @@ function MobileSearchStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
@@ -680,7 +680,7 @@ function MessageSearchSkeletonRow() {
   return (
     <div
       aria-hidden="true"
-      className="flex w-full items-start gap-3 rounded-[16px] px-3.5 py-2.5"
+      className="flex w-full items-start gap-3 rounded-[var(--radius-md)] px-3.5 py-2.5"
     >
       <div className="h-12 w-12 shrink-0 animate-pulse rounded-xl bg-black/[0.06]" />
       <div className="min-w-0 flex-1 space-y-2 pt-1">

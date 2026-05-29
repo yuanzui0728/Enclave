@@ -237,7 +237,7 @@ function MobileWorldPage() {
             aria-label={t(msg`个人主页`)}
           >
             <AvatarChip name={ownerDisplayName} src={ownerAvatar} size="xs" />
-            <span className="text-[12px] font-medium">{t(msg`我`)}</span>
+            <span className="text-[length:var(--text-caption)] font-medium">{t(msg`我`)}</span>
           </Link>
         }
       />
@@ -316,7 +316,7 @@ function SelfQuickChatBar({
         rows={1}
         placeholder={t(msg`和我说点什么…`)}
         aria-label={t(msg`和我说点什么…`)}
-        className="max-h-28 min-h-[40px] min-w-0 flex-1 resize-none rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-[14px] leading-6 text-[color:var(--text-primary)] outline-none focus:border-[color:var(--brand-primary)]"
+        className="max-h-28 min-h-[40px] min-w-0 flex-1 resize-none rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-body)] leading-6 text-[color:var(--text-primary)] outline-none focus:border-[color:var(--brand-primary)]"
       />
       <button
         type="button"
@@ -396,15 +396,15 @@ function CyberAvatarStatusHero({
     <section className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[image:var(--surface-card-gradient)] p-4 shadow-[var(--shadow-card)]">
       {/* 头部：分身标识 + 标题 + 就绪度徽标 */}
       <div className="flex items-center gap-3">
-        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
           <Fingerprint size={24} strokeWidth={1.6} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`你的分身`)}
           </div>
           {ready && (mood || energy) ? (
-            <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {[
                 mood ? t(msg`心情 ${mood}`) : "",
                 energy ? t(msg`能量 ${energy}`) : "",
@@ -416,7 +416,7 @@ function CyberAvatarStatusHero({
         </div>
         <span
           className={cn(
-            "inline-flex shrink-0 items-center gap-1 text-[11px]",
+            "inline-flex shrink-0 items-center gap-1 text-[length:var(--text-eyebrow)]",
             ready
               ? "text-[color:var(--brand-primary)]"
               : "text-[color:var(--text-muted)]",
@@ -431,7 +431,7 @@ function CyberAvatarStatusHero({
 
       {/* 信号进度（empty 态不展示进度，给引导语） */}
       {empty ? (
-        <p className="mt-3 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+        <p className="mt-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
           {t(msg`多在世界里互动，分身会越来越像你`)}
         </p>
       ) : (
@@ -442,7 +442,7 @@ function CyberAvatarStatusHero({
               style={{ width: `${Math.max(0, Math.min(100, formedPct))}%` }}
             />
           </div>
-          <div className="text-[11px] text-[color:var(--text-muted)]">
+          <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {t(msg`已分析 ${signalCount} 条信号`)}
             {pendingCount > 0 ? t(msg` · 待分析 ${pendingCount} 条`) : ""}
           </div>
@@ -467,7 +467,7 @@ function CyberAvatarStatusHero({
           size={16}
           className="shrink-0 text-[color:var(--brand-primary)]"
         />
-        <span className="min-w-0 flex-1 truncate text-[12px] leading-5 text-[color:var(--text-secondary)]">
+        <span className="min-w-0 flex-1 truncate text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
           {empty ? t(msg`去看看你的赛博分身`) : t(msg`看完整画像与对话`)}
         </span>
         <ChevronRight size={15} className="shrink-0 text-[color:var(--text-dim)]" />
@@ -486,14 +486,14 @@ function pickItems(primary?: string[], fallback?: string[]): string[] {
 function HeroChipRow({ label, items }: { label: string; items: string[] }) {
   return (
     <div className="mt-3">
-      <div className="mb-1.5 text-[12px] text-[color:var(--text-muted)]">
+      <div className="mb-1.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
         {label}
       </div>
       <div className="flex flex-wrap gap-1.5">
         {items.map((item, index) => (
           <span
             key={`${item}-${index}`}
-            className="rounded-full bg-[color:var(--brand-soft)] px-2.5 py-0.5 text-[11px] text-[color:var(--brand-primary)]"
+            className="rounded-full bg-[color:var(--brand-soft)] px-2.5 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
           >
             {item}
           </span>
@@ -514,13 +514,13 @@ function SectionHeader({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <h2 className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+      <h2 className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
         {title}
       </h2>
       {actionLabel && to ? (
         <Link
           to={to}
-          className="flex items-center gap-0.5 text-[12px] text-[color:var(--text-muted)]"
+          className="flex items-center gap-0.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
         >
           {actionLabel}
           <ChevronRight size={14} />
@@ -541,7 +541,7 @@ function ExploreGroup({
 }) {
   return (
     <div>
-      <div className="mb-1.5 text-[12px] font-medium tracking-[0.02em] text-[color:var(--text-muted)]">
+      <div className="mb-1.5 text-[length:var(--text-caption)] font-medium tracking-[0.02em] text-[color:var(--text-muted)]">
         {title}
       </div>
       <div className="grid grid-cols-2 gap-2.5">
@@ -583,10 +583,10 @@ function ExploreTile({
     >
       <MonoIconTile icon={entry.icon} size="sm" />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
           {t(entry.label)}
         </div>
-        <div className="truncate text-[11px] text-[color:var(--text-muted)]">
+        <div className="truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
           {t(entry.hint)}
         </div>
       </div>

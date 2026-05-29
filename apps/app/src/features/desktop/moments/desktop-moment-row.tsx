@@ -219,7 +219,7 @@ function DesktopMomentRowInner({
   return (
     <article
       id={`desktop-moment-post-${moment.id}`}
-      className="relative rounded-[16px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)]"
+      className="relative rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)]"
     >
       {onDelete || onShare ? (
         <div ref={menuRef} className="absolute right-3 top-3">
@@ -237,7 +237,7 @@ function DesktopMomentRowInner({
           {menuOpen ? (
             <div
               role="menu"
-              className="absolute right-0 top-9 z-10 min-w-[140px] overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
+              className="absolute right-0 top-9 z-10 min-w-[140px] overflow-hidden rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
             >
               {onShare ? (
                 <button
@@ -247,7 +247,7 @@ function DesktopMomentRowInner({
                     setMenuOpen(false);
                     onShare();
                   }}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-console)]"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--text-primary)] transition-colors hover:bg-[color:var(--surface-console)]"
                 >
                   <Share2 size={14} />
                   {t(msg`分享图卡`)}
@@ -259,7 +259,7 @@ function DesktopMomentRowInner({
                   role="menuitem"
                   onClick={handleDeleteClick}
                   disabled={deleteLoading}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-[#d23535] transition-colors hover:bg-[rgba(210,53,53,0.06)] disabled:opacity-55"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--state-danger-text)] transition-colors hover:bg-[color:var(--state-danger-bg)] disabled:opacity-55"
                 >
                   <Trash2 size={14} />
                   {deleteLoading ? t(msg`删除中...`) : t(msg`删除朋友圈`)}
@@ -317,12 +317,12 @@ function DesktopMomentRowInner({
                 <button
                   type="button"
                   onClick={(event) => onSelectAuthor?.(event)}
-                  className="truncate text-left text-[15px] font-semibold text-[color:var(--text-primary)]"
+                  className="truncate text-left text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]"
                 >
                   {moment.authorName}
                 </button>
               ) : (
-                <div className="truncate text-[15px] font-semibold text-[color:var(--text-primary)]">
+                <div className="truncate text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
                   {moment.authorName}
                 </div>
               )}
@@ -342,7 +342,7 @@ function DesktopMomentRowInner({
                 {moment.authorType === "character" ? t(msg`角色`) : t(msg`我`)}
               </span>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               <span>{formatTimestamp(moment.postedAt)}</span>
               {moment.location ? (
                 <span className="inline-flex items-center gap-1">
@@ -360,7 +360,7 @@ function DesktopMomentRowInner({
             // whitespace-pre-wrap (line 235 周围)。另外没 break-words 时，
             // 一长串 URL / 不带空格的 ID 会撑破卡片宽度，把右侧 ⋯ 菜单挤出
             // 滚动条。两个 class 一并补齐。
-            <div className="mt-3 whitespace-pre-wrap break-words text-[15px] leading-7 text-[color:var(--text-primary)]">
+            <div className="mt-3 whitespace-pre-wrap break-words text-[length:var(--text-base)] leading-7 text-[color:var(--text-primary)]">
               {displayText}
             </div>
           ) : null}
@@ -375,7 +375,7 @@ function DesktopMomentRowInner({
           ) : null}
 
           <div className="mt-3 flex items-center justify-between gap-4">
-            <div className="text-[12px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {/* 走查 R9：action 行的 "X 赞 · Y 评论" 摘要与下方 comment 头部
                   「N 条」用同一份 visible 计数，避免摘要写 50 评论、下面只展
                   开 48 条的可见错位（R8 已把渲染列表过滤到 visibleComments）。
@@ -396,7 +396,7 @@ function DesktopMomentRowInner({
                 }
                 onClick={onLike}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] transition-[background-color,border-color,color] disabled:opacity-55",
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[length:var(--text-caption)] transition-[background-color,border-color,color] disabled:opacity-55",
                   likedByOwner
                     ? activeActionClassName
                     : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
@@ -416,10 +416,10 @@ function DesktopMomentRowInner({
                 type="button"
                 onClick={onToggleFavorite}
                 className={cn(
-                  "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[12px] transition-[background-color,border-color,color]",
+                  "inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[length:var(--text-caption)] transition-[background-color,border-color,color]",
                   favorite
-                    ? "border-[#ead9a6] bg-[#fbf7e8] text-[#8a6b11]"
-                    : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:border-[#ead9a6] hover:bg-[#fffaf0] hover:text-[color:var(--text-primary)]",
+                    ? "border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
+                    : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:border-[color:var(--state-warning-bg)] hover:bg-[color:var(--state-warning-bg)] hover:text-[color:var(--text-primary)]",
                 )}
               >
                 <Star size={14} className={favorite ? "fill-current" : ""} />
@@ -440,7 +440,7 @@ function DesktopMomentRowInner({
 
           {moment.likes.length > 0 ? (
             <div className="mt-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
-              <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+              <div className="flex flex-wrap items-center gap-x-1 gap-y-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                 <Heart
                   size={12}
                   className="mr-1 text-[color:var(--brand-primary)]"
@@ -475,11 +475,11 @@ function DesktopMomentRowInner({
 
           <div className="mt-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
             <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-[12px] font-medium text-[color:var(--text-primary)]">
+              <div className="flex items-center gap-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 <MessageCircle size={13} />
                 {t(msg`评论`)}
               </div>
-              <span className="text-[11px] text-[color:var(--text-muted)]">
+              <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {/* 走查 R8：用 visibleComments.length 而不是 server-side
                     moment.commentCount —— 后者把空胶水帖评论也算进去，
                     渲染列表已经按 visibleComments 过滤掉空 cleanText 后，
@@ -503,7 +503,7 @@ function DesktopMomentRowInner({
                     return (
                       <div
                         key={comment.id}
-                        className="rounded-[10px] px-2 py-1.5 text-[13px] leading-6"
+                        className="rounded-[10px] px-2 py-1.5 text-[length:var(--text-caption)] leading-6"
                       >
                         <CommentLine
                           authorName={comment.authorName}
@@ -522,7 +522,7 @@ function DesktopMomentRowInner({
                         focusComposer();
                       }}
                       className={cn(
-                        "block w-full rounded-[10px] px-2 py-1.5 text-left text-[13px] leading-6 transition-colors",
+                        "block w-full rounded-[10px] px-2 py-1.5 text-left text-[length:var(--text-caption)] leading-6 transition-colors",
                         isActiveReply
                           ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
                           : "hover:bg-white",
@@ -539,7 +539,7 @@ function DesktopMomentRowInner({
                 })}
               </div>
             ) : (
-              <div className="mt-3 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {/* canInteract=false 的角色 moment 底下评论框被换成「加为好友才能评论」， */}
                 {/* 上面挂「成为第一个回应的人」会撞车 —— 用户读着像在被催促互动，结果发不出。 */}
                 {moment.canInteract
@@ -554,7 +554,7 @@ function DesktopMomentRowInner({
                   activeReply.commentId,
                 );
                 return (
-                  <div className="mt-3 flex items-start justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]">
+                  <div className="mt-3 flex items-start justify-between gap-2 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                     <div className="min-w-0 flex-1 space-y-1">
                       <div className="truncate">
                         {t(msg`正在回复 ${activeReply.authorName}`)}
@@ -593,11 +593,11 @@ function DesktopMomentRowInner({
                       ? t(msg`回复 ${activeReply.authorName}...`)
                       : t(msg`写评论...`)
                   }
-                  inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[13px] shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
+                  inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[length:var(--text-caption)] shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
                   buttonClassName="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
                 />
               ) : (
-                <div className="rounded-xl border border-dashed border-[color:var(--border-faint)] bg-white px-4 py-2 text-[12px] text-[color:var(--text-muted)]">
+                <div className="rounded-xl border border-dashed border-[color:var(--border-faint)] bg-white px-4 py-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {t(msg`加为好友后才能评论。`)}
                 </div>
               )}

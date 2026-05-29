@@ -21,8 +21,8 @@ export function ChatDetailsSection({
       {title ? (
         <div
           className={cn(
-            "px-1 pb-2 text-[12px] tracking-[0.04em] text-[color:var(--text-dim)]",
-            isWechat && "px-4 pb-1 text-[11px] font-normal tracking-normal text-[color:var(--text-muted)]",
+            "px-1 pb-2 text-[length:var(--text-caption)] tracking-[0.04em] text-[color:var(--text-dim)]",
+            isWechat && "px-4 pb-1 text-[length:var(--text-eyebrow)] font-normal tracking-normal text-[color:var(--text-muted)]",
           )}
         >
           {title}
@@ -30,7 +30,7 @@ export function ChatDetailsSection({
       ) : null}
       <div
         className={cn(
-          "overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]",
+          "overflow-hidden rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]",
           isWechat &&
             "rounded-none border-x-0 border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none",
         )}

@@ -273,9 +273,9 @@ export function VoicePickerModal({
         className="absolute inset-0"
       />
 
-      <div className="relative flex max-h-[80vh] w-full max-w-[400px] flex-col overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
+      <div className="relative flex max-h-[80vh] w-full max-w-[400px] flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
         <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <h2 className="text-[16px] font-semibold text-[color:var(--text-primary)]">
+          <h2 className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`选择音色`)}
           </h2>
           <button
@@ -338,7 +338,7 @@ export function VoicePickerModal({
                           aria-label={t(msg`试听`)}
                           onClick={() => void handlePreview(row.id as string)}
                           disabled={previewing}
-                          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-[color:var(--border-faint)] px-2.5 text-[12px] text-[color:var(--text-secondary)] transition-colors hover:bg-black/[0.04] disabled:opacity-60"
+                          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border border-[color:var(--border-faint)] px-2.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition-colors hover:bg-black/[0.04] disabled:opacity-60"
                         >
                           {previewing ? (
                             <Loader2 size={13} className="animate-spin" />
@@ -356,10 +356,10 @@ export function VoicePickerModal({
           )}
 
           <div className="mt-4 border-t border-[color:var(--border-faint)] pt-3">
-            <div className="px-1 text-[13px] font-medium text-[color:var(--text-primary)]">
+            <div className="px-1 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
               {t(msg`克隆我的声音`)}
             </div>
-            <p className="mt-1 px-1 text-[12px] leading-5 text-[color:var(--text-muted)]">
+            <p className="mt-1 px-1 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
               {t(
                 msg`上传一段清晰的人声样本（10 秒以上，mp3 / m4a / wav）。请仅上传你本人或已授权的声音。`,
               )}
@@ -370,12 +370,12 @@ export function VoicePickerModal({
                 {(clonesQuery.data ?? []).map((clone) => (
                   <li
                     key={clone.id}
-                    className="flex items-center gap-2 rounded-[12px] px-2 py-1.5 text-sm"
+                    className="flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 text-sm"
                   >
                     <span className="min-w-0 flex-1 truncate text-[color:var(--text-primary)]">
                       {clone.displayName}
                     </span>
-                    <span className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
+                    <span className="shrink-0 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                       {clone.status === "ready"
                         ? t(msg`可用`)
                         : clone.status === "pending"
@@ -417,12 +417,12 @@ export function VoicePickerModal({
                 <button
                   type="button"
                   onClick={() => cloneFileRef.current?.click()}
-                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] border border-[color:var(--border-faint)] px-3 text-[13px] text-[color:var(--text-secondary)] transition-colors hover:bg-black/[0.04]"
+                  className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-[10px] border border-[color:var(--border-faint)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition-colors hover:bg-black/[0.04]"
                 >
                   <Upload size={14} />
                   {t(msg`选择样本`)}
                 </button>
-                <span className="min-w-0 flex-1 truncate text-[12px] text-[color:var(--text-muted)]">
+                <span className="min-w-0 flex-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {cloneFileName ?? t(msg`未选择文件`)}
                 </span>
                 <Button
@@ -430,7 +430,7 @@ export function VoicePickerModal({
                   variant="primary"
                   onClick={handleCloneSubmit}
                   disabled={createCloneMutation.isPending}
-                  className="shrink-0 rounded-[10px] px-3 py-2 text-[13px]"
+                  className="shrink-0 rounded-[10px] px-3 py-2 text-[length:var(--text-caption)]"
                 >
                   {createCloneMutation.isPending ? (
                     <Loader2 size={14} className="animate-spin" />
@@ -448,7 +448,7 @@ export function VoicePickerModal({
             type="button"
             variant="secondary"
             onClick={onClose}
-            className="w-full rounded-[12px] py-2"
+            className="w-full rounded-[var(--radius-sm)] py-2"
           >
             {t(msg`完成`)}
           </Button>

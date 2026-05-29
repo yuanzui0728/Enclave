@@ -57,7 +57,7 @@ export function ForestTrainGame({
   }, [isRunning]);
   const containerCls =
     variant === "embedded"
-      ? "rounded-[16px] bg-white"
+      ? "rounded-[var(--radius-md)] bg-white"
       : "min-h-screen bg-[color:var(--bg-app)]";
 
   const route = getRoute(state.currentRouteId);
@@ -80,21 +80,21 @@ export function ForestTrainGame({
     <section className={cn("flex flex-col gap-3 p-3", containerCls)}>
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`星野列车`)}
           </span>
           {route ? (
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-800">
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-emerald-800">
               {route.name}
             </span>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[12px] font-medium text-emerald-800">
+          <span className="flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-emerald-800">
             <BookOpen size={12} />
             {state.totalFragments}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[12px] font-medium text-rose-700">
+          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-rose-700">
             <Ticket size={12} />
             ×{state.ticketCount}
           </span>
@@ -112,8 +112,8 @@ export function ForestTrainGame({
       </header>
 
       {/* 列车视图 */}
-      <div className="rounded-[12px] border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-3">
-        <div className="flex items-center justify-between text-[12px] text-emerald-900">
+      <div className="rounded-[var(--radius-sm)] border border-emerald-200 bg-gradient-to-r from-emerald-50 to-teal-50 p-3">
+        <div className="flex items-center justify-between text-[length:var(--text-caption)] text-emerald-900">
           <span className="flex items-center gap-1">
             <Train size={13} />
             {isRunning && station
@@ -145,7 +145,7 @@ export function ForestTrainGame({
               >
                 <span
                   className={cn(
-                    "flex h-6 w-6 items-center justify-center rounded-full text-[12px]",
+                    "flex h-6 w-6 items-center justify-center rounded-full text-[length:var(--text-caption)]",
                     here
                       ? "bg-emerald-500 text-white"
                       : passed
@@ -166,14 +166,14 @@ export function ForestTrainGame({
 
       {/* 当前乘客 */}
       {passenger ? (
-        <div className="rounded-[12px] border border-emerald-200 bg-white p-3">
+        <div className="rounded-[var(--radius-sm)] border border-emerald-200 bg-white p-3">
           <div className="flex items-start gap-3">
-            <span className="text-[28px]">{passenger.emoji}</span>
+            <span className="text-[length:var(--text-display)]">{passenger.emoji}</span>
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {passenger.name} · {passenger.fragmentTitle}
               </div>
-              <div className="mt-1 text-[12px] leading-[1.5rem] text-[color:var(--text-secondary)]">
+              <div className="mt-1 text-[length:var(--text-caption)] leading-[1.5rem] text-[color:var(--text-secondary)]">
                 {passenger.fragment}
               </div>
             </div>
@@ -188,14 +188,14 @@ export function ForestTrainGame({
             <button
               type="button"
               onClick={actions.skip}
-              className="rounded-full border border-[color:var(--border-faint)] px-3 py-1 text-[12px] text-[color:var(--text-secondary)]"
+              className="rounded-full border border-[color:var(--border-faint)] px-3 py-1 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
             >
               {t(msg`不停`)}
             </button>
             <button
               type="button"
               onClick={actions.collect}
-              className="rounded-full bg-emerald-500 px-4 py-1 text-[12px] font-medium text-white hover:bg-emerald-600"
+              className="rounded-full bg-emerald-500 px-4 py-1 text-[length:var(--text-caption)] font-medium text-white hover:bg-emerald-600"
             >
               {t(msg`拾取碎片`)}
             </button>
@@ -208,7 +208,7 @@ export function ForestTrainGame({
         <button
           type="button"
           onClick={actions.start}
-          className="flex items-center justify-center gap-1.5 rounded-full bg-emerald-500 px-4 py-2 text-[13px] font-medium text-white hover:bg-emerald-600"
+          className="flex items-center justify-center gap-1.5 rounded-full bg-emerald-500 px-4 py-2 text-[length:var(--text-caption)] font-medium text-white hover:bg-emerald-600"
         >
           <Play size={14} />
           {isEnded ? t(msg`再发一班`) : t(msg`列车出发`)}
@@ -216,10 +216,10 @@ export function ForestTrainGame({
       ) : null}
 
       {/* 路线选择 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-3">
-        <div className="mb-2 flex items-center justify-between text-[13px] font-medium">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+        <div className="mb-2 flex items-center justify-between text-[length:var(--text-caption)] font-medium">
           <span>{t(msg`选择线路`)}</span>
-          <span className="text-[11px] text-[color:var(--text-secondary)]">
+          <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
             {t(msg`本线收集 ${collectedHere.length} / ${passengerStations.length}`)}
           </span>
         </div>
@@ -239,7 +239,7 @@ export function ForestTrainGame({
                   onClick={() => actions.selectRoute(r.id)}
                   disabled={!unlocked || isRunning}
                   className={cn(
-                    "flex w-full items-start gap-2 rounded-[12px] border px-3 py-2 text-left",
+                    "flex w-full items-start gap-2 rounded-[var(--radius-sm)] border px-3 py-2 text-left",
                     active
                       ? "border-emerald-400 bg-emerald-50"
                       : "border-[color:var(--border-faint)] bg-white",
@@ -249,7 +249,7 @@ export function ForestTrainGame({
                 >
                   <Train size={14} className="mt-0.5 text-emerald-700" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--text-primary)]">
+                    <div className="flex items-center gap-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                       {r.name}
                       {r.isLimited ? (
                         <span className="rounded-full bg-violet-100 px-1.5 py-0.5 text-[10px] text-violet-700">
@@ -260,10 +260,10 @@ export function ForestTrainGame({
                         <Lock size={11} className="text-[color:var(--text-tertiary)]" />
                       ) : null}
                     </div>
-                    <div className="text-[11px] text-[color:var(--text-secondary)]">
+                    <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                       {r.blurb}
                     </div>
-                    <div className="mt-1 text-[11px] text-[color:var(--text-secondary)]">
+                    <div className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                       {unlocked
                         ? t(
                             msg`收集 ${collected.length} / ${passengerCount} 位故事`,
@@ -280,8 +280,8 @@ export function ForestTrainGame({
 
       {/* 故事手账 */}
       {state.totalFragments > 0 ? (
-        <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-3">
-          <div className="mb-2 text-[13px] font-medium text-[color:var(--text-primary)]">
+        <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+          <div className="mb-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {t(msg`故事手账`)}
           </div>
           <ul className="space-y-1.5">
@@ -292,14 +292,14 @@ export function ForestTrainGame({
                 return (
                   <li
                     key={`${routeId}-${pid}`}
-                    className="flex items-start gap-2 text-[12px]"
+                    className="flex items-start gap-2 text-[length:var(--text-caption)]"
                   >
-                    <span className="text-[16px]">{p.emoji}</span>
+                    <span className="text-[length:var(--text-title)]">{p.emoji}</span>
                     <div className="min-w-0 flex-1">
                       <div className="text-[color:var(--text-primary)]">
                         {p.name} · {p.fragmentTitle}
                       </div>
-                      <div className="text-[11px] text-[color:var(--text-secondary)]">
+                      <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                         {p.fragment}
                       </div>
                     </div>
@@ -313,11 +313,11 @@ export function ForestTrainGame({
 
       {/* 结算 */}
       {isEnded ? (
-        <div className="rounded-[12px] border border-emerald-200 bg-emerald-50 p-3 text-center">
-          <p className="text-[13px] font-medium text-emerald-900">
+        <div className="rounded-[var(--radius-sm)] border border-emerald-200 bg-emerald-50 p-3 text-center">
+          <p className="text-[length:var(--text-caption)] font-medium text-emerald-900">
             {t(msg`本班结束`)}
           </p>
-          <p className="mt-1 text-[12px] text-emerald-900/80">
+          <p className="mt-1 text-[length:var(--text-caption)] text-emerald-900/80">
             {t(
               msg`累计故事碎片 ${state.totalFragments} · 海边车票 ${state.ticketCount}`,
             )}
@@ -326,14 +326,14 @@ export function ForestTrainGame({
             <button
               type="button"
               onClick={actions.start}
-              className="rounded-full bg-emerald-500 px-4 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-600"
+              className="rounded-full bg-emerald-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-emerald-600"
             >
               {t(msg`再发一班`)}
             </button>
             <button
               type="button"
               onClick={actions.backIdle}
-              className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[13px] text-[color:var(--text-secondary)]"
+              className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
             >
               {t(msg`回到月台`)}
             </button>
@@ -342,13 +342,13 @@ export function ForestTrainGame({
       ) : null}
 
       {/* 日志 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`列车日志`)}</span>
           <button
             type="button"
             onClick={actions.reset}
-            className="flex items-center gap-1 text-[11px] text-[color:var(--text-secondary)]"
+            className="flex items-center gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
           >
             <RotateCcw size={11} />
             {t(msg`重置`)}
@@ -356,7 +356,7 @@ export function ForestTrainGame({
         </div>
         <ul className="max-h-44 overflow-y-auto px-3 py-2">
           {state.log.length === 0 ? (
-            <li className="py-1 text-[12px] text-[color:var(--text-tertiary)]">
+            <li className="py-1 text-[length:var(--text-caption)] text-[color:var(--text-tertiary)]">
               {t(msg`等待发车…`)}
             </li>
           ) : (
@@ -364,7 +364,7 @@ export function ForestTrainGame({
               <li
                 key={entry.id}
                 className={cn(
-                  "py-1 text-[12px] leading-[1.5rem]",
+                  "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
                   entry.tone === "success" && "text-emerald-700",
                   entry.tone === "warn" && "text-amber-700",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",

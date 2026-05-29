@@ -17,7 +17,7 @@ export function NeighborListPanel({ onSelectNeighbor }: NeighborListPanelProps) 
     <section className="rounded-2xl border border-white/60 bg-white/75 p-3 shadow-md backdrop-blur-md">
       <header className="mb-2 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-stone-700">{t(msg`世界邻居`)}</h2>
-        <span className="text-[11px] text-stone-400">
+        <span className="text-[length:var(--text-eyebrow)] text-stone-400">
           {neighborsQuery.data?.length ?? 0} {t(msg`位`)}
         </span>
       </header>
@@ -82,7 +82,7 @@ function NeighborRow({
               Lv.{neighbor.level}
             </span>
           </div>
-          <div className="mt-0.5 flex items-center gap-2 text-[11px] text-stone-500">
+          <div className="mt-0.5 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-stone-500">
             {neighbor.ripePlotCount > 0 ? (
               <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-amber-700">
                 ✨ {neighbor.ripePlotCount} {t(msg`块成熟`)}

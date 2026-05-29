@@ -36,11 +36,11 @@ export function WeChatCallTopBar({
 
       {centerTitle ? (
         <div className="min-w-0 flex-1 text-center">
-          <div className="truncate text-[16px] font-medium text-white">
+          <div className="truncate text-[length:var(--text-title)] font-medium text-white">
             {centerTitle}
           </div>
           {centerSubtitle ? (
-            <div className="mt-0.5 truncate text-[12px] text-white/55">
+            <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-white/55">
               {centerSubtitle}
             </div>
           ) : null}

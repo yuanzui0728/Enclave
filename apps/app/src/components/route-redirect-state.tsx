@@ -14,7 +14,7 @@ export function RouteRedirectState({
 }: RouteRedirectStateProps) {
   return (
     <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
-      <div className="w-full max-w-md rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
+      <div className="w-full max-w-md rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
         <div className="text-lg font-semibold text-[color:var(--text-primary)]">
           {title}
         </div>

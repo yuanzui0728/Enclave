@@ -422,7 +422,7 @@ export function ContactDetailPane({
             value={
               <span className="inline-flex items-center gap-2">
                 <SparkBadge streak={friendship?.sparkStreak} size="md" />
-                <span className="text-[12px] text-[color:var(--text-muted)]">
+                <span className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {t(msg`已连续 ${friendship?.sparkStreak ?? 0} 天互动`)}
                 </span>
               </span>
@@ -630,12 +630,12 @@ function DangerConfirmDialog({
         onClick={onCancel}
         className="absolute inset-0"
       />
-      <div className="relative w-full max-w-[380px] overflow-hidden rounded-[16px] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]">
+      <div className="relative w-full max-w-[380px] overflow-hidden rounded-[var(--radius-md)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]">
         <div className="px-5 py-5 text-center">
-          <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
             {title}
           </div>
-          <p className="mt-2 text-[12px] leading-5 text-[color:var(--text-muted)]">
+          <p className="mt-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
             {description}
           </p>
         </div>
@@ -643,7 +643,7 @@ function DangerConfirmDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="h-11 text-[14px] text-[color:var(--text-secondary)]"
+            className="h-11 text-[length:var(--text-body)] text-[color:var(--text-secondary)]"
           >
             {t(msg`取消`)}
           </button>
@@ -651,7 +651,7 @@ function DangerConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={pending}
-            className="h-11 border-l border-[color:var(--border-faint)] text-[14px] font-medium text-[#d74b45] disabled:opacity-50"
+            className="h-11 border-l border-[color:var(--border-faint)] text-[length:var(--text-body)] font-medium text-[color:var(--state-danger-text)] disabled:opacity-50"
           >
             {confirmLabel}
           </button>

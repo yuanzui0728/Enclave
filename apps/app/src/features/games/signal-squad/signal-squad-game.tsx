@@ -82,17 +82,17 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
 
   const containerCls =
     variant === "embedded"
-      ? "rounded-[16px] bg-white"
+      ? "rounded-[var(--radius-md)] bg-white"
       : "min-h-screen bg-[color:var(--bg-app)]";
 
   return (
     <section className={cn("flex flex-col gap-3 p-3", containerCls)}>
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`信号小队`)}
           </span>
-          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-emerald-700">
             {t(msg`3 分钟一局`)}
           </span>
         </div>
@@ -100,7 +100,7 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
           <button
             type="button"
             onClick={() => setChooserOpen((v) => !v)}
-            className="flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] px-2.5 py-1 text-[12px] text-[color:var(--text-secondary)]"
+            className="flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] px-2.5 py-1 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
           >
             <Users size={13} />
             {t(msg`阵容`)}
@@ -118,8 +118,8 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
         </div>
       </header>
 
-      <div className="rounded-[16px] bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-3">
-        <div className="flex items-end justify-between text-[12px] text-emerald-900/80">
+      <div className="rounded-[var(--radius-md)] bg-gradient-to-br from-emerald-50 to-emerald-100/60 p-3">
+        <div className="flex items-end justify-between text-[length:var(--text-caption)] text-emerald-900/80">
           <span>{t(msg`信号塔压制`)}</span>
           <span>
             {towerPct}% / {formatRemaining(state.remainingMs)}
@@ -131,7 +131,7 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
             style={{ width: `${towerPct}%` }}
           />
         </div>
-        <div className="mt-2 flex items-center justify-between text-[11px] text-emerald-900/70">
+        <div className="mt-2 flex items-center justify-between text-[length:var(--text-eyebrow)] text-emerald-900/70">
           <span>
             {t(msg`徽章 ${state.badgePoints} · 团队积分 ${state.teamScore}`)}
           </span>
@@ -156,7 +156,7 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
               disabled={!isRunning || busy || dead}
               onClick={() => actions.respond(mate.id)}
               className={cn(
-                "flex flex-col items-center rounded-[12px] border bg-white p-2 text-[12px] transition-all",
+                "flex flex-col items-center rounded-[var(--radius-sm)] border bg-white p-2 text-[length:var(--text-caption)] transition-all",
                 matched
                   ? "border-emerald-500 ring-2 ring-emerald-200"
                   : "border-[color:var(--border-faint)]",
@@ -164,7 +164,7 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
                 busy && "opacity-70",
               )}
             >
-              <div className="text-[28px] leading-none">{def.emoji}</div>
+              <div className="text-[length:var(--text-display)] leading-none">{def.emoji}</div>
               <div className="mt-1 font-medium text-[color:var(--text-primary)]">
                 {def.name}
               </div>
@@ -201,16 +201,16 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
       ) : null}
 
       {!isRunning ? (
-        <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-white px-3 py-6 text-center">
+        <div className="rounded-[var(--radius-sm)] border border-dashed border-[color:var(--border-faint)] bg-white px-3 py-6 text-center">
           {state.status === "idle" ? (
             <>
-              <p className="text-[13px] text-[color:var(--text-secondary)]">
+              <p className="text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                 {t(msg`本局目标：完成两次协同压制并稳住终点信号塔。`)}
               </p>
               <button
                 type="button"
                 onClick={actions.start}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-600"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-emerald-600"
               >
                 <Play size={14} />
                 {t(msg`开始本局`)}
@@ -229,7 +229,7 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
           onClick={actions.useSync}
           disabled={!syncReady}
           className={cn(
-            "flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors",
+            "flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--text-caption)] font-medium transition-colors",
             syncReady
               ? "bg-emerald-500 text-white hover:bg-emerald-600"
               : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",
@@ -256,13 +256,13 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
       ) : null}
 
       {/* 日志 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`本局信号日志`)}</span>
           <button
             type="button"
             onClick={actions.reset}
-            className="flex items-center gap-1 text-[11px] text-[color:var(--text-secondary)]"
+            className="flex items-center gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
             aria-label={t(msg`重置进度`)}
           >
             <RotateCcw size={11} />
@@ -271,7 +271,7 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
         </div>
         <ul className="max-h-44 overflow-y-auto px-3 py-2">
           {state.log.length === 0 ? (
-            <li className="py-1 text-[12px] text-[color:var(--text-tertiary)]">
+            <li className="py-1 text-[length:var(--text-caption)] text-[color:var(--text-tertiary)]">
               {t(msg`等待小队就位…`)}
             </li>
           ) : (
@@ -279,7 +279,7 @@ export function SignalSquadGame({ variant = "fullscreen", onExit }: SignalSquadG
               <li
                 key={entry.id}
                 className={cn(
-                  "py-1 text-[12px] leading-[1.5rem]",
+                  "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
                   entry.tone === "success" && "text-emerald-700",
                   entry.tone === "warn" && "text-amber-700",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",
@@ -324,14 +324,14 @@ function EventCard({
         ? "border-emerald-200 bg-emerald-50"
         : "border-sky-200 bg-sky-50";
   return (
-    <div className={cn("rounded-[12px] border p-3", tone)}>
-      <div className="flex items-center justify-between text-[13px] font-medium">
+    <div className={cn("rounded-[var(--radius-sm)] border p-3", tone)}>
+      <div className="flex items-center justify-between text-[length:var(--text-caption)] font-medium">
         <span>{title}</span>
-        <span className="text-[11px] text-[color:var(--text-secondary)]">
+        <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
           {Math.ceil(remainingMs / 1000)}s
         </span>
       </div>
-      <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">{hint}</div>
+      <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">{hint}</div>
       <div className="mt-2 h-1 overflow-hidden rounded-full bg-white">
         <div
           className="h-full rounded-full bg-current opacity-60 transition-all duration-200"
@@ -360,15 +360,15 @@ function SummaryCard({
   };
   return (
     <div className="space-y-2">
-      <p className="text-[14px] font-medium text-[color:var(--text-primary)]">
+      <p className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {titleByStatus[state.status] ?? t(msg`本局结束`)}
       </p>
-      <p className="text-[12px] text-[color:var(--text-secondary)]">
+      <p className="text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
         {t(
           msg`本局完成度 ${tower}% · 响应 ${state.resolvedCount} / 错过 ${state.missedCount} · 协同压制 ×${state.syncSkillUses}`,
         )}
       </p>
-      <p className="flex items-center justify-center gap-2 text-[12px] text-emerald-700">
+      <p className="flex items-center justify-center gap-2 text-[length:var(--text-caption)] text-emerald-700">
         <Award size={13} />
         {t(msg`赛季徽章 ${state.badgePoints} · 团队积分 ${state.teamScore}`)}
       </p>
@@ -376,14 +376,14 @@ function SummaryCard({
         <button
           type="button"
           onClick={onRestart}
-          className="rounded-full bg-emerald-500 px-4 py-1.5 text-[13px] font-medium text-white hover:bg-emerald-600"
+          className="rounded-full bg-emerald-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-emerald-600"
         >
           {t(msg`再来一局`)}
         </button>
         <button
           type="button"
           onClick={onIdle}
-          className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[13px] text-[color:var(--text-secondary)]"
+          className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
         >
           {t(msg`返回选阵`)}
         </button>
@@ -418,11 +418,11 @@ function SquadChooser({
   }
 
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-3">
-      <div className="mb-2 flex items-center justify-between text-[13px] font-medium">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+      <div className="mb-2 flex items-center justify-between text-[length:var(--text-caption)] font-medium">
         <span>{t(msg`选择 3 位队员`)}</span>
         {disabled ? (
-          <span className="text-[11px] text-[color:var(--text-tertiary)]">
+          <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-tertiary)]">
             {t(msg`本局结束后再调整`)}
           </span>
         ) : null}
@@ -437,7 +437,7 @@ function SquadChooser({
                 onClick={() => toggle(mate.id)}
                 disabled={disabled}
                 className={cn(
-                  "flex w-full items-center gap-2 rounded-[12px] border px-2 py-2 text-left text-[12px]",
+                  "flex w-full items-center gap-2 rounded-[var(--radius-sm)] border px-2 py-2 text-left text-[length:var(--text-caption)]",
                   active
                     ? "border-emerald-500 bg-emerald-50"
                     : "border-[color:var(--border-faint)] bg-white",
@@ -454,7 +454,7 @@ function SquadChooser({
                       {SKILL_EMOJI[mate.skill]} {SKILL_LABEL[mate.skill]}
                     </span>
                   </div>
-                  <div className="truncate text-[11px] text-[color:var(--text-secondary)]">
+                  <div className="truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     {mate.blurb}
                   </div>
                 </div>
@@ -467,7 +467,7 @@ function SquadChooser({
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full border border-[color:var(--border-faint)] px-3 py-1 text-[12px] text-[color:var(--text-secondary)]"
+          className="rounded-full border border-[color:var(--border-faint)] px-3 py-1 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
         >
           {t(msg`取消`)}
         </button>
@@ -476,7 +476,7 @@ function SquadChooser({
           disabled={disabled || draft.length !== SELECTED_SQUAD_SIZE}
           onClick={() => onSelect(draft)}
           className={cn(
-            "flex items-center gap-1 rounded-full px-3 py-1 text-[12px] font-medium",
+            "flex items-center gap-1 rounded-full px-3 py-1 text-[length:var(--text-caption)] font-medium",
             !disabled && draft.length === SELECTED_SQUAD_SIZE
               ? "bg-emerald-500 text-white hover:bg-emerald-600"
               : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",

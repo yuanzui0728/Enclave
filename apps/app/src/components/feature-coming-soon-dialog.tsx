@@ -112,7 +112,7 @@ export function FeatureComingSoonDialog({
         className="absolute inset-0"
       />
 
-      <div className="relative w-full max-w-[380px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
+      <div className="relative w-full max-w-[380px] overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
         <button
           type="button"
           aria-label={t(msg`关闭`)}
@@ -126,17 +126,17 @@ export function FeatureComingSoonDialog({
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
             <Sparkles size={22} />
           </div>
-          <h2 className="mt-3 text-[16px] font-semibold text-[color:var(--text-primary)]">
+          <h2 className="mt-3 text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
             {title}
           </h2>
-          <p className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+          <p className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
             {description}
           </p>
         </div>
 
         <div className="px-6 pt-3">
-          <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2.5">
-            <div className="text-[11px] text-[color:var(--text-muted)]">
+          <div className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2.5">
+            <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {t(msg`微信号（点一下选中，也可直接复制）`)}
             </div>
             <div className="mt-1 flex items-center gap-2">
@@ -151,14 +151,14 @@ export function FeatureComingSoonDialog({
                     selectWechatId();
                   }
                 }}
-                className="min-w-0 flex-1 cursor-text select-all truncate font-mono text-[15px] font-semibold tracking-wide text-[color:var(--text-primary)]"
+                className="min-w-0 flex-1 cursor-text select-all truncate font-mono text-[length:var(--text-base)] font-semibold tracking-wide text-[color:var(--text-primary)]"
               >
                 {wechatId}
               </span>
               <Button
                 type="button"
                 variant="primary"
-                className="shrink-0 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[12px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+                className="shrink-0 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                 onClick={() => void handleCopy()}
               >
                 <Copy size={12} className="mr-1" />
@@ -166,7 +166,7 @@ export function FeatureComingSoonDialog({
               </Button>
             </div>
           </div>
-          <p className="mt-2 text-[11px] leading-5 text-[color:var(--text-muted)]">
+          <p className="mt-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
             {t(
               msg`加好友时备注「拉群」，运营会拉你进体验群，第一时间通知功能上线～`,
             )}
@@ -184,7 +184,7 @@ export function FeatureComingSoonDialog({
             type="button"
             variant="primary"
             onClick={onClose}
-            className="w-full rounded-[12px] bg-[color:var(--brand-primary)] py-2 text-white shadow-none hover:opacity-95"
+            className="w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] py-2 text-white shadow-none hover:opacity-95"
           >
             {t(msg`我知道了`)}
           </Button>

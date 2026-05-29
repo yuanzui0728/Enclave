@@ -247,9 +247,9 @@ function MobileOfficialAccountsPage() {
             value={searchText}
             onChange={(event) => setSearchText(event.target.value)}
             placeholder={t(msg`搜索公众号`)}
-            // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+            // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in。跟 mobile-add-friend-page 已修过的搜索框对齐。
-            className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-4 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:bg-[color:var(--surface-card)]"
+            className="h-9 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-4 text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] placeholder:text-[color:var(--text-dim)] focus:bg-[color:var(--surface-card)]"
           />
         </label>
       </TabPageTopBar>
@@ -277,7 +277,7 @@ function MobileOfficialAccountsPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryAccounts}
                   >
                     {t(msg`重试读取`)}
@@ -285,7 +285,7 @@ function MobileOfficialAccountsPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回通讯录`)}
@@ -358,7 +358,7 @@ function MobileOfficialAccountsPage() {
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                   onClick={handleEmptyStateAction}
                 >
                   {safeReturnPath
@@ -396,10 +396,10 @@ function MobileOfficialAccountsPage() {
           <ArrowLeft aria-hidden="true" size={18} />
         </Button>
         <div className="mx-6 max-w-[280px] rounded-2xl border border-[color:var(--border-faint)] bg-white/98 px-6 py-6 text-center shadow-[var(--shadow-card)]">
-          <div className="text-[17px] font-semibold text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`功能开发中`)}
           </div>
-          <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+          <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
             {t(msg`敬请期待`)}
           </div>
           <Button
@@ -470,7 +470,7 @@ function MobileOfficialAccountsStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -480,7 +480,7 @@ function MobileOfficialAccountsStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -490,13 +490,13 @@ function MobileOfficialAccountsStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

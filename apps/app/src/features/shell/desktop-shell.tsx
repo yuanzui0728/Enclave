@@ -347,7 +347,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
   const shellInsetClass = nativeDesktopShell
     ? "rounded-none"
-    : "m-2 rounded-[20px]";
+    : "m-2 rounded-[var(--radius-lg)]";
   const showDesktopNavigation =
     !standaloneDesktopRoute &&
     onboardingCompleted &&
@@ -489,7 +489,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           <div className="absolute left-[-8%] top-0 h-56 w-56 rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] blur-3xl" />
           <div className="absolute right-[-4%] top-[10%] h-48 w-48 rounded-full bg-[color-mix(in_srgb,var(--brand-accent)_8%,transparent)] blur-3xl" />
-          <div className="absolute bottom-[-6%] left-1/3 h-44 w-44 rounded-full bg-[rgba(148,163,184,0.08)] blur-3xl" />
+          <div className="absolute bottom-[-6%] left-1/3 h-44 w-44 rounded-full bg-[color:var(--state-info-bg)] blur-3xl" />
         </div>
 
         <div
@@ -519,7 +519,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
           {showDesktopNavigation ? (
             <aside
               className={cn(
-                "hidden shrink-0 rounded-[20px] border border-white/8 bg-[rgba(41,47,50,0.96)] text-white shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col",
+                "hidden shrink-0 rounded-[var(--radius-lg)] border border-white/8 bg-[rgba(41,47,50,0.96)] text-white shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col",
                 compactDesktopNav ? "w-[88px] p-1.5" : "w-[92px] p-2",
               )}
             >
@@ -638,7 +638,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
                 {isMoreMenuOpen ? (
                   <div className="absolute bottom-0 left-[calc(100%+0.75rem)] z-30 w-[232px] rounded-[18px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.97)] p-2 shadow-[var(--shadow-overlay)] backdrop-blur-xl">
-                    <div className="px-3 pb-2 pt-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+                    <div className="px-3 pb-2 pt-2 text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                       {t(msg`更多功能`)}
                     </div>
                     <div className="space-y-1">
@@ -652,7 +652,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                         />
                       ))}
                     </div>
-                    <div className="mt-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[11px] leading-6 text-[color:var(--text-dim)]">
+                    <div className="mt-2 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[length:var(--text-eyebrow)] leading-6 text-[color:var(--text-dim)]">
                       ⌘/Ctrl + K {t(msg`搜索`)}
                       <br />
                       ⌘/Ctrl + , {t(msg`设置`)}
@@ -670,7 +670,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
               "min-w-0 flex-1 overflow-hidden",
               standaloneDesktopRoute
                 ? "bg-transparent"
-                : "rounded-[20px] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.86)] shadow-[var(--shadow-section)] backdrop-blur-xl",
+                : "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.86)] shadow-[var(--shadow-section)] backdrop-blur-xl",
             )}
           >
             {children}
@@ -678,8 +678,8 @@ export function DesktopShell({ children }: PropsWithChildren) {
         </div>
 
         {isLocked ? (
-          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[rgba(17,24,39,0.34)] p-6 backdrop-blur-md">
-            <div className="w-full max-w-md rounded-[24px] border border-white/30 bg-[rgba(255,255,255,0.94)] p-8 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+          <div className="absolute inset-0 z-40 flex items-center justify-center bg-[color:var(--state-info-bg)] p-6 backdrop-blur-md">
+            <div className="w-full max-w-md rounded-[var(--radius-xl)] border border-white/30 bg-[rgba(255,255,255,0.94)] p-8 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)]">
                   <AvatarChip
@@ -744,7 +744,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                 </div>
               ) : null}
               {lockError ? (
-                <div className="mt-4 rounded-[14px] bg-[rgba(239,68,68,0.10)] px-4 py-3 text-sm text-[color:var(--state-danger-text)]">
+                <div className="mt-4 rounded-[14px] bg-[color:var(--state-danger-bg)] px-4 py-3 text-sm text-[color:var(--state-danger-text)]">
                   {lockError}
                 </div>
               ) : null}
@@ -952,14 +952,14 @@ function DesktopOwnerQuickCard({
           <AvatarChip name={ownerDisplayName} src={ownerAvatar} size="lg" />
           <div className="min-w-0 flex-1">
             {ownerDisplayName ? (
-              <div className="truncate text-[17px] font-semibold leading-tight text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-title)] font-semibold leading-tight text-[color:var(--text-primary)]">
                 {ownerDisplayName}
               </div>
             ) : null}
             {trimmedSignature ? (
               <div
                 className={cn(
-                  "line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]",
+                  "line-clamp-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]",
                   ownerDisplayName ? "mt-1.5" : "",
                 )}
               >
@@ -970,7 +970,7 @@ function DesktopOwnerQuickCard({
                 type="button"
                 onClick={onEditSignature}
                 className={cn(
-                  "block w-full rounded-[8px] border-0 bg-transparent p-0 text-left text-[12px] leading-5 text-[color:var(--text-muted)] appearance-none transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:text-[color:var(--brand-primary)]",
+                  "block w-full rounded-[8px] border-0 bg-transparent p-0 text-left text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)] appearance-none transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:text-[color:var(--brand-primary)]",
                   ownerDisplayName ? "mt-1.5" : "",
                 )}
               >
@@ -1002,7 +1002,7 @@ function DesktopOwnerQuickCard({
       </div>
 
       {notice ? (
-        <div className="mt-2 rounded-[12px] border border-[rgba(255,159,10,0.24)] bg-[rgba(255,244,223,0.92)] px-3 py-2 text-[12px] leading-5 text-[#9a6700]">
+        <div className="mt-2 rounded-[var(--radius-sm)] border border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--state-warning-text)]">
           {notice}
         </div>
       ) : null}
@@ -1031,7 +1031,7 @@ function DesktopOwnerShortcutButton({
       className={cn(
         "flex w-full items-center gap-3 rounded-[14px] border bg-transparent px-3 py-2.5 text-left appearance-none transition-[transform,background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         disabled
-          ? "cursor-wait border-[color:var(--border-faint)] bg-[rgba(148,163,184,0.08)] text-[color:var(--text-muted)]"
+          ? "cursor-wait border-[color:var(--border-faint)] bg-[color:var(--state-info-bg)] text-[color:var(--text-muted)]"
           : "border-transparent bg-transparent text-[color:var(--text-primary)] hover:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]",
       )}
     >
@@ -1039,17 +1039,17 @@ function DesktopOwnerShortcutButton({
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]",
           disabled
-            ? "bg-[rgba(148,163,184,0.16)]"
-            : "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[#15803d]",
+            ? "bg-[color:var(--state-info-bg)]"
+            : "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--state-success-text)]",
         )}
       >
         <Icon size={17} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-medium leading-tight">
+        <div className="truncate text-[length:var(--text-body)] font-medium leading-tight">
           {label}
         </div>
-        <div className="mt-0.5 truncate text-[12px] leading-5 text-[color:var(--text-secondary)]">
+        <div className="mt-0.5 truncate text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
           {description}
         </div>
       </div>
@@ -1179,7 +1179,7 @@ function DesktopMoreMenuButton({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[12px] border-0 bg-transparent px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] appearance-none transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] border-0 bg-transparent px-3 py-2.5 text-left text-sm text-[color:var(--text-primary)] appearance-none transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-console)]"
     >
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]">
         <Icon size={17} />

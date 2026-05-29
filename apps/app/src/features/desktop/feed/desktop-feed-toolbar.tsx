@@ -44,13 +44,13 @@ export function DesktopFeedToolbar({
       <div className="mx-auto w-full max-w-[720px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
-            <div className="text-[11px] font-medium text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
               {t(msg`广场动态`)}
             </div>
             <div className="mt-1 text-[18px] font-semibold text-[color:var(--text-primary)]">
               {t(msg`世界公开流`)}
             </div>
-            <div className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
               {t(msg`这里不只看朋友，世界主人和居民的公开发言都会进入这条流。`)}
             </div>
           </div>
@@ -72,7 +72,7 @@ export function DesktopFeedToolbar({
         </div>
 
         <div className="mt-4 flex items-center justify-end">
-          <div className="text-[12px] text-[color:var(--text-muted)]">
+          <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {/* 还有下一页时如实展示「已加载 X / 共 Y」，告诉用户还能滚出更多；
                 所有分页都拉完后 (hasNextPage=false) 把它收敛到「共 X 条」——
                 屏蔽过滤吃掉的差额永远补不回来，挂在 toolbar 上反而像在催用户
@@ -114,13 +114,13 @@ export function DesktopFeedToolbar({
             {onRetryLike ? (
               <InlineNotice tone="info">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 flex-1 text-[12px]">
+                  <span className="min-w-0 flex-1 text-[length:var(--text-caption)]">
                     {likeErrorMessage}
                   </span>
                   <button
                     type="button"
                     onClick={onRetryLike}
-                    className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2.5 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]"
+                    className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-white px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]"
                   >
                     {t(msg`重试点赞`)}
                   </button>
@@ -142,13 +142,13 @@ export function DesktopFeedToolbar({
             {onRetryComment ? (
               <InlineNotice tone="info">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="min-w-0 flex-1 text-[12px]">
+                  <span className="min-w-0 flex-1 text-[length:var(--text-caption)]">
                     {commentErrorMessage}
                   </span>
                   <button
                     type="button"
                     onClick={onRetryComment}
-                    className="shrink-0 rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2.5 py-0.5 text-[11px] font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]"
+                    className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-white px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]"
                   >
                     {t(msg`重试发送`)}
                   </button>

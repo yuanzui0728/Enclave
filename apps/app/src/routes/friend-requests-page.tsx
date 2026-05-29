@@ -274,7 +274,7 @@ function MobileFriendRequestsPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryRequests}
                   >
                     {t(msg`重试读取`)}
@@ -283,7 +283,7 @@ function MobileFriendRequestsPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath
@@ -299,7 +299,7 @@ function MobileFriendRequestsPage() {
           <div className="px-3 pt-2">
             <InlineNotice
               tone="success"
-              className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
             >
               {successNotice}
             </InlineNotice>
@@ -378,13 +378,13 @@ function MobileFriendRequestsPage() {
                       <div className="min-w-0">
                         <div
                           className={cn(
-                            "truncate text-[14px] text-[color:var(--text-primary)]",
+                            "truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]",
                             expired ? "opacity-70" : undefined,
                           )}
                         >
                           {safeName}
                         </div>
-                        <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-[color:var(--text-muted)]">
+                        <div className="mt-0.5 flex items-center gap-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                           <span className={expired ? "opacity-70" : undefined}>
                             {t(getFriendRequestSourceLabel(request.triggerScene))}
                           </span>
@@ -402,7 +402,7 @@ function MobileFriendRequestsPage() {
 
                     <div
                       className={cn(
-                        "mt-2 whitespace-pre-line break-words rounded-[12px] bg-[color:var(--surface-card-hover)] px-3 py-2 text-[13px] leading-5 text-[color:var(--text-secondary)]",
+                        "mt-2 whitespace-pre-line break-words rounded-[var(--radius-sm)] bg-[color:var(--surface-card-hover)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]",
                         expired ? "opacity-70" : undefined,
                       )}
                     >
@@ -410,7 +410,7 @@ function MobileFriendRequestsPage() {
                     </div>
 
                     {acceptErrorForRow || declineErrorForRow ? (
-                      <div className="mt-2 rounded-[12px] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[11px] leading-4 text-[color:var(--state-danger-text)]">
+                      <div className="mt-2 rounded-[var(--radius-sm)] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-4 text-[color:var(--state-danger-text)]">
                         <div className="flex items-start justify-between gap-2">
                           <span className="min-w-0 flex-1">
                             {(acceptErrorForRow ?? declineErrorForRow)?.message}
@@ -422,7 +422,7 @@ function MobileFriendRequestsPage() {
                                 ? handleRetryAccept
                                 : handleRetryDecline
                             }
-                            className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                            className="shrink-0 rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                           >
                             {acceptErrorForRow
                               ? t(msg`重试通过`)
@@ -445,7 +445,7 @@ function MobileFriendRequestsPage() {
                         }
                         variant="secondary"
                         size="sm"
-                        className="h-8 min-w-[3.5rem] rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-card-hover)]"
+                        className="h-8 min-w-[3.5rem] rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                       >
                         {declineMutation.isPending &&
                         declineMutation.variables?.requestId === request.id
@@ -465,7 +465,7 @@ function MobileFriendRequestsPage() {
                           onClick={() => acceptMutation.mutate(request.id)}
                           variant="primary"
                           size="sm"
-                          className="h-8 min-w-[3.5rem] rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+                          className="h-8 min-w-[3.5rem] rounded-full bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                         >
                           {acceptMutation.isPending &&
                           acceptMutation.variables === request.id
@@ -495,7 +495,7 @@ function MobileFriendRequestsPage() {
                   type="button"
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                   onClick={handleStatusBack}
                 >
                   {safeReturnPath
@@ -564,7 +564,7 @@ function MobileFriendRequestsStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -574,7 +574,7 @@ function MobileFriendRequestsStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -584,13 +584,13 @@ function MobileFriendRequestsStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

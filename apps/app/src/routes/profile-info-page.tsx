@@ -215,7 +215,7 @@ export function ProfileInfoPage() {
   const fieldValueSpan = (text: string) => (
     <span
       className={cn(
-        "max-w-[55vw] truncate text-[13px]",
+        "max-w-[55vw] truncate text-[length:var(--text-caption)]",
         text
           ? "text-[color:var(--text-muted)]"
           : "text-[color:var(--text-dim)]",
@@ -292,7 +292,7 @@ export function ProfileInfoPage() {
             label={t(msg`名字`)}
             to="/profile/info/name"
             value={
-              <span className="truncate text-[14px] text-[color:var(--text-primary)]">
+              <span className="truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
                 {ownerLabel}
               </span>
             }
@@ -303,7 +303,7 @@ export function ProfileInfoPage() {
               value={
                 <span className="flex min-w-0 items-center gap-1.5">
                   <span
-                    className="truncate text-[13px] text-[color:var(--text-muted)]"
+                    className="truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
                     data-i18n-skip="true"
                   >
                     {yinjieIdText}
@@ -329,7 +329,7 @@ export function ProfileInfoPage() {
             <InfoRow
               label={t(msg`隐界号`)}
               value={
-                <span className="truncate text-[13px] text-[color:var(--text-muted)]">
+                <span className="truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {t(msg`未生成`)}
                 </span>
               }
@@ -345,7 +345,7 @@ export function ProfileInfoPage() {
             value={
               <span
                 className={cn(
-                  "max-w-[55vw] truncate text-[13px]",
+                  "max-w-[55vw] truncate text-[length:var(--text-caption)]",
                   trimmedSignature
                     ? "text-[color:var(--text-muted)]"
                     : "text-[color:var(--text-dim)]",
@@ -362,7 +362,7 @@ export function ProfileInfoPage() {
             value={
               <span
                 className={cn(
-                  "max-w-[55vw] truncate text-[13px]",
+                  "max-w-[55vw] truncate text-[length:var(--text-caption)]",
                   trimmedContact
                     ? "text-[color:var(--text-muted)]"
                     : "text-[color:var(--text-dim)]",
@@ -375,7 +375,7 @@ export function ProfileInfoPage() {
         </InfoRowGroup>
 
         {/* 补充资料：注入 AI 角色对话上下文，让陪伴更贴合你（不公开给其他用户）。 */}
-        <div className="px-4 pt-5 pb-1.5 text-[12px] text-[color:var(--text-dim)]">
+        <div className="px-4 pt-5 pb-1.5 text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
           {t(msg`补充资料，让 AI 更懂你`)}
         </div>
         <InfoRowGroup>
@@ -458,7 +458,7 @@ export function ProfileInfoPage() {
           role="status"
           aria-live="polite"
         >
-          <div className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[13px] text-white">
+          <div className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[length:var(--text-caption)] text-white">
             {toast.message}
           </div>
         </div>
@@ -516,7 +516,7 @@ function InfoRow({
 }: InfoRowProps) {
   const inner = (
     <>
-      <div className="min-w-0 flex-1 text-[15px] text-[color:var(--text-primary)]">
+      <div className="min-w-0 flex-1 text-[length:var(--text-base)] text-[color:var(--text-primary)]">
         {label}
       </div>
       {value ? (
@@ -654,19 +654,19 @@ function AvatarConfirmDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-[320px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[320px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
       >
         <div className="flex flex-col items-center px-6 pb-2 pt-6">
           <AvatarChip name={ownerLabel} src={picked.dataUrl} size="xl" />
           <div
             id={titleId}
-            className="mt-4 max-w-full truncate text-[14px] text-[color:var(--text-primary)]"
+            className="mt-4 max-w-full truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]"
             title={picked.name}
           >
             {picked.name || t(msg`本地图片`)}
           </div>
           <div
-            className="mt-0.5 text-[11px] text-[color:var(--text-muted)]"
+            className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
             data-i18n-skip="true"
           >
             {formatBytes(picked.size)}
@@ -676,7 +676,7 @@ function AvatarConfirmDialog({
         {errorMessage ? (
           <div
             role="alert"
-            className="mx-4 mt-3 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+            className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--state-danger-text)]"
           >
             {errorMessage}
           </div>
@@ -690,7 +690,7 @@ function AvatarConfirmDialog({
             // 走查 R2：取消按钮不随 isSaving disable——跟 ESC / Android Back / 背景
             // 点击 / 原 avatar page 顶栏返回箭头同口径。save 没有 abort signal，
             // 让用户能随时关 modal，PATCH 继续在后台跑。
-            className="flex-1 rounded-[12px] py-2 shadow-none"
+            className="flex-1 rounded-[var(--radius-sm)] py-2 shadow-none"
           >
             {t(msg`取消`)}
           </Button>
@@ -702,7 +702,7 @@ function AvatarConfirmDialog({
             // 走查新 R3：「完成」按钮 mobile tap 没按压反馈——hover:opacity-95
             // 是桌面鼠标悬停的渐变，mobile tap 不触发 hover。补 active:opacity-90
             // 让按下瞬间有视觉响应；跟 profile-subscription 复制/开通按钮同款补漏。
-            className="flex-1 rounded-[16px] bg-[color:var(--brand-primary)] py-2 text-[color:var(--text-on-brand)] shadow-none hover:opacity-95 active:opacity-90"
+            className="flex-1 rounded-[var(--radius-md)] bg-[color:var(--brand-primary)] py-2 text-[color:var(--text-on-brand)] shadow-none hover:opacity-95 active:opacity-90"
           >
             {isSaving ? t(msg`保存中`) : t(msg`完成`)}
           </Button>

@@ -747,7 +747,7 @@ export function DesktopCreateGroupDialog({
         <AvatarChip name={displayName} src={item.character.avatar} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+            <div className="truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
               {displayName}
             </div>
             {isSourceFriend ? (
@@ -761,7 +761,7 @@ export function DesktopCreateGroupDialog({
               </span>
             ) : null}
           </div>
-          <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {item.character.relationship || t(msg`世界联系人`)}
           </div>
         </div>
@@ -770,7 +770,7 @@ export function DesktopCreateGroupDialog({
             "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors",
             checked
               ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-              : "border-[rgba(15,23,42,0.14)] bg-white text-transparent",
+              : "border-[color:var(--state-info-bg)] bg-white text-transparent",
           )}
         >
           <Check size={12} strokeWidth={3} />
@@ -820,7 +820,7 @@ export function DesktopCreateGroupDialog({
     // 搜索框 / 联系人 row 时 workspace pointerdown capture 偷关侧栏，
     // 用户点取消时回不到原详情视图。Esc 路径已 stopPropagation。
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[rgba(17,24,39,0.18)] p-6 backdrop-blur-[2px]"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[color:var(--state-info-bg)] p-6 backdrop-blur-[2px]"
       data-yj-portal-shield="desktop-create-group-dialog"
     >
       <button
@@ -851,13 +851,13 @@ export function DesktopCreateGroupDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-[min(700px,82vh)] w-full max-w-[560px] flex-col overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative flex h-[min(700px,82vh)] w-full max-w-[560px] flex-col overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
         onKeyDown={handleDialogKeyDown}
       >
-        <div className="relative border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-6 py-4 text-center">
+        <div className="relative border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-6 py-4 text-center">
           <div
             id={titleId}
-            className="text-[16px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]"
+            className="text-[length:var(--text-title)] font-medium tracking-[0.01em] text-[color:var(--text-primary)]"
           >
             {t(msg`选择联系人`)}
           </div>
@@ -876,7 +876,7 @@ export function DesktopCreateGroupDialog({
           </button>
         </div>
 
-        <div className="border-b border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-4 py-3">
+        <div className="border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-3">
           <label className="relative block">
             <Search
               size={16}
@@ -909,7 +909,7 @@ export function DesktopCreateGroupDialog({
             ) : null}
           </label>
 
-          <div className="mt-3 min-h-[72px] rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white px-3 py-3">
+          <div className="mt-3 min-h-[72px] rounded-[10px] border border-[color:var(--border-subtle)] bg-white px-3 py-3">
             {selectedFriends.length ? (
               <div className="flex gap-3 overflow-x-auto pb-1">
                 {selectedFriends.map((item) => {
@@ -932,7 +932,7 @@ export function DesktopCreateGroupDialog({
                           <X size={10} />
                         </span>
                       </div>
-                      <span className="w-full truncate text-[11px] text-[color:var(--text-secondary)]">
+                      <span className="w-full truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                         {displayName}
                       </span>
                       {isSourceFriend ? (
@@ -945,13 +945,13 @@ export function DesktopCreateGroupDialog({
                 })}
               </div>
             ) : (
-              <div className="flex min-h-[42px] items-center text-[12px] text-[color:var(--text-muted)]">
+              <div className="flex min-h-[42px] items-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {t(msg`已选联系人会显示在这里`)}
               </div>
             )}
           </div>
           {seedMemberIds.length ? (
-            <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {sourceFriendName
                 ? t(msg`已默认选择 “${sourceFriendName}”`)
                 : t(msg`已默认选择当前聊天对象`)}
@@ -1010,7 +1010,7 @@ export function DesktopCreateGroupDialog({
           {!friendsQuery.isLoading &&
           !friendsQuery.isError &&
           filteredFriends.length ? (
-            <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-2 text-[11px] text-[color:var(--text-dim)]">
+            <div className="border-b border-[color:var(--border-faint)] px-4 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
               {searchTerm.trim()
                 ? t(msg`搜索结果 ${filteredFriends.length} 位联系人`)
                 : t(msg`共 ${filteredFriends.length} 位联系人`)}
@@ -1021,7 +1021,7 @@ export function DesktopCreateGroupDialog({
             <div className="space-y-3">
               {pinnedSourceFriend ? (
                 <div>
-                  <div className="border-b border-[rgba(15,23,42,0.06)] bg-[#fafafa] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
+                  <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2 text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-[color:var(--brand-primary)]">
                     {t(msg`当前聊天`)}
                   </div>
                   {renderFriendRow(pinnedSourceFriend)}
@@ -1030,7 +1030,7 @@ export function DesktopCreateGroupDialog({
 
               {friendSections.map((section) => (
                 <div key={section.key}>
-                  <div className="sticky top-0 z-[1] border-b border-[rgba(15,23,42,0.06)] bg-[#fafafa] px-4 py-2 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-dim)]">
+                  <div className="sticky top-0 z-[1] border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2 text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-[color:var(--text-dim)]">
                     {section.title}
                   </div>
                   <div>
@@ -1045,10 +1045,10 @@ export function DesktopCreateGroupDialog({
         {conversationId && shareHistory ? (
           <div
             id={shareHistoryPanelId}
-            className="border-t border-[rgba(15,23,42,0.08)] bg-[#fafafa] px-4 py-3"
+            className="border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-3"
           >
             <div className="mb-3 flex items-center justify-between gap-3">
-              <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`分享聊天内容`)}
               </div>
               <button
@@ -1058,7 +1058,7 @@ export function DesktopCreateGroupDialog({
                   setSelectedMessageIds([]);
                   setMessageSelectionNotice(null);
                 }}
-                className="text-[12px] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
+                className="text-[length:var(--text-caption)] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
               >
                 {t(msg`收起`)}
               </button>
@@ -1094,7 +1094,7 @@ export function DesktopCreateGroupDialog({
             {!shareableMessagesQuery.isLoading &&
             !shareableMessagesQuery.isError &&
             !shareableMessages.length ? (
-              <div className="rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white px-3 py-3 text-[12px] text-[color:var(--text-muted)]">
+              <div className="rounded-[10px] border border-[color:var(--border-subtle)] bg-white px-3 py-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {t(msg`当前单聊里还没有可分享的消息。`)}
               </div>
             ) : null}
@@ -1103,7 +1103,7 @@ export function DesktopCreateGroupDialog({
             shareableMessages.length ? (
               <>
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="text-[12px] text-[color:var(--text-muted)]">
+                  <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                     {t(
                       msg`已选择 ${selectedMessageIds.length} / ${Math.min(MAX_SHARED_MESSAGE_COUNT, shareableMessages.length)} 条`,
                     )}
@@ -1116,7 +1116,7 @@ export function DesktopCreateGroupDialog({
                       条 / 最近 20 条 / 全选」一串裸 label，无法识别当前选择正好
                       匹配哪条预设。补 aria-pressed = 是否匹配此预设。清空按钮
                       不挂——它是命令式 action（点了变 0），不属于 toggle 类。 */}
-                  <div className="flex flex-wrap items-center gap-2 text-[12px]">
+                  <div className="flex flex-wrap items-center gap-2 text-[length:var(--text-caption)]">
                     {SHARE_HISTORY_PRESET_COUNTS.map((count) => (
                       <button
                         key={count}
@@ -1127,7 +1127,7 @@ export function DesktopCreateGroupDialog({
                           "rounded-full border px-2.5 py-1 transition",
                           recentPresetSelectionState.get(count)
                             ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
-                            : "border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
+                            : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
                         )}
                       >
                         {t(msg`最近 ${count} 条`)}
@@ -1145,7 +1145,7 @@ export function DesktopCreateGroupDialog({
                         "rounded-full border px-2.5 py-1 transition",
                         allShareableMessagesSelected
                           ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
-                          : "border-[rgba(15,23,42,0.08)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
+                          : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
                       )}
                     >
                       {t(msg`全选`)}
@@ -1153,7 +1153,7 @@ export function DesktopCreateGroupDialog({
                     <button
                       type="button"
                       onClick={() => setSelectedMessageIds([])}
-                      className="rounded-full border border-[rgba(15,23,42,0.08)] bg-white px-2.5 py-1 text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.03)]"
+                      className="rounded-full border border-[color:var(--border-subtle)] bg-white px-2.5 py-1 text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.03)]"
                     >
                       {t(msg`清空`)}
                     </button>
@@ -1163,12 +1163,12 @@ export function DesktopCreateGroupDialog({
                 <div
                   tabIndex={0}
                   onKeyDown={handleSharedMessagesKeyDown}
-                  className="max-h-56 overflow-auto rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
+                  className="max-h-56 overflow-auto rounded-[10px] border border-[color:var(--border-subtle)] bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
                   aria-label={t(msg`可分享聊天记录列表`)}
                 >
                   {shareableMessageSections.map((section) => (
                     <div key={section.key}>
-                      <div className="sticky top-0 z-10 border-b border-[rgba(15,23,42,0.06)] bg-[#fafafa] px-3 py-2 text-[11px] font-medium text-[color:var(--text-dim)]">
+                      <div className="sticky top-0 z-10 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-dim)]">
                         {section.label}
                       </div>
                       <div>
@@ -1189,7 +1189,7 @@ export function DesktopCreateGroupDialog({
                               aria-pressed={checked}
                               aria-current={focused ? "true" : undefined}
                               className={cn(
-                                "flex w-full items-start gap-3 border-b border-[rgba(15,23,42,0.05)] px-3 py-2.5 text-left transition",
+                                "flex w-full items-start gap-3 border-b border-[color:var(--border-faint)] px-3 py-2.5 text-left transition",
                                 checked
                                   ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
                                   : "hover:bg-[rgba(0,0,0,0.028)]",
@@ -1201,14 +1201,14 @@ export function DesktopCreateGroupDialog({
                                   "mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors",
                                   checked
                                     ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-                                    : "border-[rgba(15,23,42,0.14)] bg-white text-transparent",
+                                    : "border-[color:var(--state-info-bg)] bg-white text-transparent",
                                 )}
                               >
                                 <Check size={12} strokeWidth={3} />
                               </div>
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2 text-[11px] text-[color:var(--text-dim)]">
-                                  <span className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
+                                <div className="flex items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
+                                  <span className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                                     {message.senderName}
                                   </span>
                                   <span>
@@ -1218,7 +1218,7 @@ export function DesktopCreateGroupDialog({
                                   </span>
                                   <span>{formatMessageTypeLabel(message)}</span>
                                 </div>
-                                <div className="mt-1 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+                                <div className="mt-1 line-clamp-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
                                   {getMessagePreviewText(message)}
                                 </div>
                               </div>
@@ -1234,8 +1234,8 @@ export function DesktopCreateGroupDialog({
           </div>
         ) : null}
 
-        <div className="flex items-center justify-between gap-4 border-t border-[rgba(15,23,42,0.08)] bg-[#f7f7f7] px-4 py-3">
-          <div className="flex min-w-0 items-center gap-3 text-[12px] text-[color:var(--text-muted)]">
+        <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-4 py-3">
+          <div className="flex min-w-0 items-center gap-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             <span>{t(msg`已选择 ${selectedIds.length} 位联系人`)}</span>
             {conversationId ? (
               // 走查电脑端群聊 R100：原版「分享聊天内容」chip 是 disclosure 模式——

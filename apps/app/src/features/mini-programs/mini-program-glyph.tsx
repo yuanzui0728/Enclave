@@ -14,9 +14,9 @@ type MiniProgramGlyphProps = {
 };
 
 const sizeClassName = {
-  sm: "h-10 w-10 rounded-[16px] text-[11px]",
-  md: "h-12 w-12 rounded-[16px] text-sm",
-  lg: "h-16 w-16 rounded-[20px] text-base",
+  sm: "h-10 w-10 rounded-[var(--radius-md)] text-[length:var(--text-eyebrow)]",
+  md: "h-12 w-12 rounded-[var(--radius-md)] text-sm",
+  lg: "h-16 w-16 rounded-[var(--radius-lg)] text-base",
 };
 
 function getGlyphLabel(name: string) {

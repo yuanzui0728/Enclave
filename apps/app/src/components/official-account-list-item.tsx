@@ -28,7 +28,7 @@ export function OfficialAccountListItem({
       className={cn(
         "flex w-full items-center text-left transition-[border-color,background-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         compact
-          ? "gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
+          ? "gap-3 rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 shadow-[var(--shadow-section)] hover:bg-[color:var(--surface-console)]"
           : dense
             ? "gap-3 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 hover:bg-[color:var(--surface-card-hover)]"
             : "gap-3 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3.5 hover:bg-[color:var(--surface-card-hover)]",
@@ -54,7 +54,7 @@ export function OfficialAccountListItem({
           <div
             className={cn(
               "truncate font-medium text-[color:var(--text-primary)]",
-              dense ? "text-[14px]" : "text-[15px]",
+              dense ? "text-[length:var(--text-body)]" : "text-[length:var(--text-base)]",
             )}
           >
             {stripBidiControl(account.name)}
@@ -62,14 +62,14 @@ export function OfficialAccountListItem({
           {account.isVerified ? (
             <BadgeCheck
               size={dense ? 12 : 14}
-              className="shrink-0 text-[#2f7cf6]"
+              className="shrink-0 text-[color:var(--state-info-text)]"
             />
           ) : null}
         </div>
         <div
           className={cn(
             "flex items-center gap-1.5 text-[color:var(--text-muted)]",
-            dense ? "mt-0.5 text-[11px]" : "mt-1 text-[11px]",
+            dense ? "mt-0.5 text-[length:var(--text-eyebrow)]" : "mt-1 text-[length:var(--text-eyebrow)]",
           )}
         >
           <Radio size={dense ? 10 : 12} className="shrink-0" />
@@ -86,7 +86,7 @@ export function OfficialAccountListItem({
           ) : null}
         </div>
         {dense ? (
-          <div className="mt-1 truncate text-[11px] text-[color:var(--text-dim)]">
+          <div className="mt-1 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
             @{stripBidiControl(account.handle)}
           </div>
         ) : (

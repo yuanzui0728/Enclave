@@ -1140,7 +1140,7 @@ export function DesktopSearchWorkspace({
               placeholder={t(msg`搜索聊天记录、联系人、收藏和朋友圈`)}
               className={cn(
                 "w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] pr-20 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow,height,font-size,padding] placeholder:text-[color:var(--text-dim)] focus:border-[color-mix(in_srgb,var(--brand-primary)_40%,transparent)] focus:bg-white focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_8%,transparent)]",
-                hasKeyword ? "h-9 pl-10 text-sm" : "h-11 pl-11 text-[15px]",
+                hasKeyword ? "h-9 pl-10 text-sm" : "h-11 pl-11 text-[length:var(--text-base)]",
               )}
             />
             {searchText ? (
@@ -1184,7 +1184,7 @@ export function DesktopSearchWorkspace({
                     handleSelectCategory(item.id, { focusInput: true })
                   }
                   className={cn(
-                    "inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[13px] transition",
+                    "inline-flex shrink-0 items-center gap-1 rounded-md px-2.5 py-1 text-[length:var(--text-caption)] transition",
                     desktopSearchChipFocusClassName,
                     activeCategory === item.id
                       ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] font-medium text-[color:var(--brand-primary)]"
@@ -1195,7 +1195,7 @@ export function DesktopSearchWorkspace({
                   {countLabel ? (
                     <span
                       className={cn(
-                        "text-[11px]",
+                        "text-[length:var(--text-eyebrow)]",
                         activeCategory === item.id
                           ? "text-[color:var(--brand-primary)]"
                           : "text-[color:var(--text-muted)]",
@@ -1583,11 +1583,11 @@ function DesktopSearchLandingPanel({
     <section className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-baseline gap-2">
-          <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {title}
           </div>
           {countLabel ? (
-            <div className="text-[11px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {countLabel}
             </div>
           ) : null}
@@ -1616,8 +1616,8 @@ function DesktopSearchActionButton({
     tone === "brand"
       ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
       : tone === "danger"
-        ? "border-[rgba(225,29,72,0.10)] bg-[rgba(225,29,72,0.06)] text-[#be123c] hover:bg-[rgba(225,29,72,0.10)]"
-        : "border-[rgba(15,23,42,0.06)] bg-white text-[color:var(--text-muted)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]";
+        ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)] hover:bg-[color:var(--state-danger-bg)]"
+        : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]";
 
   return (
     <button
@@ -1625,7 +1625,7 @@ function DesktopSearchActionButton({
       onClick={onClick}
       tabIndex={priority === "secondary" ? -1 : undefined}
       className={cn(
-        "inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[11px] transition",
+        "inline-flex items-center justify-center rounded-full border px-2.5 py-1 text-[length:var(--text-eyebrow)] transition",
         desktopSearchChipFocusClassName,
         toneClassName,
         className,
@@ -1649,18 +1649,18 @@ function DesktopSearchOpenCue({
 }) {
   const toneClassName =
     tone === "gold"
-      ? "border-[rgba(180,132,23,0.14)] bg-[rgba(180,132,23,0.08)] text-[#9a6b12] group-hover:bg-[rgba(180,132,23,0.12)] group-focus-visible:bg-[rgba(180,132,23,0.12)]"
+      ? "border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)] group-hover:bg-[color:var(--state-warning-bg)] group-focus-visible:bg-[color:var(--state-warning-bg)]"
       : tone === "teal"
-        ? "border-[rgba(15,118,110,0.16)] bg-[rgba(15,118,110,0.08)] text-[#226448] group-hover:bg-[rgba(15,118,110,0.12)] group-focus-visible:bg-[rgba(15,118,110,0.12)]"
+        ? "border-[rgba(15,118,110,0.16)] bg-[rgba(15,118,110,0.08)] text-[color:var(--state-success-text)] group-hover:bg-[rgba(15,118,110,0.12)] group-focus-visible:bg-[rgba(15,118,110,0.12)]"
         : tone === "olive"
-          ? "border-[rgba(134,181,96,0.18)] bg-[rgba(134,181,96,0.10)] text-[#587d38] group-hover:bg-[rgba(134,181,96,0.14)] group-focus-visible:bg-[rgba(134,181,96,0.14)]"
+          ? "border-[color:var(--state-success-bg)] bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)] group-hover:bg-[color:var(--state-success-bg)] group-focus-visible:bg-[color:var(--state-success-bg)]"
           : "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)] group-hover:bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] group-focus-visible:bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]";
 
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1 rounded-full border transition-[transform,background-color,border-color,color] group-hover:translate-x-0.5 group-focus-visible:translate-x-0.5",
-        compact ? "px-2 py-1 text-[10px]" : "px-2.5 py-1 text-[11px]",
+        compact ? "px-2 py-1 text-[10px]" : "px-2.5 py-1 text-[length:var(--text-eyebrow)]",
         toneClassName,
         className,
       )}
@@ -1706,13 +1706,13 @@ function DesktopSearchStatusCard({
   const t = useRuntimeTranslator();
   const toneClassName =
     status === "error"
-      ? "border-[rgba(225,29,72,0.14)] bg-[rgba(225,29,72,0.06)]"
+      ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)]"
       : status === "empty"
         ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
         : "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]";
   const badgeClassName =
     status === "error"
-      ? "bg-white text-[#be123c]"
+      ? "bg-white text-[color:var(--state-danger-text)]"
       : status === "empty"
         ? "bg-white text-[color:var(--text-muted)]"
       : status === "pending"
@@ -1739,7 +1739,7 @@ function DesktopSearchStatusCard({
           {badgeLabel ?? statusLabel}
         </div>
       </div>
-      <div className="mt-2 rounded-[12px] bg-white px-3 py-2.5 text-xs leading-6 text-[color:var(--text-secondary)]">
+      <div className="mt-2 rounded-[var(--radius-sm)] bg-white px-3 py-2.5 text-xs leading-6 text-[color:var(--text-secondary)]">
         {description}
       </div>
       {action ? <div className="mt-3 flex items-center justify-end">{action}</div> : null}
@@ -1764,19 +1764,19 @@ function DesktopSearchScopeCard({
   const t = useRuntimeTranslator();
   const iconToneClassName =
     category === "favorites"
-      ? "bg-[rgba(180,132,23,0.12)] text-[color:var(--brand-primary)]"
+      ? "bg-[color:var(--state-warning-bg)] text-[color:var(--brand-primary)]"
       : category === "moments"
-        ? "bg-[rgba(134,181,96,0.14)] text-[#5b7f3d]"
+        ? "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]"
         : category === "feed"
-          ? "bg-[rgba(15,23,42,0.08)] text-[#3c6a53]"
-          : "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[#15803d]";
+          ? "bg-[color:var(--border-subtle)] text-[color:var(--state-success-text)]"
+          : "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--state-success-text)]";
 
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
-        "group flex items-center gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-left transition hover:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]",
+        "group flex items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-left transition hover:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]",
         desktopSearchCardFocusClassName,
       )}
     >
@@ -1892,7 +1892,7 @@ function DesktopSearchContextBar({
                 type="button"
                 onClick={() => onSelectSection?.(item.category)}
                 className={cn(
-                  "inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[11px] transition",
+                  "inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-0.5 text-[length:var(--text-eyebrow)] transition",
                   desktopSearchChipFocusClassName,
                   activeSection === item.category
                     ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] font-medium text-[color:var(--brand-primary)]"
@@ -1934,10 +1934,10 @@ function DesktopSearchDrilldownBanner({
   const getCategoryTitle = useSearchCategoryTitle();
   const categoryTitle = getCategoryTitle(category);
   return (
-    <section className="rounded-[18px] border border-[#dce9dd] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_10%,transparent),color-mix(in_srgb,var(--brand-primary)_4%,transparent)_40%,white)] p-4">
+    <section className="rounded-[18px] border border-[color:var(--state-success-bg)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand-primary)_10%,transparent),color-mix(in_srgb,var(--brand-primary)_4%,transparent)_40%,white)] p-4">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-dim)]">
+          <div className="flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
             <span className="rounded-full bg-white px-2.5 py-1">{t(msg`全部结果`)}</span>
             <ChevronRight size={12} />
             <span className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] px-2.5 py-1 text-[color:var(--brand-primary)]">
@@ -1985,7 +1985,7 @@ function DesktopSearchResultsPanel({
     <section
       ref={panelRef}
       className={cn(
-        "scroll-mt-36 rounded-[20px] border bg-[color:var(--surface-console)] p-4 transition-[border-color,box-shadow,transform]",
+        "scroll-mt-36 rounded-[var(--radius-lg)] border bg-[color:var(--surface-console)] p-4 transition-[border-color,box-shadow,transform]",
         highlighted
           ? "border-[color-mix(in_srgb,var(--brand-primary)_24%,transparent)] shadow-[0_20px_44px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
           : "border-[color:var(--border-faint)]",
@@ -2151,7 +2151,7 @@ function DesktopSearchSubsectionPanel({
   title: string;
 }) {
   return (
-    <section className="rounded-[18px] border border-[#dfe7dd] bg-[linear-gradient(180deg,#fbfdfb,white)] px-4 py-4">
+    <section className="rounded-[18px] border border-[color:var(--state-success-bg)] bg-[linear-gradient(180deg,#fbfdfb,white)] px-4 py-4">
       <div className="text-xs font-medium text-[color:var(--text-muted)]">
         {title}
       </div>
@@ -2262,16 +2262,16 @@ function DesktopSearchFeatureCard({
   const t = useRuntimeTranslator();
   const toneClassName =
     category === "contacts"
-      ? "border-[#d9e7d9] bg-[linear-gradient(180deg,#f9fcfa,white)]"
+      ? "border-[color:var(--state-success-bg)] bg-[linear-gradient(180deg,#f9fcfa,white)]"
       : category === "favorites"
-        ? "border-[#efe2bf] bg-[linear-gradient(180deg,#fffdf7,white)]"
-        : "border-[#d8e7df] bg-[linear-gradient(180deg,#f7fbf9,white)]";
+        ? "border-[color:var(--state-warning-bg)] bg-[linear-gradient(180deg,#fffdf7,white)]"
+        : "border-[color:var(--state-success-bg)] bg-[linear-gradient(180deg,#f7fbf9,white)]";
   const badgeClassName =
     category === "contacts"
-      ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[#1d6a37]"
+      ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--state-success-text)]"
       : category === "favorites"
-        ? "bg-[rgba(180,132,23,0.10)] text-[#9a6b12]"
-        : "bg-[rgba(15,118,110,0.10)] text-[#226448]";
+        ? "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
+        : "bg-[rgba(15,118,110,0.10)] text-[color:var(--state-success-text)]";
   const actionLabel =
     category === "contacts"
       ? t(msg`查看资料与聊天入口`)
@@ -2289,7 +2289,7 @@ function DesktopSearchFeatureCard({
       onFocus={() => onSelect(item.id)}
       onMouseEnter={() => onSelect(item.id)}
       className={cn(
-        "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
+        "group overflow-hidden rounded-[var(--radius-lg)] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(15,23,42,0.08)]",
         desktopSearchCardFocusClassName,
         selected ? desktopSearchSelectedCardClassName : null,
         toneClassName,
@@ -2323,9 +2323,9 @@ function DesktopSearchFeatureCard({
 
       <div
         className={cn(
-          "mt-4 rounded-[16px] px-4 py-4",
+          "mt-4 rounded-[var(--radius-md)] px-4 py-4",
           category === "favorites"
-            ? "bg-[rgba(255,247,230,0.72)]"
+            ? "bg-[color:var(--state-warning-bg)]"
             : "bg-[color:var(--surface-console)]",
         )}
       >
@@ -2385,14 +2385,14 @@ function DesktopQuickLinkRow({
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+          <span className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {item.title}
           </span>
           <span className="shrink-0 text-[10px] text-[color:var(--text-muted)]">
             {item.badge}
           </span>
         </div>
-        <div className="truncate text-[11px] text-[color:var(--text-muted)]">
+        <div className="truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
           {item.meta}
         </div>
       </div>
@@ -2421,7 +2421,7 @@ function DesktopSearchHistoryRow({
         )}
       >
         <Clock3 size={13} className="shrink-0 text-[color:var(--text-dim)]" />
-        <span className="truncate text-[13px] text-[color:var(--text-primary)]">
+        <span className="truncate text-[length:var(--text-caption)] text-[color:var(--text-primary)]">
           {keyword}
         </span>
       </button>
@@ -2429,7 +2429,7 @@ function DesktopSearchHistoryRow({
         type="button"
         onClick={onRemove}
         aria-label={t(msg`移除`)}
-        className="shrink-0 rounded p-1 text-[color:var(--text-dim)] opacity-0 transition hover:bg-white hover:text-[#be123c] group-hover/row:opacity-100 focus:opacity-100"
+        className="shrink-0 rounded p-1 text-[color:var(--text-dim)] opacity-0 transition hover:bg-white hover:text-[color:var(--state-danger-text)] group-hover/row:opacity-100 focus:opacity-100"
       >
         <X size={14} />
       </button>
@@ -2461,7 +2461,7 @@ function DesktopSearchMessageGroupCard({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-[20px] border border-[#dde8dc] bg-[linear-gradient(180deg,#fbfdfb,white)] shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow]",
+        "overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--state-success-bg)] bg-[linear-gradient(180deg,#fbfdfb,white)] shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow]",
         isHeaderSelected || hasSelectedMessage
           ? desktopSearchSelectedCardClassName
           : null,
@@ -2509,7 +2509,7 @@ function DesktopSearchMessageGroupCard({
         </div>
       </button>
 
-      <div className="border-t border-[rgba(15,23,42,0.06)] bg-[rgba(248,251,249,0.84)] px-4 py-3">
+      <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--state-success-bg)] px-4 py-3">
         <div className="space-y-2">
           {group.messages.map((item) => (
             <button
@@ -2524,12 +2524,12 @@ function DesktopSearchMessageGroupCard({
               onFocus={() => onSelect(item.id)}
               onMouseEnter={() => onSelect(item.id)}
               className={cn(
-                "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
+                "group flex w-full items-start gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
                 desktopSearchRowFocusClassName,
                 selectedResultId === item.id ? desktopSearchSelectedRowClassName : null,
               )}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[#15803d]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--state-success-text)]">
                 <MessageSquareText size={15} />
               </div>
               <div className="min-w-0 flex-1">
@@ -2573,7 +2573,7 @@ function DesktopSearchOfficialAccountGroupCard({
   return (
     <section
       className={cn(
-        "overflow-hidden rounded-[20px] border border-[#dde8dc] bg-[linear-gradient(180deg,#fbfdfb,white)] shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow]",
+        "overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--state-success-bg)] bg-[linear-gradient(180deg,#fbfdfb,white)] shadow-[0_10px_24px_rgba(15,23,42,0.03)] transition-[border-color,box-shadow]",
         isHeaderSelected || hasSelectedArticle
           ? desktopSearchSelectedCardClassName
           : null,
@@ -2624,7 +2624,7 @@ function DesktopSearchOfficialAccountGroupCard({
         </div>
       </button>
 
-      <div className="border-t border-[rgba(15,23,42,0.06)] bg-[rgba(248,251,249,0.84)] px-4 py-3">
+      <div className="border-t border-[color:var(--border-faint)] bg-[color:var(--state-success-bg)] px-4 py-3">
         <div className="space-y-2">
           {group.articles.map((item) => (
             <button
@@ -2639,12 +2639,12 @@ function DesktopSearchOfficialAccountGroupCard({
               onFocus={() => onSelect(item.id)}
               onMouseEnter={() => onSelect(item.id)}
               className={cn(
-                "group flex w-full items-start gap-3 rounded-[14px] border border-[rgba(15,23,42,0.04)] bg-white px-3 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
+                "group flex w-full items-start gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-3 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
                 desktopSearchRowFocusClassName,
                 selectedResultId === item.id ? desktopSearchSelectedRowClassName : null,
               )}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[#15803d]">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--state-success-text)]">
                 <Newspaper size={15} />
               </div>
               <div className="min-w-0 flex-1">
@@ -2685,12 +2685,12 @@ function DesktopSearchContentCard({
   const t = useRuntimeTranslator();
   const toneClassName =
     item.category === "moments"
-      ? "border-[#dce8d7] bg-[linear-gradient(180deg,#f9fcf7,white)]"
-      : "border-[#dce5de] bg-[linear-gradient(180deg,#f6faf8,white)]";
+      ? "border-[color:var(--state-success-bg)] bg-[linear-gradient(180deg,#f9fcf7,white)]"
+      : "border-[color:var(--state-success-bg)] bg-[linear-gradient(180deg,#f6faf8,white)]";
   const badgeClassName =
     item.category === "moments"
-      ? "bg-[rgba(134,181,96,0.12)] text-[#587d38]"
-      : "bg-[rgba(15,23,42,0.08)] text-[#3c6a53]";
+      ? "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]"
+      : "bg-[color:var(--border-subtle)] text-[color:var(--state-success-text)]";
   const actionLabel =
     item.category === "moments" ? t(msg`打开朋友圈动态`) : t(msg`打开广场动态`);
 
@@ -2704,7 +2704,7 @@ function DesktopSearchContentCard({
       onFocus={() => onSelect(item.id)}
       onMouseEnter={() => onSelect(item.id)}
       className={cn(
-        "group overflow-hidden rounded-[20px] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.08)]",
+        "group overflow-hidden rounded-[var(--radius-lg)] border p-5 text-left transition hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(15,23,42,0.08)]",
         desktopSearchCardFocusClassName,
         selected ? desktopSearchSelectedCardClassName : null,
         toneClassName,
@@ -2736,7 +2736,7 @@ function DesktopSearchContentCard({
         </div>
       </div>
 
-      <div className="mt-4 rounded-[16px] bg-[color:var(--surface-console)] px-4 py-4">
+      <div className="mt-4 rounded-[var(--radius-md)] bg-[color:var(--surface-console)] px-4 py-4">
         <div className="line-clamp-5 text-sm leading-7 text-[color:var(--text-secondary)]">
           {renderHighlightedText(item.description, keyword)}
         </div>
@@ -2804,7 +2804,7 @@ function DesktopSearchResultRow({
       onFocus={() => onSelect(item.id)}
       onMouseEnter={() => onSelect(item.id)}
       className={cn(
-        "group flex w-full items-center gap-3 rounded-[16px] border border-[rgba(15,23,42,0.04)] bg-white px-3.5 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
+        "group flex w-full items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-3.5 py-3 text-left transition hover:bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)] hover:shadow-[0_10px_24px_rgba(15,23,42,0.04)]",
         desktopSearchRowFocusClassName,
         selected ? desktopSearchSelectedRowClassName : null,
       )}

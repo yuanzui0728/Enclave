@@ -141,9 +141,9 @@ export function MobileMiniProgramsWorkspace({
               value={searchText}
               onChange={(event) => onSearchTextChange(event.target.value)}
               placeholder={t(msg`搜索小程序、服务或场景`)}
-              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+              // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。
-              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[16px] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/22 focus:bg-[color:var(--surface-card)]"
+              className="h-8.5 w-full rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] pl-9 pr-11 text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/22 focus:bg-[color:var(--surface-card)]"
             />
             {searchText ? (
               <button
@@ -179,7 +179,7 @@ export function MobileMiniProgramsWorkspace({
       <div className="space-y-1.5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-2.5">
         {successNotice ? (
           <InlineNotice
-            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             tone={noticeTone}
           >
             {noticeTone === "info" &&
@@ -192,7 +192,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onNoticeAction}
-                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionLabel}
                     </button>
@@ -201,7 +201,7 @@ export function MobileMiniProgramsWorkspace({
                     <button
                       type="button"
                       onClick={onStatusBack}
-                      className="shrink-0 rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                     >
                       {statusBackLabel}
                     </button>
@@ -216,7 +216,7 @@ export function MobileMiniProgramsWorkspace({
 
         <section
           className={cn(
-            "relative overflow-hidden rounded-[16px] p-3.5 shadow-none",
+            "relative overflow-hidden rounded-[var(--radius-md)] p-3.5 shadow-none",
             selectedTone.heroCardClassName,
           )}
         >
@@ -227,13 +227,13 @@ export function MobileMiniProgramsWorkspace({
           <div className="relative">
             <div className="flex items-start justify-between gap-3.5">
               <div className="min-w-0">
-                <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-2 py-0.5 text-[11px] font-medium tracking-[0.12em] text-white/82">
+                <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-white/82">
                   {selectedMiniProgram.badge}
                 </div>
-                <div className="mt-2.5 text-[22px] font-semibold leading-tight text-white">
+                <div className="mt-2.5 text-[length:var(--text-section)] font-semibold leading-tight text-white">
                   {selectedMiniProgram.name}
                 </div>
-                <div className="mt-1 text-[12px] leading-[1.35rem] text-white/82">
+                <div className="mt-1 text-[length:var(--text-caption)] leading-[1.35rem] text-white/82">
                   {selectedMiniProgram.slogan}
                 </div>
               </div>
@@ -253,7 +253,7 @@ export function MobileMiniProgramsWorkspace({
               {selectedMiniProgram.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/18 bg-white/10 px-2 py-0.5 text-[11px] text-white/82"
+                  className="rounded-full border border-white/18 bg-white/10 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-white/82"
                 >
                   {tag}
                 </span>
@@ -265,7 +265,7 @@ export function MobileMiniProgramsWorkspace({
                 variant="secondary"
                 size="lg"
                 onClick={() => onOpenMiniProgram(selectedMiniProgram.id)}
-                className="h-8.5 flex-1 border-white/18 bg-[color:var(--surface-card)] px-3 text-[11px] text-[color:var(--text-primary)] hover:bg-white/92"
+                className="h-8.5 flex-1 border-white/18 bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)] hover:bg-white/92"
               >
                 {t(msg`打开小程序`)}
               </Button>
@@ -273,7 +273,7 @@ export function MobileMiniProgramsWorkspace({
                 variant="secondary"
                 size="lg"
                 onClick={() => onTogglePinnedMiniProgram(selectedMiniProgram.id)}
-                className="h-8.5 border-white/18 bg-white/10 px-3 text-[11px] text-white hover:bg-white/18"
+                className="h-8.5 border-white/18 bg-white/10 px-3 text-[length:var(--text-eyebrow)] text-white hover:bg-white/18"
               >
                 {pinnedMiniProgramIds.includes(selectedMiniProgram.id)
                   ? t(msg`已加入`)
@@ -312,10 +312,10 @@ export function MobileMiniProgramsWorkspace({
         <AppSection className="space-y-2 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`最近使用`)}
               </div>
-              <div className="mt-0.5 text-[11px] leading-4 text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-4 text-[color:var(--text-muted)]">
                 {t(msg`模拟微信里最近打开的小程序快捷入口。`)}
               </div>
             </div>
@@ -346,10 +346,10 @@ export function MobileMiniProgramsWorkspace({
         <AppSection className="space-y-2 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`我的小程序`)}
               </div>
-              <div className="mt-0.5 text-[11px] leading-4 text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-4 text-[color:var(--text-muted)]">
                 {t(msg`这里承接微信式固定常用入口。`)}
               </div>
             </div>
@@ -401,7 +401,7 @@ export function MobileMiniProgramsWorkspace({
         </AppSection>
 
         <AppSection className="space-y-2 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
-          <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {t(msg`今日推荐`)}
           </div>
           <div className="space-y-2">
@@ -411,24 +411,24 @@ export function MobileMiniProgramsWorkspace({
                 <div
                   key={campaign.id}
                   className={cn(
-                    "rounded-[16px] border px-3.5 py-3 shadow-none",
+                    "rounded-[var(--radius-md)] border px-3.5 py-3 shadow-none",
                     tone.mutedPanelClassName,
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+                    <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                       {campaign.title}
                     </div>
                     <div
                       className={cn(
-                        "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                        "rounded-full border px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium",
                         tone.badgeClassName,
                       )}
                     >
                       {campaign.meta}
                     </div>
                   </div>
-                  <div className="mt-1.5 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+                  <div className="mt-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
                     {campaign.description}
                   </div>
                 </div>
@@ -440,10 +440,10 @@ export function MobileMiniProgramsWorkspace({
         <AppSection className="space-y-2 border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] shadow-none">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`全部小程序`)}
               </div>
-              <div className="mt-0.5 text-[11px] leading-4 text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-4 text-[color:var(--text-muted)]">
                 {searchText
                   ? t(msg`搜索“${searchText.trim()}”命中 ${visibleMiniPrograms.length} 个结果。`)
                   : t(msg`按分类浏览当前可用的小程序目录。`)}
@@ -516,10 +516,10 @@ function MobileFeatureComingSoonOverlay({ onBack }: { onBack: () => void }) {
         <ArrowLeft size={18} />
       </Button>
       <div className="mx-6 max-w-[280px] rounded-2xl border border-[color:var(--border-faint)] bg-white/98 px-6 py-6 text-center shadow-[var(--shadow-card)]">
-        <div className="text-[17px] font-semibold text-[color:var(--text-primary)]">
+        <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
           {t(msg`功能开发中`)}
         </div>
-        <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
           {t(msg`敬请期待`)}
         </div>
         <Button
@@ -538,11 +538,11 @@ function MobileFeatureComingSoonOverlay({ onBack }: { onBack: () => void }) {
 
 function MobileMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[16px] border border-white/18 bg-white/12 px-2.5 py-2.25 backdrop-blur-sm">
-      <div className="text-[11px] uppercase tracking-[0.12em] text-white/68">
+    <div className="rounded-[var(--radius-md)] border border-white/18 bg-white/12 px-2.5 py-2.25 backdrop-blur-sm">
+      <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.12em] text-white/68">
         {label}
       </div>
-      <div className="mt-1 text-[12px] font-medium leading-5 text-white">
+      <div className="mt-1 text-[length:var(--text-caption)] font-medium leading-5 text-white">
         {value}
       </div>
     </div>
@@ -561,14 +561,14 @@ function MobileMiniProgramsStatusCard({
   action?: ReactNode;
 }) {
   return (
-    <section className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-4 text-center shadow-none">
+    <section className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3.5 py-4 text-center shadow-none">
       <div className="mx-auto inline-flex rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
         {badge}
       </div>
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
@@ -592,7 +592,7 @@ function MiniProgramTile({
       type="button"
       onClick={onClick}
       className={cn(
-        "rounded-[16px] border px-2.5 py-2.5 text-left transition",
+        "rounded-[var(--radius-md)] border px-2.5 py-2.5 text-left transition",
         active
           ? "border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-card)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
@@ -601,7 +601,7 @@ function MiniProgramTile({
       <div className="flex items-center gap-2">
         <MiniProgramGlyph miniProgram={miniProgram} size="sm" />
         <div className="min-w-0">
-          <div className="truncate text-[12px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {miniProgram.name}
           </div>
           <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-dim)]">
@@ -654,7 +654,7 @@ function MiniProgramListCard({
       onClick={handleSelect}
       onKeyDown={handleKeyDown}
       className={cn(
-        "w-full cursor-pointer rounded-[16px] border px-3 py-3 text-left shadow-none transition",
+        "w-full cursor-pointer rounded-[var(--radius-md)] border px-3 py-3 text-left shadow-none transition",
         active
           ? "border-[color:var(--brand-primary)]/18 bg-[color:var(--surface-card)]"
           : "border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)]",
@@ -664,19 +664,19 @@ function MiniProgramListCard({
         <MiniProgramGlyph miniProgram={miniProgram} size="md" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
               {miniProgram.name}
             </div>
             <div
               className={cn(
-                "rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                "rounded-full border px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium",
                 tone.badgeClassName,
               )}
             >
               {miniProgram.deckLabel}
             </div>
           </div>
-          <div className="mt-1 text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+          <div className="mt-1 text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
             {miniProgram.description}
           </div>
           <div className="mt-1 text-[10px] leading-4 text-[color:var(--text-dim)]">

@@ -357,7 +357,7 @@ export function LiveCompanionPage() {
         title={t(msg`直播伴侣`)}
         subtitle={t(msg`把开播前准备、状态检查和参考内容收在一起。`)}
       toolbar={
-        <div className="rounded-full border border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/7 px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+        <div className="rounded-full border border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/7 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
           {activeSession ? t(msg`直播中`) : t(msg`待开播`)}
         </div>
       }
@@ -365,7 +365,7 @@ export function LiveCompanionPage() {
       sidebar={
         <div className="flex h-full min-h-0 flex-col">
           <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`直播伴侣`)}
             </div>
             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
@@ -396,7 +396,7 @@ export function LiveCompanionPage() {
                 value={ownerName ?? t(msg`世界主人`)}
               />
 
-              <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-section)]">
+              <div className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-section)]">
                 <div className="text-xs font-medium text-[color:var(--text-muted)]">
                   {t(msg`开播检查清单`)}
                 </div>
@@ -404,7 +404,7 @@ export function LiveCompanionPage() {
                   {preflightChecks.map((item) => (
                     <div
                       key={item.label}
-                      className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5"
+                      className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5"
                     >
                       <div className="text-xs text-[color:var(--text-secondary)]">
                         {item.label}
@@ -414,7 +414,7 @@ export function LiveCompanionPage() {
                           "rounded-full px-2.5 py-1 text-[10px] font-medium",
                           item.passed
                             ? "bg-[color:var(--brand-primary)]/7 text-[color:var(--brand-primary)]"
-                            : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
+                            : "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
                         )}
                       >
                         {item.passed ? t(msg`通过`) : t(msg`待处理`)}
@@ -475,7 +475,7 @@ export function LiveCompanionPage() {
         ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-          <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
               <RadioTower
                 size={16}
@@ -673,7 +673,7 @@ export function LiveCompanionPage() {
           </section>
 
           <section className="space-y-5">
-            <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+            <div className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <BadgeCheck
                   size={16}
@@ -692,10 +692,10 @@ export function LiveCompanionPage() {
                     </div>
                     <div
                       className={cn(
-                        "rounded-md px-2.5 py-1 text-[11px] font-medium",
+                        "rounded-md px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium",
                         item.passed
                           ? "bg-[color:var(--brand-primary)]/7 text-[color:var(--brand-primary)]"
-                          : "bg-[rgba(239,68,68,0.10)] text-[color:var(--state-danger-text)]",
+                          : "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
                       )}
                     >
                       {item.passed ? t(msg`通过`) : t(msg`待处理`)}
@@ -705,7 +705,7 @@ export function LiveCompanionPage() {
               </div>
             </div>
 
-            <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+            <div className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 {t(msg`当前实例状态`)}
               </div>
@@ -754,7 +754,7 @@ export function LiveCompanionPage() {
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-          <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -812,7 +812,7 @@ export function LiveCompanionPage() {
             </div>
           </section>
 
-          <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -873,7 +873,7 @@ export function LiveCompanionPage() {
                 liveHistory.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
+                    className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -881,9 +881,9 @@ export function LiveCompanionPage() {
                       </div>
                       <span
                         className={cn(
-                          "rounded-md px-2.5 py-1 text-[11px] font-medium",
+                          "rounded-md px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium",
                           item.status === "live"
-                            ? "bg-[rgba(239,68,68,0.10)] text-[#b91c1c]"
+                            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
                             : "bg-[color:var(--brand-primary)]/7 text-[color:var(--brand-primary)]",
                         )}
                       >
@@ -895,7 +895,7 @@ export function LiveCompanionPage() {
                     <div className="mt-2 text-xs leading-5 text-[color:var(--text-secondary)]">
                       {item.topic || t(msg`未填写直播主题`)}
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-[color:var(--text-muted)]">
+                    <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                       <span>{t(msg`开播 ${formatTimestamp(item.startedAt)}`)}</span>
                       <span>{t(msg`模式 ${resolveModeLabel(t, item.mode)}`)}</span>
                       <span>{t(msg`质量 ${resolveQualityLabel(t, item.quality)}`)}</span>
@@ -926,7 +926,7 @@ export function LiveCompanionPage() {
                   </div>
                 ))
               ) : (
-                <div className="rounded-[20px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
+                <div className="rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5 text-sm leading-7 text-[color:var(--text-secondary)]">
                   {t(msg`还没有直播记录。先准备一场直播并切到"直播中"，这里就会开始积累桌面伴侣历史。`)}
                 </div>
               )}
@@ -1080,7 +1080,7 @@ function ToggleCard({
       aria-pressed={checked}
       onClick={() => onChange(!checked)}
       className={cn(
-        "rounded-[20px] border px-4 py-4 text-left transition",
+        "rounded-[var(--radius-lg)] border px-4 py-4 text-left transition",
         checked
           ? "border-[color:var(--brand-primary)]/14 bg-[color:var(--brand-primary)]/7"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
@@ -1092,10 +1092,10 @@ function ToggleCard({
         </div>
         <span
           className={cn(
-            "rounded-md px-2.5 py-1 text-[11px] font-medium",
+            "rounded-md px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium",
             checked
               ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
-              : "bg-[rgba(60, 40, 110, 0.06)] text-[color:var(--text-secondary)]",
+              : "bg-[color:var(--border-faint)] text-[color:var(--text-secondary)]",
           )}
         >
           {checked ? t(msg`开启`) : t(msg`关闭`)}
@@ -1144,7 +1144,7 @@ function PostReferenceCard({
   const hasTitle = Boolean(post.title?.trim());
   const showBody = Boolean(cleanText && cleanText !== post.title);
   return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+    <div className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
       <div className="flex items-start gap-3">
         <AvatarChip
           name={post.authorName}
@@ -1183,7 +1183,7 @@ function PostReferenceCard({
               <Sparkles size={14} />
               {t(msg`带入直播准备`)}
             </Button>
-            <span className="inline-flex items-center rounded-md border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)]">
+            <span className="inline-flex items-center rounded-md border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {t(msg`${post.commentCount} 评论 · ${post.likeCount} 赞`)}
             </span>
           </div>
@@ -1206,7 +1206,7 @@ function StatusRow({ label, value }: { label: string; value: string }) {
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-section)]">
+    <div className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-section)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium leading-6 text-[color:var(--text-primary)]">
         {value}

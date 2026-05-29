@@ -122,7 +122,7 @@ export function NeighborFarmModal({
                   <div className="text-sm font-semibold">
                     {detailQuery.data.characterName} {t(msg`的农场`)}
                   </div>
-                  <div className="text-[11px] text-stone-500">
+                  <div className="text-[length:var(--text-eyebrow)] text-stone-500">
                     Lv.{detailQuery.data.level} · {t(msg`好感`)} {detailQuery.data.intimacyLevel} ·{" "}
                     {translateExpertDomains(
                       t,
@@ -221,7 +221,7 @@ export function NeighborFarmModal({
                   );
                 })}
               </div>
-              <p className="text-center text-[11px] text-stone-400">
+              <p className="text-center text-[length:var(--text-eyebrow)] text-stone-400">
                 {t(msg`点击成熟（金边）田块即可顺走一份。每天最多 10 次，对方对你的好感度会降。`)}
               </p>
 
@@ -230,7 +230,7 @@ export function NeighborFarmModal({
                   <h3 className="mb-1 text-xs font-medium text-stone-500">
                     {t(msg`近期动向`)}
                   </h3>
-                  <ul className="space-y-1 text-[11px] text-stone-500">
+                  <ul className="space-y-1 text-[length:var(--text-eyebrow)] text-stone-500">
                     {detailQuery.data.recentEvents.slice(0, 5).map((event) => (
                       <li key={event.id} className="rounded-md bg-stone-50 px-2 py-1">
                         <span className="text-stone-400 mr-1">

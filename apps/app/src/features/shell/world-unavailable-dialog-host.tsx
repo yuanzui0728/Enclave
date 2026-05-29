@@ -76,9 +76,9 @@ export function WorldUnavailableDialogHost() {
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="w-full max-w-md rounded-[24px] bg-[color:var(--surface-card)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+        className="w-full max-w-md rounded-[var(--radius-xl)] bg-[color:var(--surface-card)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
       >
-        <div className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
+        <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
           {t(msg`世界状态`)}
         </div>
         <h2
@@ -99,7 +99,7 @@ export function WorldUnavailableDialogHost() {
             variant="primary"
             // 走查新一轮 R1：补 active:bg- 让移动 tap 有按压反馈（同 R3 修过的
             // profile-subscription 邀请「复制链接」/「联系开通」）。
-            className="w-full rounded-[16px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)] active:opacity-90"
+            className="w-full rounded-[var(--radius-md)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)] active:opacity-90"
             onClick={handleRelogin}
           >
             {t(msg`重新登录`)}

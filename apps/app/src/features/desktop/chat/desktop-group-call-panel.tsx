@@ -400,11 +400,11 @@ export function DesktopGroupCallPanel({
   };
 
   return (
-    <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] p-5 shadow-[var(--shadow-card)]">
-      <div className="flex min-w-0 flex-[1.08] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+    <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] p-5 shadow-[var(--shadow-card)]">
+      <div className="flex min-w-0 flex-[1.08] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
               {kind === "voice" ? <Mic size={13} /> : <Video size={13} />}
               {callKindLabel}
             </div>
@@ -415,7 +415,7 @@ export function DesktopGroupCallPanel({
                 size="wechat"
               />
               <div className="min-w-0">
-                <div className="truncate text-[22px] font-semibold text-[color:var(--text-primary)]">
+                <div className="truncate text-[length:var(--text-section)] font-semibold text-[color:var(--text-primary)]">
                   {groupName}
                 </div>
                 <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
@@ -537,7 +537,7 @@ export function DesktopGroupCallPanel({
             variant="secondary"
             onClick={handleEndCall}
             disabled={endNoticePending}
-            className="rounded-[10px] border-[rgba(220,38,38,0.14)] bg-[rgba(254,242,242,0.92)] text-[#d74b45] shadow-none hover:border-[rgba(220,38,38,0.2)] hover:bg-[rgba(254,226,226,0.96)]"
+            className="rounded-[10px] border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)] shadow-none hover:border-[color:var(--state-danger-bg)] hover:bg-[color:var(--state-danger-bg)]"
           >
             <PhoneOff size={16} />
             {endNoticePending ? t(msg`结束中...`) : t(msg`结束通话`)}
@@ -545,7 +545,7 @@ export function DesktopGroupCallPanel({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-[0.92] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+      <div className="flex min-w-0 flex-[0.92] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -555,7 +555,7 @@ export function DesktopGroupCallPanel({
               {t(msg`点击角色成员可切换为已加入或待加入，快速模拟群通话调度。`)}
             </div>
           </div>
-          <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+          <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
             {t(msg`${activeCount}/${members.length} 已加入`)}
           </div>
         </div>
@@ -592,7 +592,7 @@ export function DesktopGroupCallPanel({
                 // 留挂便于群里多个 user 成员（理论上可能）的边界一致。
                 aria-pressed={joined}
                 className={cn(
-                  "rounded-[12px] border px-4 py-4 text-left transition",
+                  "rounded-[var(--radius-sm)] border px-4 py-4 text-left transition",
                   joined
                     ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[var(--shadow-soft)]"
                     : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
@@ -632,13 +632,13 @@ export function DesktopGroupCallPanel({
                       "rounded-full px-2.5 py-1 text-[10px] font-medium",
                       joined
                         ? "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
-                        : "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]",
+                        : "bg-[color:var(--border-faint)] text-[color:var(--text-muted)]",
                     )}
                   >
                     {joined ? t(msg`已加入`) : t(msg`待加入`)}
                   </span>
                   {member.memberType === "character" ? (
-                    <span className="text-[11px] text-[color:var(--text-dim)]">
+                    <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                       {joined ? t(msg`点击设为待加入`) : t(msg`点击邀请加入`)}
                     </span>
                   ) : null}
@@ -674,7 +674,7 @@ function CallMetricCard({
 }) {
   return (
     <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]">
-      <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+      <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div className="mt-2 text-base font-medium text-[color:var(--text-primary)]">

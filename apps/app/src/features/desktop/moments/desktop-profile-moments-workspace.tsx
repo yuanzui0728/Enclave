@@ -166,7 +166,7 @@ export function DesktopProfileMomentsWorkspace({
       return (
         <LoadingBlock
           label={t(msg`正在加载我的朋友圈`)}
-          className="rounded-[20px] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
+          className="rounded-[var(--radius-lg)] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
         />
       );
     }
@@ -261,8 +261,8 @@ export function DesktopProfileMomentsWorkspace({
   const displayName = ownerName?.trim() || t(msg`世界主人`);
 
   return (
-    <div className="relative flex h-full min-h-0 bg-[rgba(244,247,246,0.98)]">
-      <section className="min-w-0 flex-1 bg-[rgba(245,248,247,0.96)]">
+    <div className="relative flex h-full min-h-0 bg-[color:var(--surface-section)]">
+      <section className="min-w-0 flex-1 bg-[color:var(--surface-section)]">
         <div className="flex h-full min-h-0 flex-col">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
             <div className="mx-auto flex w-full max-w-[760px] items-center justify-between gap-4">
@@ -274,7 +274,7 @@ export function DesktopProfileMomentsWorkspace({
               >
                 <ArrowLeft size={17} />
               </button>
-              <div className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
                 {t(msg`我的朋友圈`)}
               </div>
               <Button
@@ -358,7 +358,7 @@ export function DesktopProfileMomentsWorkspace({
             className="min-h-0 flex-1 overflow-auto"
           >
             <section
-              className="relative w-full bg-[rgba(245,248,247,0.96)]"
+              className="relative w-full bg-[color:var(--surface-section)]"
               style={{ height: 290 }}
             >
               <div

@@ -43,8 +43,8 @@ export function SubscriptionExpiredDialogHost() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 p-4 sm:items-center">
-      <div className="w-full max-w-md rounded-[24px] bg-[color:var(--surface-card)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
-        <div className="text-[11px] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
+      <div className="w-full max-w-md rounded-[var(--radius-xl)] bg-[color:var(--surface-card)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.18)]">
+        <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.26em] text-[color:var(--text-muted)]">
           {t(msg`AI 访问权限`)}
         </div>
         <h2 className="mt-3 text-2xl font-semibold text-[color:var(--text-primary)]">
@@ -80,7 +80,7 @@ export function SubscriptionExpiredDialogHost() {
           </Button>
           <Button
             variant="primary"
-            className="flex-1 rounded-[16px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+            className="flex-1 rounded-[var(--radius-md)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
             onClick={() => {
               closeDialog();
               void navigate({ to: "/profile/subscription" });

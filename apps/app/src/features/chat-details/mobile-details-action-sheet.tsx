@@ -164,7 +164,7 @@ export function MobileDetailsActionSheet({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-50 bg-[rgba(60, 40, 110, 0.14)]">
+    <div className="fixed inset-0 z-50 bg-[color:var(--border-strong)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -186,18 +186,18 @@ export function MobileDetailsActionSheet({
           <div className="h-1 w-9 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
 
-        <div className="overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
+        <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
           <div className="border-b border-[color:var(--border-subtle)] px-5 py-2.5 text-center">
             <div
               id={titleId}
-              className="text-[14px] font-medium text-[color:var(--text-primary)]"
+              className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]"
             >
               {title}
             </div>
             {description ? (
               <div
                 id={descriptionId}
-                className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-muted)]"
+                className="mt-0.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-muted)]"
               >
                 {description}
               </div>
@@ -212,15 +212,15 @@ export function MobileDetailsActionSheet({
               disabled={action.disabled}
               className={`flex min-h-[48px] w-full flex-col items-center justify-center px-5 py-2 text-center transition active:bg-[color:var(--surface-card-hover)] ${
                 index > 0 ? "border-t border-[color:var(--border-subtle)]" : ""
-              } ${action.danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]"} ${
+              } ${action.danger ? "text-[color:var(--state-danger-text)]" : "text-[color:var(--text-primary)]"} ${
                 action.disabled ? "opacity-45" : ""
               }`}
             >
-              <span className="text-[15px] leading-6">{action.label}</span>
+              <span className="text-[length:var(--text-base)] leading-6">{action.label}</span>
               {action.description ? (
                 <span
-                  className={`mt-0.5 text-[11px] leading-[18px] ${
-                    action.danger ? "text-[#e28a84]" : "text-[color:var(--text-muted)]"
+                  className={`mt-0.5 text-[length:var(--text-eyebrow)] leading-[18px] ${
+                    action.danger ? "text-[color:var(--state-danger-text)]" : "text-[color:var(--text-muted)]"
                   }`}
                 >
                   {action.description}
@@ -233,7 +233,7 @@ export function MobileDetailsActionSheet({
         <button
           type="button"
           onClick={onClose}
-          className="mt-2 flex h-10 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
+          className="mt-2 flex h-10 w-full items-center justify-center rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
         >
           {cancelLabel ?? t(msg`取消`)}
         </button>

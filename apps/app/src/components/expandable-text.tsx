@@ -69,7 +69,7 @@ export function ExpandableText({
           type="button"
           onClick={() => setExpanded((current) => !current)}
           className={cn(
-            "mt-1 text-[12px] font-medium text-[color:var(--brand-primary)] transition active:opacity-70",
+            "mt-1 text-[length:var(--text-caption)] font-medium text-[color:var(--brand-primary)] transition active:opacity-70",
             toggleClassName,
           )}
         >

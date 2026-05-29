@@ -1250,7 +1250,7 @@ export function ProfileMomentsPage() {
       >
         {pullState.offset || pullState.refreshing ? (
           <div
-            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[12px] text-[color:var(--text-muted)]"
+            className="pointer-events-none absolute left-0 right-0 z-10 flex items-center justify-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
             style={{ top: 0, height: `${pullState.offset || 60}px` }}
           >
             <span>
@@ -1281,7 +1281,7 @@ export function ProfileMomentsPage() {
                 // role="alert"（assertive 立即朗读），success/info 用 status（polite
                 // 待空隙）。和 R1 profile-feedback / favorites notice 一并补齐。
                 role={notice.tone === "danger" ? "alert" : "status"}
-                className="rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2 text-[12px] shadow-none"
+                className="rounded-[8px] border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 py-2 text-[length:var(--text-caption)] shadow-none"
               >
                 {/* 走查 R2：之前 mobile 分支只渲 notice.message，但点赞/删除失败
                     时 likeMutation/deleteMutation onError 已经把 actionLabel +
@@ -1296,7 +1296,7 @@ export function ProfileMomentsPage() {
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-eyebrow)]"
                       onClick={notice.action}
                     >
                       {notice.actionLabel}
@@ -1339,7 +1339,7 @@ export function ProfileMomentsPage() {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[12px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3.5 text-[length:var(--text-caption)]"
                     onClick={() => {
                       void momentsQuery.refetch();
                     }}
@@ -1362,7 +1362,7 @@ export function ProfileMomentsPage() {
                 action={
                   <Button
                     variant="primary"
-                    className="rounded-full bg-[color:var(--brand-primary)] px-5 text-[13px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+                    className="rounded-full bg-[color:var(--brand-primary)] px-5 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                     onClick={goPublish}
                   >
                     {t(msg`发条朋友圈`)}
@@ -1584,7 +1584,7 @@ function PersonalAlbumRow({
             <div className="text-[26px] font-semibold leading-none text-[color:var(--text-primary)]">
               {dayLabel}
             </div>
-            <div className="mt-1 text-[11px] tracking-[0.04em] text-[color:var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--text-eyebrow)] tracking-[0.04em] text-[color:var(--text-muted)]">
               {monthLabel}
             </div>
           </>

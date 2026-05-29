@@ -117,7 +117,7 @@ export function ProfilePage() {
           />
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
                 {username?.trim() || t(msg`世界主人`)}
               </div>
               {username?.trim() ? (
@@ -134,7 +134,7 @@ export function ProfilePage() {
                 </div>
               ) : null}
             </div>
-            <div className="mt-0.5 line-clamp-1 text-[11px] text-[color:var(--text-secondary)]">
+            <div className="mt-0.5 line-clamp-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
               {signature?.trim() || t(msg`查看与编辑个人资料`)}
             </div>
           </div>
@@ -300,7 +300,7 @@ function ProfileEntry({
       >
         <Icon size={15} />
       </div>
-      <div className="min-w-0 flex-1 text-[14px] text-[color:var(--text-primary)]">
+      <div className="min-w-0 flex-1 text-[length:var(--text-body)] text-[color:var(--text-primary)]">
         {label}
       </div>
       <ChevronRight
@@ -337,7 +337,7 @@ function ProfileActionEntry({
       >
         <Icon size={15} />
       </div>
-      <div className="min-w-0 flex-1 text-[14px] text-[color:var(--text-primary)]">
+      <div className="min-w-0 flex-1 text-[length:var(--text-body)] text-[color:var(--text-primary)]">
         {label}
       </div>
       <ChevronRight

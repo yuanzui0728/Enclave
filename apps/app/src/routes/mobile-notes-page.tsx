@@ -195,7 +195,7 @@ export function MobileNotesPage() {
 
         {standaloneDrafts.length ? (
           <section className="space-y-2">
-            <div className="px-1 text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+            <div className="px-1 text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
               {t(msg`未保存草稿`)}
             </div>
             <div className="space-y-2">
@@ -212,7 +212,7 @@ export function MobileNotesPage() {
 
         {notesQuery.data && notesQuery.data.length ? (
           <section className="space-y-2">
-            <div className="px-1 text-[11px] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
+            <div className="px-1 text-[length:var(--text-eyebrow)] uppercase tracking-[0.16em] text-[color:var(--text-dim)]">
               {t(msg`已收藏笔记`)}
             </div>
             <div className="space-y-2">
@@ -238,7 +238,7 @@ export function MobileNotesPage() {
               <Button
                 variant="primary"
                 onClick={handleCreate}
-                className="h-10 rounded-[12px] bg-[color:var(--brand-primary)] px-5 text-white hover:opacity-95"
+                className="h-10 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-5 text-white hover:opacity-95"
               >
                 <Plus size={16} />
                 <span className="ml-1">{t(msg`新建笔记`)}</span>
@@ -265,9 +265,9 @@ function NoteRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] px-3 py-3 text-left shadow-[var(--shadow-soft)] active:bg-[color:var(--surface-console)] active:bg-none"
+      className="flex w-full items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] px-3 py-3 text-left shadow-[var(--shadow-soft)] active:bg-[color:var(--surface-console)] active:bg-none"
     >
-      <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[12px] bg-[color:var(--brand-primary)]/8">
+      <div className="flex h-12 w-12 shrink-0 overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)]/8">
         {previewImage?.url ? (
           <img
             // 2026-05-21 修：公网隧道下 /api/chat/attachments/<file> 必须经 /cloud/world-api
@@ -284,10 +284,10 @@ function NoteRow({
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
           {note.title || t(msg`无标题笔记`)}
         </div>
-        <div className="mt-0.5 line-clamp-1 text-[12px] text-[color:var(--text-muted)]">
+        <div className="mt-0.5 line-clamp-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {note.excerpt || t(msg`这条笔记还没有正文摘要。`)}
         </div>
         <div className="mt-1 text-[10px] text-[color:var(--text-dim)]">
@@ -312,16 +312,16 @@ function DraftRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[16px] border border-dashed border-[color:var(--border-strong)]/40 bg-white/72 px-3 py-3 text-left active:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-strong)]/40 bg-white/72 px-3 py-3 text-left active:bg-[color:var(--surface-console)]"
     >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[12px] bg-[rgba(60, 40, 110, 0.05)] text-[color:var(--text-secondary)]">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--border-faint)] text-[color:var(--text-secondary)]">
         <FileText size={18} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
           {title}
         </div>
-        <div className="mt-0.5 line-clamp-1 text-[12px] text-[color:var(--text-muted)]">
+        <div className="mt-0.5 line-clamp-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {draft.contentText.trim() || t(msg`仅含附件的草稿`)}
         </div>
         <div className="mt-1 text-[10px] text-[color:var(--text-dim)]">

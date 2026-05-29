@@ -329,7 +329,7 @@ export function DesktopChatHistoryPage() {
                 void messagesQuery.refetch();
                 setNotice(t(msg`已刷新当前会话最近的记录。`));
               }}
-              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
             >
               {t(msg`刷新记录`)}
             </Button>
@@ -345,7 +345,7 @@ export function DesktopChatHistoryPage() {
                 setHistoryLimit((current) => current + HISTORY_LOAD_STEP);
               }}
               disabled={!historyRows.length || messagesQuery.isFetching}
-              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
             >
               {messagesQuery.isFetching
                 ? t(msg`正在加载...`)
@@ -358,7 +358,7 @@ export function DesktopChatHistoryPage() {
               size="sm"
               onClick={() => setClearConfirmOpen(true)}
               disabled={clearMutation.isPending}
-              className="h-8 rounded-[10px] border-[rgba(239,68,68,0.18)] bg-[rgba(254,242,242,0.92)] px-3 text-[12px] text-[color:var(--state-danger-text)] shadow-none hover:bg-[rgba(254,226,226,0.95)]"
+              className="h-8 rounded-[10px] border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3 text-[length:var(--text-caption)] text-[color:var(--state-danger-text)] shadow-none hover:bg-[color:var(--state-danger-bg)]"
             >
               {clearMutation.isPending ? t(msg`清空中...`) : t(msg`清空记录`)}
             </Button>
@@ -414,7 +414,7 @@ export function DesktopChatHistoryPage() {
                   aria-checked={conversation.id === selectedConversationId}
                   onClick={() => setSelectedConversationId(conversation.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-[12px] border px-3 py-2.5 text-left transition",
+                    "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border px-3 py-2.5 text-left transition",
                     conversation.id === selectedConversationId
                       ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
                       : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white/80",
@@ -546,11 +546,11 @@ export function DesktopChatHistoryPage() {
                       </div>
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
-                      <span className="rounded-[8px] bg-[#f3f4f6] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                      <span className="rounded-[8px] bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                         {item.typeLabel}
                       </span>
                       {item.reminderAt ? (
-                        <span className="rounded-[8px] bg-[rgba(59,130,246,0.12)] px-2.5 py-1 text-[11px] text-[#2563eb]">
+                        <span className="rounded-[8px] bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--state-info-text)]">
                           {t(msg`提醒 · ${formatMessageTimestamp(item.reminderAt)}`)}
                         </span>
                       ) : null}
@@ -566,7 +566,7 @@ export function DesktopChatHistoryPage() {
                       onClick={() =>
                         navigateToHistoryMessage(selectedConversation, item.id)
                       }
-                      className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[12px] shadow-none hover:bg-white"
+                      className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
                     >
                       {t(msg`定位到原消息`)}
                     </Button>
@@ -598,7 +598,7 @@ export function DesktopChatHistoryPage() {
                   setHistoryLimit((current) => current + HISTORY_LOAD_STEP)
                 }
                 disabled={messagesQuery.isFetching}
-                className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-4 text-[12px] shadow-none hover:bg-[#f5f7f7]"
+                className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-4 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
               >
                 {messagesQuery.isFetching
                   ? t(msg`正在加载更早消息...`)
@@ -714,7 +714,7 @@ function resolveMessageTypeLabel(
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-4">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}

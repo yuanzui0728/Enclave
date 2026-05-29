@@ -682,7 +682,7 @@ function OccupancySheet({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg bg-zinc-100 px-3 py-2">
-      <div className="text-[11px] text-zinc-500">{label}</div>
+      <div className="text-[length:var(--text-eyebrow)] text-zinc-500">{label}</div>
       <div className="text-sm font-medium text-zinc-800">{value}</div>
     </div>
   );
@@ -856,7 +856,7 @@ function NeighborRow({
             <span className="h-2 w-2 rounded-full bg-emerald-500" />
           )}
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-zinc-500">
+        <div className="mt-0.5 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-zinc-500">
           <span className={cn("rounded-full px-2", surface.bgClass)}>
             {surface.name}
           </span>
@@ -1342,7 +1342,7 @@ function RankTab({
               {typeof e.amountCents === "number" && e.amountCents !== 0 && (
                 <span
                   className={cn(
-                    "text-[11px]",
+                    "text-[length:var(--text-eyebrow)]",
                     e.amountCents > 0 ? "text-amber-700" : "text-rose-600",
                   )}
                 >

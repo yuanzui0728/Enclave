@@ -165,12 +165,12 @@ function ProfileSettingsMobileEntry() {
           <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
             <Languages size={15} />
           </div>
-          <div className="min-w-0 flex-1 text-[14px] text-[color:var(--text-primary)]">
+          <div className="min-w-0 flex-1 text-[length:var(--text-body)] text-[color:var(--text-primary)]">
             {t(msg`多语言`)}
           </div>
           <div
             data-i18n-skip="true"
-            className="text-[12px] text-[color:var(--text-muted)]"
+            className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
           >
             {SUPPORTED_LOCALE_LABELS[requestedLocale]}
           </div>
@@ -190,7 +190,7 @@ function ProfileSettingsMobileEntry() {
             <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
               <ShieldCheck size={15} />
             </div>
-            <div className="min-w-0 flex-1 text-[14px] text-[color:var(--text-primary)]">
+            <div className="min-w-0 flex-1 text-[length:var(--text-body)] text-[color:var(--text-primary)]">
               {t(msg`账号安全`)}
             </div>
             <ChevronRight
@@ -208,12 +208,12 @@ function ProfileSettingsMobileEntry() {
           <div className="flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
             <SunMoon size={15} />
           </div>
-          <div className="min-w-0 flex-1 text-[14px] text-[color:var(--text-primary)]">
+          <div className="min-w-0 flex-1 text-[length:var(--text-body)] text-[color:var(--text-primary)]">
             {t(msg`外观`)}
           </div>
         </div>
         <div className="px-4 pb-3 pt-1">
-          <div className="flex gap-1 rounded-[12px] bg-[color:var(--surface-soft)] p-1">
+          <div className="flex gap-1 rounded-[var(--radius-sm)] bg-[color:var(--surface-soft)] p-1">
             {appearanceOptions.map((option) => {
               const active = appearanceMode === option.value;
               return (
@@ -223,7 +223,7 @@ function ProfileSettingsMobileEntry() {
                   onClick={() => setAppearanceMode(option.value)}
                   aria-pressed={active}
                   className={cn(
-                    "flex-1 rounded-[10px] py-1.5 text-[12px] font-medium transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                    "flex-1 rounded-[10px] py-1.5 text-[length:var(--text-caption)] font-medium transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                     active
                       ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[var(--shadow-soft)]"
                       : "text-[color:var(--text-secondary)]",
@@ -246,10 +246,10 @@ function ProfileSettingsMobileEntry() {
               <UsersRound size={15} />
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[14px] text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-body)] text-[color:var(--text-primary)]">
                 {t(msg`允许我的分身参与社交相遇`)}
               </div>
-              <div className="mt-0.5 text-[11px] leading-4 text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-4 text-[color:var(--text-muted)]">
                 {t(msg`关闭后别人无法和你的分身相遇，你也收不到新的相遇。`)}
               </div>
             </div>

@@ -2671,7 +2671,7 @@ export function ContactsPage() {
                 type="button"
                 variant="ghost"
                 onClick={exitBulkMode}
-                className="h-9 rounded-full bg-transparent px-3 text-[13px] text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
+                className="h-9 rounded-full bg-transparent px-3 text-[length:var(--text-caption)] text-[color:var(--text-primary)] shadow-none hover:bg-black/4 active:bg-black/[0.05]"
                 aria-label={t(msg`取消`)}
               >
                 {t(msg`取消`)}
@@ -2719,7 +2719,7 @@ export function ContactsPage() {
                 <div
                   role="menu"
                   aria-label={t(msg`快捷操作`)}
-                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[12px] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(60, 40, 110, 0.2)]"
+                  className="absolute right-0 top-[calc(100%+0.3rem)] z-40 w-[10rem] overflow-hidden rounded-[var(--radius-sm)] bg-[#2c2c2c] p-1 shadow-[0_12px_32px_rgba(60, 40, 110, 0.2)]"
                 >
                   {mobileQuickActionItems.map((item) => {
                     const Icon = item.icon;
@@ -2732,7 +2732,7 @@ export function ContactsPage() {
                           type="button"
                           role="menuitem"
                           onClick={() => handleMobileQuickActionNavigate(to)}
-                          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
+                          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
                         >
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
                             <Icon aria-hidden="true" size={14} />
@@ -2762,7 +2762,7 @@ export function ContactsPage() {
                         aria-label={disabledItemLabel}
                         tabIndex={item.disabled ? -1 : undefined}
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[12px] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                          "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                           item.disabled
                             ? "cursor-not-allowed opacity-55"
                             : "hover:bg-white/10 active:bg-white/12",
@@ -2816,7 +2816,7 @@ export function ContactsPage() {
                     }),
                   });
                 }}
-                className="flex h-9 w-full items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]"
+                className="flex h-9 w-full items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-dim)]"
               >
                 <Search aria-hidden="true" size={14} className="shrink-0" />
                 <span className="min-w-0 flex-1 text-left">{t(msg`搜索`)}</span>
@@ -2832,10 +2832,10 @@ export function ContactsPage() {
                 <InlineNotice
                   tone={notice.tone}
                   className={cn(
-                    "rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
+                    "rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none",
                     notice.tone === "danger"
-                      ? "border-[rgba(220,38,38,0.18)]"
-                      : "border-[rgba(96,165,250,0.16)]",
+                      ? "border-[color:var(--state-danger-bg)]"
+                      : "border-[color:var(--state-info-bg)]",
                   )}
                 >
                   {notice.message}
@@ -2845,7 +2845,7 @@ export function ContactsPage() {
                 <InlineNotice
                   key={item.key}
                   tone="danger"
-                  className="rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                  className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 flex-1">{item.message}</span>
@@ -2854,7 +2854,7 @@ export function ContactsPage() {
                         <button
                           type="button"
                           onClick={item.onAction}
-                          className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                          className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                         >
                           {item.actionLabel}
                         </button>
@@ -2863,7 +2863,7 @@ export function ContactsPage() {
                         <button
                           type="button"
                           onClick={item.onRetry}
-                          className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                          className="rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                         >
                           {item.retryLabel ?? t(msg`重试`)}
                         </button>
@@ -2914,7 +2914,7 @@ export function ContactsPage() {
                       <Button
                         variant="secondary"
                         onClick={() => setSearchText("")}
-                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                       >
                         {t(msg`清空搜索`)}
                       </Button>
@@ -2922,7 +2922,7 @@ export function ContactsPage() {
                       <Button
                         variant="secondary"
                         onClick={handleOpenWorldCharacters}
-                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                       >
                         {t(msg`查看世界角色`)}
                       </Button>
@@ -3119,7 +3119,7 @@ const FriendListRow = memo(function FriendListRow({
         <div
           className={cn(
             "truncate text-[color:var(--text-primary)]",
-            desktop ? "text-[16px]" : "text-[14px]",
+            desktop ? "text-[length:var(--text-title)]" : "text-[length:var(--text-body)]",
           )}
         >
           {item.displayName}
@@ -3153,7 +3153,7 @@ const FriendListRow = memo(function FriendListRow({
           <Star
             aria-hidden="true"
             size={15}
-            className="shrink-0 text-[#f3a311]"
+            className="shrink-0 text-[color:var(--state-warning-text)]"
             fill="currentColor"
           />
         </>
@@ -3175,7 +3175,7 @@ function SectionHeader({
         "z-10 flex items-center gap-1.5 px-4 py-1.25 font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
           ? "sticky top-0 border-b border-[color:var(--border-faint)] bg-white/78 backdrop-blur-xl"
-          : "text-[11px] bg-[color:var(--surface-overlay)]",
+          : "text-[length:var(--text-eyebrow)] bg-[color:var(--surface-overlay)]",
       )}
     >
       {!desktop ? (
@@ -3205,7 +3205,7 @@ function MobileContactsStatusCard({
   const loading = tone === "loading";
 
   return (
-    <section className="rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
+    <section className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none">
       <div className="mx-auto inline-flex rounded-full bg-[color:var(--brand-primary)]/10 px-2.5 py-1 text-[9px] font-medium tracking-[0.04em] text-[color:var(--brand-primary)]">
         {badge}
       </div>
@@ -3213,13 +3213,13 @@ function MobileContactsStatusCard({
         <div className="mt-3 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-3 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-2 max-w-[18rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-2 max-w-[18rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-4 flex justify-center">{action}</div> : null}

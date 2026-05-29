@@ -375,7 +375,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryAccount}
                   >
                     {t(msg`重试读取`)}
@@ -384,7 +384,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回公众号列表`)}
@@ -406,7 +406,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryAccount}
                   >
                     {t(msg`重试读取`)}
@@ -415,7 +415,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回公众号列表`)}
@@ -428,7 +428,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
         {actionNotice ? (
           <div className="mx-auto max-w-[24rem] px-3.5 pt-3">
             <InlineNotice
-              className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+              className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
               tone={actionNotice.tone}
             >
               {actionNotice.tone === "info" ? (
@@ -440,7 +440,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                         type="button"
                         variant="secondary"
                         size="sm"
-                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                        className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                         onClick={actionNotice.onAction}
                       >
                         {actionNotice.actionLabel}
@@ -450,7 +450,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                      className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                       onClick={handleStatusBack}
                     >
                       {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回公众号列表`)}
@@ -466,7 +466,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
 
         {account ? (
           <>
-            <section className="mx-3.5 mt-3 overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 pb-4 pt-5">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 pb-4 pt-5">
               <div className="flex flex-col items-center text-center">
                 <AvatarChip
                   name={account.name}
@@ -476,15 +476,15 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                 <div className="mt-3 truncate text-[19px] font-semibold text-[color:var(--text-primary)]">
                   {account.name}
                 </div>
-                <div className="mt-1 text-[12px] text-[color:var(--text-secondary)]">
+                <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
                   @{account.handle}
                 </div>
                 <div className="mt-2 flex flex-wrap justify-center gap-1.5 text-[10px]">
-                  <span className="rounded-full bg-[rgba(47,122,63,0.12)] px-2 py-0.5 text-[#2f7a3f]">
+                  <span className="rounded-full bg-[color:var(--state-success-bg)] px-2 py-0.5 text-[color:var(--state-success-text)]">
                     {account.accountType === "service" ? t(msg`服务号`) : t(msg`订阅号`)}
                   </span>
                   {account.isVerified ? (
-                    <span className="rounded-full bg-[rgba(37,99,235,0.12)] px-2 py-0.5 text-[#2563eb]">
+                    <span className="rounded-full bg-[color:var(--state-info-bg)] px-2 py-0.5 text-[color:var(--state-info-text)]">
                       {t(msg`已认证`)}
                     </span>
                   ) : null}
@@ -494,7 +494,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                     </span>
                   ) : null}
                 </div>
-                <div className="mt-3 max-w-[20rem] text-[12px] leading-6 text-[color:var(--text-secondary)]">
+                <div className="mt-3 max-w-[20rem] text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                   {account.description}
                 </div>
               </div>
@@ -505,7 +505,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                   onClick={() => followMutation.mutate()}
                   disabled={followMutation.isPending}
                   variant={account.isFollowing ? "secondary" : "primary"}
-                  className="h-9 w-full rounded-[12px] text-[12px]"
+                  className="h-9 w-full rounded-[var(--radius-sm)] text-[length:var(--text-caption)]"
                 >
                   {followMutation.isPending
                     ? t(msg`处理中...`)
@@ -517,7 +517,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                   type="button"
                   variant="secondary"
                   onClick={toggleAccountFavorite}
-                  className="h-9 w-full rounded-[12px] text-[12px]"
+                  className="h-9 w-full rounded-[var(--radius-sm)] text-[length:var(--text-caption)]"
                 >
                   {accountFavoriteSourceId &&
                   favoriteSourceIds.includes(accountFavoriteSourceId)
@@ -530,7 +530,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               followMutation.error instanceof Error ? (
                 <div className="mt-3">
                   <InlineNotice
-                    className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+                    className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
                     tone="danger"
                   >
                     <div className="flex items-start justify-between gap-2">
@@ -543,7 +543,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                             type="button"
                             variant="secondary"
                             size="sm"
-                            className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                            className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                             onClick={handleRetryFollow}
                           >
                             {account.isFollowing ? t(msg`重试取消关注`) : t(msg`重试关注`)}
@@ -553,7 +553,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                           type="button"
                           variant="secondary"
                           size="sm"
-                          className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                          className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                           onClick={handleStatusBack}
                         >
                           {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回公众号列表`)}
@@ -565,7 +565,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               ) : null}
             </section>
 
-            <section className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
               <button
                 type="button"
                 disabled={!account.isFollowing}
@@ -593,7 +593,7 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
                 className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left disabled:cursor-default disabled:opacity-80"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                     {account.accountType === "service"
                       ? t(msg`服务号消息`)
                       : t(msg`订阅号消息`)}
@@ -615,9 +615,9 @@ function MobileOfficialAccountDetailPage({ accountId }: { accountId: string }) {
               </button>
             </section>
 
-            <section className="mx-3.5 mt-3 overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
+            <section className="mx-3.5 mt-3 overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
               <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5">
-                <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`最近文章`)}
                 </div>
                 <div className="mt-0.5 text-[10px] leading-[1.125rem] text-[color:var(--text-muted)]">
@@ -672,7 +672,7 @@ function MobileOfficialStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -682,7 +682,7 @@ function MobileOfficialStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -692,13 +692,13 @@ function MobileOfficialStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

@@ -63,7 +63,7 @@ export function IslandConcertGame({
   }, [isPerforming, isBetween]);
   const containerCls =
     variant === "embedded"
-      ? "rounded-[16px] bg-white"
+      ? "rounded-[var(--radius-md)] bg-white"
       : "min-h-screen bg-[color:var(--bg-app)]";
 
   const currentSongId = state.setlist[state.currentSongIndex];
@@ -76,10 +76,10 @@ export function IslandConcertGame({
     <section className={cn("flex flex-col gap-3 p-3", containerCls)}>
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`岛屿演唱会`)}
           </span>
-          <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[11px] text-orange-800">
+          <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-orange-800">
             {isIdle
               ? t(msg`编排中`)
               : isPerforming
@@ -90,11 +90,11 @@ export function IslandConcertGame({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[12px] font-medium text-rose-700">
+          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-rose-700">
             <Image size={12} />
             ×{state.posters}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[12px] font-medium text-violet-800">
+          <span className="flex items-center gap-1 rounded-full bg-violet-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-violet-800">
             <Sparkles size={12} />
             {state.ensemblePoints}
           </span>
@@ -112,7 +112,7 @@ export function IslandConcertGame({
       </header>
 
       {/* 演出舞台 */}
-      <div className="rounded-[12px] border border-orange-200 bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 p-3">
+      <div className="rounded-[var(--radius-sm)] border border-orange-200 bg-gradient-to-br from-orange-50 via-rose-50 to-amber-50 p-3">
         {isPerforming && currentSong ? (
           <PerformanceStage
             songTitle={currentSong.title}
@@ -126,14 +126,14 @@ export function IslandConcertGame({
           />
         ) : (
           <div className="text-center">
-            <div className="text-[12px] text-orange-900/80">
+            <div className="text-[length:var(--text-caption)] text-orange-900/80">
               {isBetween
                 ? t(msg`下一首准备中…`)
                 : isEnded
                   ? t(msg`今晚演出结束`)
                   : t(msg`选好乐器、道具与曲目后开演`)}
             </div>
-            <div className="mt-2 flex items-center justify-center gap-2 text-[12px] text-orange-900/80">
+            <div className="mt-2 flex items-center justify-center gap-2 text-[length:var(--text-caption)] text-orange-900/80">
               <Music size={13} />
               {getInstrument(state.instrumentId)?.name}
               {state.propIds.length > 0 ? (
@@ -158,7 +158,7 @@ export function IslandConcertGame({
           onClick={actions.start}
           disabled={state.setlist.length !== SETLIST_SIZE}
           className={cn(
-            "flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium",
+            "flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--text-caption)] font-medium",
             state.setlist.length === SETLIST_SIZE
               ? "bg-orange-500 text-white hover:bg-orange-600"
               : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",
@@ -172,11 +172,11 @@ export function IslandConcertGame({
               )}
         </button>
       ) : isEnded ? (
-        <div className="rounded-[12px] border border-orange-200 bg-orange-50 p-3 text-center">
-          <p className="text-[13px] font-medium text-orange-900">
+        <div className="rounded-[var(--radius-sm)] border border-orange-200 bg-orange-50 p-3 text-center">
+          <p className="text-[length:var(--text-caption)] font-medium text-orange-900">
             {t(msg`今晚演出结算`)}
           </p>
-          <p className="mt-1 text-[12px] text-orange-900/80">
+          <p className="mt-1 text-[length:var(--text-caption)] text-orange-900/80">
             {t(
               msg`总节奏分 ${state.totalScore} · 单曲达 ${POSTER_THRESHOLD} 分送海报，已收 ${state.posters} 张 · 合奏积分 +${state.ensemblePoints}`,
             )}
@@ -187,7 +187,7 @@ export function IslandConcertGame({
               return (
                 <li
                   key={result.songId}
-                  className="flex items-center justify-between text-[12px]"
+                  className="flex items-center justify-between text-[length:var(--text-caption)]"
                 >
                   <span className="text-orange-900">{song?.title}</span>
                   <span className="text-orange-900/80">
@@ -201,21 +201,21 @@ export function IslandConcertGame({
             <button
               type="button"
               onClick={actions.start}
-              className="rounded-full bg-orange-500 px-4 py-1.5 text-[13px] font-medium text-white hover:bg-orange-600"
+              className="rounded-full bg-orange-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-orange-600"
             >
               {t(msg`再排一场`)}
             </button>
             <button
               type="button"
               onClick={actions.backIdle}
-              className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[13px] text-[color:var(--text-secondary)]"
+              className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
             >
               {t(msg`回到编排`)}
             </button>
           </div>
         </div>
       ) : (
-        <div className="rounded-[12px] bg-orange-50 px-3 py-1.5 text-center text-[12px] text-orange-900">
+        <div className="rounded-[var(--radius-sm)] bg-orange-50 px-3 py-1.5 text-center text-[length:var(--text-caption)] text-orange-900">
           {t(
             msg`第 ${state.currentSongIndex + 1} / ${state.setlist.length} 首 · 剩余 ${formatRemaining(state.remainingMs)}`,
           )}
@@ -276,13 +276,13 @@ export function IslandConcertGame({
       ) : null}
 
       {/* 日志 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`后台日志`)}</span>
           <button
             type="button"
             onClick={actions.reset}
-            className="flex items-center gap-1 text-[11px] text-[color:var(--text-secondary)]"
+            className="flex items-center gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
           >
             <RotateCcw size={11} />
             {t(msg`重置`)}
@@ -290,7 +290,7 @@ export function IslandConcertGame({
         </div>
         <ul className="max-h-44 overflow-y-auto px-3 py-2">
           {state.log.length === 0 ? (
-            <li className="py-1 text-[12px] text-[color:var(--text-tertiary)]">
+            <li className="py-1 text-[length:var(--text-caption)] text-[color:var(--text-tertiary)]">
               {t(msg`等待开演…`)}
             </li>
           ) : (
@@ -298,7 +298,7 @@ export function IslandConcertGame({
               <li
                 key={entry.id}
                 className={cn(
-                  "py-1 text-[12px] leading-[1.5rem]",
+                  "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
                   entry.tone === "success" && "text-emerald-700",
                   entry.tone === "warn" && "text-amber-700",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",
@@ -335,8 +335,8 @@ function PerformanceStage({
 }) {
   return (
     <div className="space-y-2 text-center">
-      <div className="text-[13px] font-medium text-orange-900">{songTitle}</div>
-      <div className="flex items-center justify-between text-[11px] text-orange-900/80">
+      <div className="text-[length:var(--text-caption)] font-medium text-orange-900">{songTitle}</div>
+      <div className="flex items-center justify-between text-[length:var(--text-eyebrow)] text-orange-900/80">
         <span>
           {t(msg`节拍`)} {beatIndex + 1} / {beatTotal}
         </span>
@@ -348,7 +348,7 @@ function PerformanceStage({
         type="button"
         onClick={onTap}
         className={cn(
-          "relative flex h-24 w-full items-center justify-center rounded-[16px] text-[16px] font-semibold transition-all",
+          "relative flex h-24 w-full items-center justify-center rounded-[var(--radius-md)] text-[length:var(--text-title)] font-semibold transition-all",
           beatActive
             ? "bg-emerald-500 text-white shadow-lg shadow-emerald-200"
             : "bg-white text-[color:var(--text-secondary)]",
@@ -391,8 +391,8 @@ function PickPanel({
   single?: boolean;
 }) {
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-3">
-      <div className="mb-2 text-[13px] font-medium">{title}</div>
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+      <div className="mb-2 text-[length:var(--text-caption)] font-medium">{title}</div>
       <ul className="grid grid-cols-2 gap-2">
         {items.map((item) => (
           <li key={item.id}>
@@ -401,7 +401,7 @@ function PickPanel({
               onClick={() => onToggle(item.id)}
               disabled={item.disabled}
               className={cn(
-                "flex w-full items-center gap-2 rounded-[12px] border px-2 py-2 text-left text-[12px]",
+                "flex w-full items-center gap-2 rounded-[var(--radius-sm)] border px-2 py-2 text-left text-[length:var(--text-caption)]",
                 item.active
                   ? "border-orange-400 bg-orange-50"
                   : "border-[color:var(--border-faint)] bg-white",
@@ -418,7 +418,7 @@ function PickPanel({
                     </span>
                   ) : null}
                 </div>
-                <div className="text-[11px] text-[color:var(--text-secondary)]">
+                <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                   {item.hint}
                 </div>
               </div>

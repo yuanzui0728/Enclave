@@ -157,7 +157,7 @@ export function WeChatActionBubble({
         left: position.left,
         zIndex: 1000,
       }}
-      className="flex h-9 items-stretch overflow-hidden rounded-[6px] bg-[#4C4C4C] text-[14px] text-white shadow-[0_4px_18px_rgba(0,0,0,0.25)]"
+      className="flex h-9 items-stretch overflow-hidden rounded-[6px] bg-[#4C4C4C] text-[length:var(--text-body)] text-white shadow-[0_4px_18px_rgba(0,0,0,0.25)]"
     >
       <button
         type="button"
@@ -171,7 +171,7 @@ export function WeChatActionBubble({
       >
         <Heart
           size={14}
-          className={liked ? "fill-[#FA5151] text-[#FA5151]" : "text-white"}
+          className={liked ? "fill-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]" : "text-white"}
         />
         <span>{liked ? t(msg`取消`) : t(msg`赞`)}</span>
       </button>
@@ -205,7 +205,7 @@ export function WeChatActionBubble({
             <Star
               size={14}
               className={
-                favorited ? "fill-[#FAD961] text-[#FAD961]" : "text-white"
+                favorited ? "fill-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]" : "text-white"
               }
             />
             <span>{favorited ? t(msg`取消收藏`) : t(msg`收藏`)}</span>

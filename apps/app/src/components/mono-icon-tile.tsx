@@ -15,9 +15,9 @@ type MonoIconTileProps = {
 };
 
 const SIZE_MAP: Record<MonoIconTileSize, { box: string; icon: number }> = {
-  sm: { box: "h-9 w-9 rounded-[12px]", icon: 18 },
+  sm: { box: "h-9 w-9 rounded-[var(--radius-sm)]", icon: 18 },
   md: { box: "h-11 w-11 rounded-[14px]", icon: 20 },
-  lg: { box: "h-12 w-12 rounded-[16px]", icon: 22 },
+  lg: { box: "h-12 w-12 rounded-[var(--radius-md)]", icon: 22 },
 };
 
 const TONE_MAP: Record<MonoIconTileTone, string> = {

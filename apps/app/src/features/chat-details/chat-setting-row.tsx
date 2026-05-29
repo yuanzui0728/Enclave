@@ -62,7 +62,7 @@ export function ChatSettingRow({
       {...interactiveButtonProps}
       className={cn(
         "flex min-h-14 w-full items-center justify-between gap-3 px-4 text-left",
-        danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
+        danger ? "text-[color:var(--state-danger-text)]" : "text-[color:var(--text-primary)]",
         disabled ? "opacity-60" : undefined,
         isWechat &&
           cn(
@@ -74,15 +74,15 @@ export function ChatSettingRow({
         className,
       )}
     >
-      <span className={cn("text-[16px]", isWechat && "text-[14px] text-[color:var(--text-primary)]")}>
+      <span className={cn("text-[length:var(--text-title)]", isWechat && "text-[length:var(--text-body)] text-[color:var(--text-primary)]")}>
         {label}
       </span>
       <span className="flex shrink-0 items-center gap-2">
         {value ? (
           <span
             className={cn(
-              "max-w-[11rem] truncate text-[14px] text-[color:var(--text-muted)]",
-              isWechat && "max-w-[12rem] text-[11px] text-[color:var(--text-muted)]",
+              "max-w-[11rem] truncate text-[length:var(--text-body)] text-[color:var(--text-muted)]",
+              isWechat && "max-w-[12rem] text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]",
             )}
           >
             {value}
@@ -115,7 +115,7 @@ export function ChatSettingRow({
             size={18}
             className={cn(
               "text-[color:var(--text-dim)]",
-              isWechat && "text-[#c7c7cc]",
+              isWechat && "text-[color:var(--text-dim)]",
             )}
           />
         )}

@@ -729,7 +729,7 @@ function DirectChatDetailsPanel({
             : null;
 
   return (
-    <div className="space-y-2 bg-[#f5f5f5] px-3 pb-6 pt-3">
+    <div className="space-y-2 bg-[color:var(--surface-card)] px-3 pb-6 pt-3">
       {notice ? (
         // R40：和姊妹 R36/R37/R39 workspace / message-list / composer notice
         // 同款—— 详情侧栏 (单聊) 顶部 notice 是 2400ms 自动消失的 transient
@@ -1891,7 +1891,7 @@ function GroupChatDetailsPanel({
         : null;
 
   return (
-    <div className="space-y-2.5 bg-[#ededed] px-0 pb-6 pt-3">
+    <div className="space-y-2.5 bg-[color:var(--surface-soft)] px-0 pb-6 pt-3">
       {notice ? (
         // R40：和上面单聊详情侧栏同款—— 群聊详情侧栏顶部 notice 也是 2400ms
         // 自动消失的 transient toast（line 1270 setTimeout），反馈置顶 / 免打扰 /
@@ -2235,7 +2235,7 @@ function DesktopWechatGroupSection({
   return (
     <section className="space-y-1.5">
       {title ? (
-        <div className="px-4 text-[11px] text-[#8c8c8c]">{title}</div>
+        <div className="px-4 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">{title}</div>
       ) : null}
       <div className="border-y border-[rgba(0,0,0,0.07)] bg-white">
         {children}
@@ -2284,7 +2284,7 @@ function DesktopWechatGroupRow({
       }}
       className={cn(
         "flex min-h-[46px] w-full items-center justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] px-4 py-3 text-left last:border-b-0",
-        danger ? "text-[#e14c45]" : "text-[#111111]",
+        danger ? "text-[color:var(--state-danger-text)]" : "text-[#111111]",
         disabled
           ? "cursor-not-allowed opacity-50"
           : interactive
@@ -2294,12 +2294,12 @@ function DesktopWechatGroupRow({
       role={isSwitch ? "switch" : undefined}
       aria-checked={isSwitch ? checked : undefined}
     >
-      <span className="min-w-0 text-[14px]">{label}</span>
+      <span className="min-w-0 text-[length:var(--text-body)]">{label}</span>
       <span className="flex shrink-0 items-center gap-2.5">
         {value ? (
           <span
             className={cn(
-              "max-w-[10.5rem] text-right text-[12px] text-[#8c8c8c]",
+              "max-w-[10.5rem] text-right text-[length:var(--text-caption)] text-[color:var(--text-muted)]",
               multilineValue
                 ? "whitespace-pre-wrap break-words leading-4"
                 : "truncate",
@@ -2312,7 +2312,7 @@ function DesktopWechatGroupRow({
           <span
             className={cn(
               "relative h-6 w-[42px] rounded-full transition-colors",
-              checked ? "bg-[color:var(--brand-primary)]" : "bg-[#d9d9d9]",
+              checked ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--surface-soft)]",
             )}
           >
             <span
@@ -2323,7 +2323,7 @@ function DesktopWechatGroupRow({
             />
           </span>
         ) : interactive ? (
-          <ChevronRight size={16} className="text-[#c7c7cc]" />
+          <ChevronRight size={16} className="text-[color:var(--text-dim)]" />
         ) : null}
       </span>
     </button>
@@ -2347,8 +2347,8 @@ function DesktopWechatDangerButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex h-11 w-full items-center justify-center rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white text-[14px] transition",
-        danger ? "text-[#e14c45]" : "text-[#111111]",
+        "flex h-11 w-full items-center justify-center rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white text-[length:var(--text-body)] transition",
+        danger ? "text-[color:var(--state-danger-text)]" : "text-[#111111]",
         disabled
           ? "cursor-not-allowed opacity-50"
           : "hover:bg-[rgba(0,0,0,0.02)]",
@@ -2378,8 +2378,8 @@ function DesktopWechatMemberGrid({
             {isAction ? (
               <div
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-[10px] border border-[rgba(0,0,0,0.08)] bg-[#f7f7f7] text-[#7a7a7a] transition-colors",
-                  "hover:bg-[#f1f1f1]",
+                  "flex h-12 w-12 items-center justify-center rounded-[10px] border border-[rgba(0,0,0,0.08)] bg-[color:var(--surface-card)] text-[color:var(--text-muted)] transition-colors",
+                  "hover:bg-[color:var(--surface-card)]",
                 )}
               >
                 {item.kind === "remove" ? (
@@ -2391,7 +2391,7 @@ function DesktopWechatMemberGrid({
             ) : (
               <AvatarChip name={item.label} src={item.src} size="wechat" />
             )}
-            <span className="w-full truncate text-[11px] text-[#707070]">
+            <span className="w-full truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {item.label}
             </span>
           </button>
@@ -2768,11 +2768,11 @@ function DesktopGroupMemberBrowserDialog({
           <div>
             <div
               id={titleId}
-              className="text-[16px] font-medium text-[color:var(--text-primary)]"
+              className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]"
             >
               {t(msg`群成员`)}
             </div>
-            <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`${groupName} · ${members.length} 人`)}
             </div>
           </div>
@@ -2792,7 +2792,7 @@ function DesktopGroupMemberBrowserDialog({
         </div>
 
         <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-6 py-4">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
             <span>{t(msg`全部 ${members.length} 人`)}</span>
             <span className="text-black/10">·</span>
             <span>{t(msg`角色成员 ${characterCount} 人`)}</span>
@@ -2800,7 +2800,7 @@ function DesktopGroupMemberBrowserDialog({
             <span>{t(msg`群主与管理员 ${ownerCount + adminCount} 人`)}</span>
           </div>
 
-          <div className="mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
+          <div className="mt-4 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-4">
             <div className="flex flex-col gap-3">
               <label className="relative block">
                 <Search
@@ -2850,7 +2850,7 @@ function DesktopGroupMemberBrowserDialog({
                     </button>
                   ))}
                 </div>
-                <div className="text-[11px] text-[color:var(--text-dim)]">
+                <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                   {t(msg`↑ ↓ 选择，Enter 打开`)}
                 </div>
               </div>
@@ -2858,7 +2858,7 @@ function DesktopGroupMemberBrowserDialog({
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[color:var(--border-faint)] pt-4">
-            <div className="text-[11px] leading-5 text-[color:var(--text-dim)]">
+            <div className="text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-dim)]">
               {t(msg`先看完整列表，再继续加人、减人或跳转资料。`)}
             </div>
             <div className="flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white p-1">
@@ -2867,7 +2867,7 @@ function DesktopGroupMemberBrowserDialog({
                 variant="secondary"
                 onClick={onRemoveMembers}
                 disabled={pending || !canRemoveMembers}
-                className="h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3 text-[12px] shadow-none hover:bg-[color:var(--surface-console)]"
+                className="h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 {t(msg`移除成员`)}
               </Button>
@@ -2876,7 +2876,7 @@ function DesktopGroupMemberBrowserDialog({
                 variant="primary"
                 onClick={onAddMembers}
                 disabled={pending}
-                className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-white hover:opacity-95"
+                className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-white hover:opacity-95"
               >
                 {t(msg`添加成员`)}
               </Button>
@@ -2928,15 +2928,15 @@ function DesktopGroupMemberBrowserDialog({
                     }}
                     disabled={pending || !canViewProfile}
                     className={cn(
-                      "flex w-full items-center gap-3 rounded-[12px] border px-4 py-2.5 text-left transition",
+                      "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border px-4 py-2.5 text-left transition",
                       canViewProfile && activeMemberId === member.id
                         ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
                         : canViewProfile
                           ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white"
-                          : "border-[rgba(15,23,42,0.05)] bg-[rgba(247,250,250,0.72)]",
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
                       canViewProfile
                         ? "focus-visible:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] focus-visible:outline-none"
-                        : "border-[rgba(15,23,42,0.05)] bg-[rgba(247,250,250,0.72)]",
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
                       pending || !canViewProfile
                         ? "cursor-default"
                         : "shadow-none",
@@ -2956,9 +2956,9 @@ function DesktopGroupMemberBrowserDialog({
                           className={cn(
                             "shrink-0 rounded-full px-1.5 py-0.5 text-[10px]",
                             member.role === "owner"
-                              ? "bg-[rgba(245,158,11,0.14)] text-[#b45309]"
+                              ? "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
                               : member.role === "admin"
-                                ? "bg-[rgba(59,130,246,0.14)] text-[#2563eb]"
+                                ? "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]"
                                 : "border border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
                           )}
                         >
@@ -2968,8 +2968,8 @@ function DesktopGroupMemberBrowserDialog({
                           className={cn(
                             "shrink-0 rounded-full px-1.5 py-0.5 text-[10px]",
                             member.memberType === "user"
-                              ? "bg-[rgba(15,23,42,0.06)] text-[color:var(--text-muted)]"
-                              : "bg-[rgba(47,122,63,0.10)] text-[#2f7a3f]",
+                              ? "bg-[color:var(--border-faint)] text-[color:var(--text-muted)]"
+                              : "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
                           )}
                         >
                           {member.memberType === "user"
@@ -2977,7 +2977,7 @@ function DesktopGroupMemberBrowserDialog({
                             : memberTypeLabels.character}
                         </span>
                       </div>
-                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-dim)]">
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
                         {displayName !== rawName ? (
                           <>
                             <span>{t(msg`昵称：${rawName}`)}</span>
@@ -3006,7 +3006,7 @@ function DesktopGroupMemberBrowserDialog({
             </div>
           ) : (
             <div className="flex h-full items-center justify-center px-6">
-              <div className="flex max-w-[320px] flex-col items-center rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-6 py-8 text-center">
+              <div className="flex max-w-[320px] flex-col items-center rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-6 py-8 text-center">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--surface-console)] text-[color:var(--text-dim)]">
                   <Search size={18} />
                 </div>

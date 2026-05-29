@@ -36,7 +36,7 @@ export function WeChatGroupCallTile({
       >
         <AvatarChip name={name} src={avatar} size="wechat" />
       </span>
-      <span className="max-w-[64px] truncate text-[12px] leading-none text-white/80">
+      <span className="max-w-[64px] truncate text-[length:var(--text-caption)] leading-none text-white/80">
         {name}
       </span>
     </button>

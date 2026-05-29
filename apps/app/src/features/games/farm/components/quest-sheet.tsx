@@ -106,14 +106,14 @@ export function QuestSheet({ open, onClose }: QuestSheetProps) {
                     {q.progress} / {q.goal}
                   </span>
                 </div>
-                <span className="text-[11px] text-stone-500">{q.descriptionZh}</span>
+                <span className="text-[length:var(--text-eyebrow)] text-stone-500">{q.descriptionZh}</span>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
                   <div
                     className={`h-full ${done ? "bg-emerald-500" : "bg-amber-400"} transition-all`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <div className="mt-1 flex items-center justify-between text-[11px]">
+                <div className="mt-1 flex items-center justify-between text-[length:var(--text-eyebrow)]">
                   <span className="text-stone-500">
                     🪙{q.rewardCoins}
                     {q.rewardExperience > 0 && ` · ✨${q.rewardExperience}`}
@@ -122,7 +122,7 @@ export function QuestSheet({ open, onClose }: QuestSheetProps) {
                     type="button"
                     onClick={() => handleClaim(q.id)}
                     disabled={!done || q.claimed || claim.isPending}
-                    className={`rounded-full px-3 py-1 text-[11px] font-medium ${
+                    className={`rounded-full px-3 py-1 text-[length:var(--text-eyebrow)] font-medium ${
                       q.claimed
                         ? "bg-stone-100 text-stone-400"
                         : done

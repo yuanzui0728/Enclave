@@ -428,7 +428,7 @@ export function OfficialAccountServiceThread({
                 </Button>
               ) : null}
               <div className="min-w-0 flex-1">
-                <div className="truncate text-[15px] font-medium text-[color:var(--text-primary)]">
+                <div className="truncate text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                   {accountQuery.data?.name ?? t(msg`服务号消息`)}
                 </div>
                 {desktopHeaderMeta.length ? (
@@ -450,14 +450,14 @@ export function OfficialAccountServiceThread({
                 <MoreHorizontal size={16} />
               </Button>
               {isDesktopMenuOpen ? (
-                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1.5 shadow-[0_18px_50px_rgba(60, 40, 110, 0.12)]">
+                <div className="absolute right-0 top-[calc(100%+0.35rem)] w-[12rem] overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1.5 shadow-[0_18px_50px_rgba(60, 40, 110, 0.12)]">
                   <button
                     type="button"
                     onClick={() => {
                       setIsDesktopMenuOpen(false);
                       handleOpenAccount(accountId, activeArticleId ?? undefined);
                     }}
-                    className="flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                    className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-3 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                   >
                     <BookOpenText size={15} className="text-[color:var(--text-secondary)]" />
                     <span>{t(msg`公众号主页`)}</span>
@@ -465,7 +465,7 @@ export function OfficialAccountServiceThread({
                   <button
                     type="button"
                     onClick={handleOpenMobileHandoff}
-                    className="flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                    className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-3 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                   >
                     <Smartphone size={15} className="text-[color:var(--text-secondary)]" />
                     <span>{t(msg`到手机继续`)}</span>
@@ -482,7 +482,7 @@ export function OfficialAccountServiceThread({
                       muteMutation.mutate(!accountQuery.data.isMuted);
                     }}
                     className={cn(
-                      "flex w-full items-center gap-2 rounded-[12px] px-3 py-2 text-left text-[13px] transition",
+                      "flex w-full items-center gap-2 rounded-[var(--radius-sm)] px-3 py-2 text-left text-[length:var(--text-caption)] transition",
                       !accountQuery.data?.isFollowing || muteMutation.isPending
                         ? "cursor-not-allowed opacity-45"
                         : "text-[color:var(--text-primary)] hover:bg-[color:var(--surface-console)]",
@@ -620,7 +620,7 @@ export function OfficialAccountServiceThread({
             <ArrowLeft size={17} />
           </Button>
           <div className="min-w-0 flex-1">
-            <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
               {accountQuery.data?.name ?? t(msg`服务号消息`)}
             </div>
             {mobileHeaderMeta.length ? (
@@ -668,7 +668,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryPageData}
                   >
                     {t(msg`重试读取`)}
@@ -677,7 +677,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看公众号主页`)}
@@ -700,7 +700,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryActionSync}
                   >
                     {t(msg`重试同步`)}
@@ -709,7 +709,7 @@ export function OfficialAccountServiceThread({
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                    className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看公众号主页`)}
@@ -742,7 +742,7 @@ export function OfficialAccountServiceThread({
                   type="button"
                   variant="secondary"
                   size="sm"
-                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+                  className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
                   onClick={handleStatusBack}
                 >
                   {safeReturnPath ? t(msg`返回上一页`) : t(msg`查看公众号主页`)}
@@ -769,7 +769,7 @@ function ServiceDesktopStatusPane({
     <div className="mx-auto flex min-h-full max-w-[720px] items-center px-8 py-14">
       <div
         className={cn(
-          "w-full rounded-[24px] border px-8 py-10 text-center shadow-none",
+          "w-full rounded-[var(--radius-xl)] border px-8 py-10 text-center shadow-none",
           tone === "danger"
             ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]",
@@ -779,18 +779,18 @@ function ServiceDesktopStatusPane({
           <div className="flex items-center justify-center gap-1.5">
             <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
             <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
           </div>
         ) : null}
         <div
           className={cn(
-            "font-medium text-[16px] text-[color:var(--text-primary)]",
+            "font-medium text-[length:var(--text-title)] text-[color:var(--text-primary)]",
             tone === "loading" ? "mt-4" : undefined,
           )}
         >
           {title}
         </div>
-        <p className="mx-auto mt-2 max-w-[26rem] text-[13px] leading-7 text-[color:var(--text-secondary)]">
+        <p className="mx-auto mt-2 max-w-[26rem] text-[length:var(--text-caption)] leading-7 text-[color:var(--text-secondary)]">
           {description}
         </p>
       </div>
@@ -809,9 +809,9 @@ function ServiceDesktopInlineStatus({
     <div className="mx-auto max-w-[720px] px-8 pt-8">
       <div
         className={cn(
-          "rounded-[16px] border px-4 py-3 text-[13px] leading-6 shadow-none",
+          "rounded-[var(--radius-md)] border px-4 py-3 text-[length:var(--text-caption)] leading-6 shadow-none",
           tone === "danger"
-            ? "border-[rgba(220,38,38,0.18)] bg-[rgba(255,245,245,0.96)] text-[color:var(--state-danger-text)]"
+            ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]",
         )}
       >
@@ -834,7 +834,7 @@ function ServiceThreadStatusPane({
     <div className="mx-auto w-full max-w-[34rem]">
       <div
         className={cn(
-          "rounded-[24px] border px-6 py-8 text-center shadow-none",
+          "rounded-[var(--radius-xl)] border px-6 py-8 text-center shadow-none",
           tone === "danger"
             ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]",
@@ -844,18 +844,18 @@ function ServiceThreadStatusPane({
           <div className="flex items-center justify-center gap-1.5">
             <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
             <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-            <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+            <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
           </div>
         ) : null}
         <div
           className={cn(
-            "font-medium text-[15px] text-[color:var(--text-primary)]",
+            "font-medium text-[length:var(--text-base)] text-[color:var(--text-primary)]",
             tone === "loading" ? "mt-4" : undefined,
           )}
         >
           {title}
         </div>
-        <p className="mx-auto mt-2 max-w-[24rem] text-[13px] leading-7 text-[color:var(--text-secondary)]">
+        <p className="mx-auto mt-2 max-w-[24rem] text-[length:var(--text-caption)] leading-7 text-[color:var(--text-secondary)]">
           {description}
         </p>
       </div>
@@ -874,9 +874,9 @@ function ServiceThreadInlineStatus({
     <div className="mx-auto w-full max-w-[34rem]">
       <div
         className={cn(
-          "rounded-[16px] border px-4 py-3 text-[13px] leading-6 shadow-none",
+          "rounded-[var(--radius-md)] border px-4 py-3 text-[length:var(--text-caption)] leading-6 shadow-none",
           tone === "danger"
-            ? "border-[rgba(220,38,38,0.18)] bg-[rgba(255,245,245,0.96)] text-[color:var(--state-danger-text)]"
+            ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]",
         )}
       >
@@ -902,7 +902,7 @@ function MobileOfficialStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -912,7 +912,7 @@ function MobileOfficialStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -922,13 +922,13 @@ function MobileOfficialStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

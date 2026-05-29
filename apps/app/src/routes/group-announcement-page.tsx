@@ -438,7 +438,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             role={notice.tone === "info" ? "alert" : "status"}
             aria-live={notice.tone === "info" ? "assertive" : "polite"}
             tone={notice.tone}
-            className="rounded-[16px] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+            className="rounded-[var(--radius-md)] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
           >
             {notice.tone === "info" ? (
               <div className="flex items-center justify-between gap-2">
@@ -449,7 +449,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                       type="button"
                       variant="secondary"
                       size="sm"
-                      className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                      className="h-7 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                       onClick={notice.onAction}
                     >
                       {notice.actionLabel}
@@ -459,7 +459,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                     type="button"
                     variant="secondary"
                     size="sm"
-                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[11px]"
+                    className="h-7 shrink-0 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)]"
                     onClick={handleErrorStateAction}
                   >
                     {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回群聊信息`)}
@@ -481,7 +481,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
             // group-chat-edit-page saveMutation error 同款修法。
             role="alert"
             tone="danger"
-            className="rounded-[16px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[11px] leading-[1.45] shadow-none"
+            className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">{describeRequestError(saveMutation.error)}</span>
@@ -489,7 +489,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 <button
                   type="button"
                   onClick={handleRetrySave}
-                  className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试保存`)}
                 </button>
@@ -502,7 +502,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                       ...(currentRouteHash ? { hash: currentRouteHash } : {}),
                     });
                   }}
-                  className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  className="rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {t(msg`返回群聊信息`)}
                 </button>
@@ -558,8 +558,8 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 // aria-label="群公告" 明确表达意图，跟父 ChatDetailsSection
                 // 的标题一致。
                 aria-label={t(msg`群公告`)}
-                // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-                className="min-h-44 w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/18 focus:bg-[color:var(--surface-card)]"
+                // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+                className="min-h-44 w-full resize-none rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 py-3 text-[length:var(--text-title)] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/18 focus:bg-[color:var(--surface-card)]"
               />
               {/* 走查 2026-05-22 R1：原版无论有没有现有公告，都常驻一条
                   "留空后保存，会清空当前群公告。"——在 announcement 还是
@@ -567,7 +567,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                   误导（用户会以为我空着提交就能"清空"什么，结果其实保存按钮
                   在 draft==='' 时本来就被 disabled）。只有当真有公告内容时
                   才显示这条提示。 */}
-              <div className="mt-2 flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-2 flex items-center justify-between gap-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 <span>
                   {groupQuery.data.announcement?.trim()
                     ? t(msg`留空后保存，会清空当前群公告。`)
@@ -575,7 +575,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                 </span>
                 <span>{t(msg`${draft.trim().length} 字`)}</span>
               </div>
-              <div className="mt-3 rounded-[12px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+              <div className="mt-3 rounded-[var(--radius-sm)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                 {t(
                   msg`当前公告：${groupQuery.data.announcement?.trim() || t(msg`暂未设置`)}`,
                 )}
@@ -594,7 +594,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                   (groupQuery.data.announcement?.trim() ?? "")
               }
               onClick={triggerSave}
-              className="h-10 w-full rounded-[12px] bg-[color:var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-50"
+              className="h-10 w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-50"
             >
               {saveMutation.isPending ? t(msg`正在保存...`) : t(msg`保存群公告`)}
             </Button>
@@ -631,7 +631,7 @@ function MobileAnnouncementStatusCard({
         tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
       }
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -641,7 +641,7 @@ function MobileAnnouncementStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -651,13 +651,13 @@ function MobileAnnouncementStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

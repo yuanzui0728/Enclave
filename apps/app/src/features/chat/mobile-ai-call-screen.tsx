@@ -622,7 +622,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       <AppPage
         className={cn(
           "min-h-full px-4 py-6",
-          isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
+          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-white",
         )}
       >
         {isDesktopLayout ? (
@@ -642,7 +642,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       <AppPage
         className={cn(
           "min-h-full px-4 py-6",
-          isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
+          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-white",
         )}
       >
         {isDesktopLayout ? (
@@ -683,7 +683,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       <AppPage
         className={cn(
           "min-h-full space-y-4 px-4 py-6",
-          isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
+          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-white",
         )}
       >
         {isDesktopLayout ? (
@@ -694,7 +694,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               onClick={handleBack}
               className={cn(
                 isDesktopLayout
-                  ? "rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#efefef]"
+                  ? "rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
                   : "rounded-full",
               )}
             >
@@ -735,7 +735,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
       <AppPage
         className={cn(
           "min-h-full space-y-4 px-4 py-6",
-          isDesktopLayout ? "bg-[#f3f3f3]" : "bg-[#111827] text-white",
+          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-white",
         )}
       >
         {isDesktopLayout ? (
@@ -752,7 +752,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               onClick={handleBack}
               className={cn(
                 isDesktopLayout
-                  ? "rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#efefef]"
+                  ? "rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
                   : "rounded-full",
               )}
             >
@@ -788,26 +788,26 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
 
   if (isDesktopLayout) {
     return (
-      <AppPage className="min-h-full bg-[#f3f3f3] px-0 py-0">
+      <AppPage className="min-h-full bg-[color:var(--surface-card)] px-0 py-0">
         <div className="flex min-h-full flex-col">
-          <header className="flex items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[#f8f5ec] px-6 py-4">
+          <header className="flex items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--state-warning-bg)] px-6 py-4">
             <div className="flex items-center gap-3">
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex h-10 w-10 items-center justify-center rounded-[12px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[#efefef]"
+                className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-card)]"
                 aria-label={t(msg`返回聊天`)}
               >
                 <ArrowLeft size={18} />
               </button>
               <div>
-                <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                   {isVideoMode ? t(msg`视频通话`) : t(msg`语音通话`)}
                 </div>
                 <div className="mt-1 text-[18px] font-medium text-[color:var(--text-primary)]">
                   {conversation.title}
                 </div>
-                <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+                <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {t(msg`桌面端通话入口已收口到聊天顶部工具栏。`)}
                 </div>
               </div>
@@ -817,19 +817,19 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               type="button"
               variant="secondary"
               onClick={handleBack}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#efefef]"
+              className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
             >
               {t(msg`返回聊天`)}
             </Button>
           </header>
 
           <div className="flex min-h-0 flex-1 items-center justify-center p-6">
-            <div className="w-full max-w-[760px] rounded-[20px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[0_18px_48px_rgba(180,130,20,0.08)]">
-              <div className="inline-flex rounded-full bg-[rgba(180,130,20,0.05)] px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+            <div className="w-full max-w-[760px] rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[0_18px_48px_rgba(180,130,20,0.08)]">
+              <div className="inline-flex rounded-full bg-[color:var(--state-warning-bg)] px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`桌面通话工作区`)}
               </div>
               <div className="mt-5 flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[16px] bg-[color:var(--brand-primary)]/10 text-[#1f8f4f]">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--brand-primary)]/10 text-[color:var(--state-success-text)]">
                   {isVideoMode ? <Camera size={24} /> : <Mic size={24} />}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -845,16 +845,16 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
-                  <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
+                  <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`当前会话`)}
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
                     {conversation.title}
                   </div>
                 </div>
-                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
-                  <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
+                  <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`通话类型`)}
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -863,8 +863,8 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                       : t(msg`语音通话`)}
                   </div>
                 </div>
-                <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
-                  <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 py-4">
+                  <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                     {t(msg`对话对象`)}
                   </div>
                   <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -900,7 +900,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                         : {}),
                     });
                   }}
-                  className="rounded-[12px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#efefef]"
+                  className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
                 >
                   {t(msg`查看聊天信息`)}
                 </Button>
@@ -1078,7 +1078,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
               statusHint=""
             />
 
-            <div className="absolute right-3 top-20 w-[112px] overflow-hidden rounded-[20px] border border-white/12 bg-[rgba(15,23,42,0.72)] shadow-[0_20px_48px_rgba(2,6,23,0.35)]">
+            <div className="absolute right-3 top-20 w-[112px] overflow-hidden rounded-[var(--radius-lg)] border border-white/12 bg-[color:var(--state-info-bg)] shadow-[0_20px_48px_rgba(2,6,23,0.35)]">
               <div className="relative aspect-[3/4] bg-[linear-gradient(180deg,rgba(30,41,59,0.98),rgba(15,23,42,0.96))]">
                 {cameraEnabled && cameraPreview.status === "ready" ? (
                   <video
@@ -1101,7 +1101,7 @@ export function MobileAiCallScreen({ mode }: MobileAiCallScreenProps) {
                         <CameraOff size={16} />
                       )}
                     </div>
-                    <div className="px-2 text-[11px] leading-4 text-white/58">
+                    <div className="px-2 text-[length:var(--text-eyebrow)] leading-4 text-white/58">
                       {cameraPreviewMessage}
                     </div>
                   </div>
@@ -1146,7 +1146,7 @@ function CallToastAction({
     <button
       type="button"
       onClick={onClick}
-      className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[12px] font-medium text-white transition active:bg-white/25"
+      className="shrink-0 rounded-full bg-white/15 px-3 py-1 text-[length:var(--text-caption)] font-medium text-white transition active:bg-white/25"
     >
       {label}
     </button>
@@ -1169,7 +1169,7 @@ function MobileCallStatusCard({
   return (
     <section
       className={cn(
-        "mx-auto flex max-w-[26rem] flex-col items-center rounded-[24px] border px-5 py-6 text-center shadow-[0_24px_64px_rgba(2,6,23,0.28)]",
+        "mx-auto flex max-w-[26rem] flex-col items-center rounded-[var(--radius-xl)] border px-5 py-6 text-center shadow-[0_24px_64px_rgba(2,6,23,0.28)]",
         tone === "danger"
           ? "border-[#f87171]/24 bg-[linear-gradient(180deg,rgba(127,29,29,0.34),rgba(69,10,10,0.3))] text-white"
           : "border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(2,6,23,0.88))] text-white",
@@ -1180,8 +1180,8 @@ function MobileCallStatusCard({
           className={cn(
             "inline-flex rounded-full px-2.5 py-1 text-[10px] font-medium tracking-[0.12em]",
             tone === "danger"
-              ? "bg-[#ef4444]/14 text-[#fecaca]"
-              : "bg-[#34d399]/12 text-[#bbf7d0]",
+              ? "bg-[#ef4444]/14 text-[color:var(--state-danger-text)]"
+              : "bg-[#34d399]/12 text-[color:var(--state-success-text)]",
           )}
         >
           {badge}
@@ -1191,12 +1191,12 @@ function MobileCallStatusCard({
         <div className="mt-3 flex items-center justify-center gap-1.5">
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/24" />
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/36 [animation-delay:120ms]" />
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[#86efac] [animation-delay:240ms]" />
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
       <div className="mt-3 text-[18px] font-medium leading-7">{title}</div>
       {description ? (
-        <p className="mt-2 max-w-[18rem] text-[13px] leading-6 text-white/68">
+        <p className="mt-2 max-w-[18rem] text-[length:var(--text-caption)] leading-6 text-white/68">
           {description}
         </p>
       ) : null}
@@ -1216,7 +1216,7 @@ function MobileCallActionButton({
       className={cn(
         "flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition disabled:opacity-45",
         tone === "danger"
-          ? "border-[#fca5a5]/26 bg-[#ef4444]/14 text-[#fecaca] active:bg-[#ef4444]/20"
+          ? "border-[#fca5a5]/26 bg-[#ef4444]/14 text-[color:var(--state-danger-text)] active:bg-[#ef4444]/20"
           : "border-white/12 bg-white/10 text-white active:bg-white/14",
         className,
       )}

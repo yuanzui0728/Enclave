@@ -200,7 +200,7 @@ export function MobileSpeechInputSheet({
         aria-labelledby={titleId}
         className="pointer-events-auto relative w-full max-w-[19.5rem]"
       >
-        <div className="rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-4 pt-3 text-[color:var(--text-primary)] shadow-[0_20px_48px_rgba(60, 40, 110, 0.18)] backdrop-blur-xl">
+        <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-overlay)] px-4 pb-4 pt-3 text-[color:var(--text-primary)] shadow-[0_20px_48px_rgba(60, 40, 110, 0.18)] backdrop-blur-xl">
           <div className="flex justify-center pb-2.5">
             <div className="h-1 w-10 rounded-full bg-black/8" />
           </div>
@@ -208,18 +208,18 @@ export function MobileSpeechInputSheet({
             <div className="min-w-0">
               <div
                 id={titleId}
-                className="text-[15px] font-medium tracking-[0.01em] text-[color:var(--text-primary)]"
+                className="text-[length:var(--text-base)] font-medium tracking-[0.01em] text-[color:var(--text-primary)]"
               >
                 {title}
               </div>
-              <div className="mt-1 text-[11px] leading-5 text-[#7a7a7a]">
+              <div className="mt-1 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
                 {hint}
               </div>
             </div>
             <button
               type="button"
               className={cn(
-                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[#7a7a7a] transition active:bg-[color:var(--surface-secondary)]",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-muted)] transition active:bg-[color:var(--surface-secondary)]",
                 holding ? "pointer-events-none opacity-0" : "opacity-100",
               )}
               onClick={onClose}
@@ -235,11 +235,11 @@ export function MobileSpeechInputSheet({
               className={cn(
                 "flex h-[76px] w-[76px] items-center justify-center rounded-full border text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32)] transition",
                 holding && cancelIntent
-                  ? "border-[#ff7875]/36 bg-[#ef4444]"
+                  ? "border-[#ff7875]/36 bg-[color:var(--state-danger-bg)]"
                   : listening || holding
                     ? "border-[color:var(--brand-primary)]/30 bg-[color:var(--brand-primary)]"
                     : processing
-                      ? "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[#606266]"
+                      ? "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]",
               )}
             >
@@ -261,10 +261,10 @@ export function MobileSpeechInputSheet({
 
           <div
             className={cn(
-              "mt-4 min-h-[76px] rounded-[20px] border px-4 py-3 text-[13px] leading-6",
+              "mt-4 min-h-[76px] rounded-[var(--radius-lg)] border px-4 py-3 text-[length:var(--text-caption)] leading-6",
               text
                 ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
-                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[#a3a3a3]",
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-muted)]",
             )}
           >
             {text ||
@@ -274,7 +274,7 @@ export function MobileSpeechInputSheet({
           </div>
 
           {error ? (
-            <div className="mt-3 rounded-[16px] border border-[#ffb4b2] bg-[#fff3f3] px-3 py-2 text-[11px] leading-5 text-[#d74b45]">
+            <div className="mt-3 rounded-[var(--radius-md)] border border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--state-danger-text)]">
               {error}
             </div>
           ) : null}
@@ -284,7 +284,7 @@ export function MobileSpeechInputSheet({
               <button
                 type="button"
                 onClick={onCancel}
-                className="flex h-10 items-center justify-center rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[14px] font-medium text-[#606266] transition active:bg-[color:var(--surface-secondary)]"
+                className="flex h-10 items-center justify-center rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[length:var(--text-body)] font-medium text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-secondary)]"
               >
                 {t(msg`取消`)}
               </button>
@@ -292,7 +292,7 @@ export function MobileSpeechInputSheet({
                 type="button"
                 onClick={onCommit}
                 disabled={!canCommit || processing}
-                className="flex h-10 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-[14px] font-medium text-[color:var(--text-on-brand)] shadow-[0_6px_16px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] transition disabled:opacity-45"
+                className="flex h-10 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-[length:var(--text-body)] font-medium text-[color:var(--text-on-brand)] shadow-[0_6px_16px_color-mix(in_srgb,var(--brand-primary)_18%,transparent)] transition disabled:opacity-45"
               >
                 <span className="inline-flex items-center gap-1.5">
                   <WandSparkles size={15} />

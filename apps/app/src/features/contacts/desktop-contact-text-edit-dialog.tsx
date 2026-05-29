@@ -178,14 +178,14 @@ export function DesktopContactTextEditDialog({
           <div className="min-w-0">
             <div
               id={titleId}
-              className="text-[17px] font-medium text-[color:var(--text-primary)]"
+              className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]"
             >
               {title}
             </div>
             {description ? (
               <div
                 id={descId}
-                className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+                className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]"
               >
                 {description}
               </div>
@@ -212,7 +212,7 @@ export function DesktopContactTextEditDialog({
             className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
           />
 
-          <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+          <div className="flex items-center justify-between gap-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             <span>{t(msg`支持留空保存`)}</span>
             <span>{t(msg`${normalizedDraft.length} 字`)}</span>
           </div>

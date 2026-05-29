@@ -46,12 +46,12 @@ export function DigitalHumanEntryNotice({
       tone={tone}
       className={
         compact
-          ? "rounded-[12px] px-3 py-2 text-[11px] leading-[17px] shadow-none"
+          ? "rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[17px] shadow-none"
           : undefined
       }
     >
       <div className={`flex flex-col ${compact ? "gap-2" : "gap-3"}`}>
-        <div className={compact ? "text-[11px] leading-[17px]" : "text-sm leading-6"}>
+        <div className={compact ? "text-[length:var(--text-eyebrow)] leading-[17px]" : "text-sm leading-6"}>
           {message}
         </div>
         <div className={`flex flex-wrap items-center ${compact ? "gap-1.5" : "gap-2"}`}>

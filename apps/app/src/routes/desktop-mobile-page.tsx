@@ -813,7 +813,7 @@ export function DesktopMobilePage() {
       title={t(msg`手机接力`)}
       subtitle={t(msg`把桌面内容带到移动端继续处理。`)}
       toolbar={
-        <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+        <div className="rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
           {t(msg`${activeHandoffHistory.length} 条最近接力`)}
         </div>
       }
@@ -821,7 +821,7 @@ export function DesktopMobilePage() {
       sidebar={
         <div className="flex h-full min-h-0 flex-col">
           <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`手机接力`)}
             </div>
             <div className="mt-1 text-xs leading-5 text-[color:var(--text-muted)]">
@@ -829,7 +829,7 @@ export function DesktopMobilePage() {
             </div>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] px-4 py-4">
+          <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-shell)] px-4 py-4">
             <div className="space-y-4">
               <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
                 <div className="flex items-center gap-4">
@@ -862,7 +862,7 @@ export function DesktopMobilePage() {
                     groupedHandoffHistory.slice(0, 4).map((group) => (
                       <div
                         key={group.id}
-                        className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5"
+                        className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-2.5"
                       >
                         <div className="text-xs text-[color:var(--text-secondary)]">
                           {group.label}
@@ -873,7 +873,7 @@ export function DesktopMobilePage() {
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-5 text-[color:var(--text-muted)]">
+                    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3 text-xs leading-5 text-[color:var(--text-muted)]">
                       {t(msg`还没有形成稳定的手机接力记录。`)}
                     </div>
                   )}
@@ -1079,7 +1079,7 @@ export function DesktopMobilePage() {
               {quickEntries.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
+                  className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                 >
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
                     {item.label}
@@ -1378,7 +1378,7 @@ export function DesktopMobilePage() {
           </div>
 
           <div className="mt-4 grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
-            <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+            <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 {t(msg`当前小程序工作台`)}
               </div>
@@ -1436,7 +1436,7 @@ export function DesktopMobilePage() {
               )}
             </div>
 
-            <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+            <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 {t(msg`最近使用小程序`)}
               </div>
@@ -1528,7 +1528,7 @@ export function DesktopMobilePage() {
           </div>
 
           <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_1fr]">
-            <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+            <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 {t(msg`当前直播准备`)}
               </div>
@@ -1539,7 +1539,7 @@ export function DesktopMobilePage() {
                     )
                   : t(msg`直播伴侣里还没有填写准备稿。`)}
               </div>
-              <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-3 flex flex-wrap gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 <span>
                   {t(msg`模式 ${resolveLiveModeLabel(liveDraft.mode)}`)}
                 </span>
@@ -1592,7 +1592,7 @@ export function DesktopMobilePage() {
               </div>
             </div>
 
-            <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+            <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
               <div className="text-sm font-medium text-[color:var(--text-primary)]">
                 {t(msg`最近直播状态`)}
               </div>
@@ -1607,7 +1607,7 @@ export function DesktopMobilePage() {
                       )
                     : t(msg`还没有直播记录。`)}
               </div>
-              <div className="mt-3 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {activeLiveSession
                   ? t(
                       msg`开播于 ${formatTimestamp(activeLiveSession.startedAt)}`,
@@ -1679,7 +1679,7 @@ export function DesktopMobilePage() {
                         {group.description}
                       </div>
                     </div>
-                    <div className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)]">
+                    <div className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)]">
                       {t(msg`${group.items.length} 条`)}
                     </div>
                   </div>
@@ -1687,7 +1687,7 @@ export function DesktopMobilePage() {
                   {group.items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-start justify-between gap-4 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
+                      className="flex items-start justify-between gap-4 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                     >
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1696,7 +1696,7 @@ export function DesktopMobilePage() {
                         <div className="mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]">
                           {item.description}
                         </div>
-                        <div className="mt-2 text-[11px] text-[color:var(--text-muted)]">
+                        <div className="mt-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                           {formatTimestamp(item.sentAt)}
                         </div>
                       </div>
@@ -1757,7 +1757,7 @@ function RecentConversationRow({
   onCopy: () => void;
 }) {
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
       <div className="flex items-start gap-3">
         {isPersistedGroupConversation(item) ? (
           <GroupAvatarChip
@@ -1813,7 +1813,7 @@ function RecentArticleRow({
   }
 
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4">
       <div className="flex items-start gap-3">
         <AvatarChip name={account.name} src={account.avatar} size="wechat" />
         <div className="min-w-0 flex-1">
@@ -1890,7 +1890,7 @@ function MiniProgramHandoffCard({
   onCopy: () => void;
 }) {
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1910,7 +1910,7 @@ function MiniProgramHandoffCard({
         {miniProgram.openHint}
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2 text-[11px] text-[color:var(--text-muted)]">
+      <div className="mt-3 flex flex-wrap gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
         <span>{t(msg`待办 ${completedTaskCount}/${totalTaskCount}`)}</span>
         <span>
           {lastOpenedAt
@@ -1935,7 +1935,7 @@ function MiniProgramHandoffCard({
 
 function MetricCard({ label, value }: { label: ReactNode; value: ReactNode }) {
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
@@ -1946,7 +1946,7 @@ function MetricCard({ label, value }: { label: ReactNode; value: ReactNode }) {
 
 function StatusRow({ label, value }: { label: ReactNode; value: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
+    <div className="flex items-center justify-between gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="text-sm font-medium text-[color:var(--text-primary)]">
         {value}

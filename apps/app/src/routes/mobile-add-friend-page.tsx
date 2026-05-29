@@ -605,7 +605,7 @@ function MobileAddFriend() {
             {pendingRequestCount > 0 ? (
               <span
                 aria-hidden="true"
-                className="absolute right-1 top-1 min-w-[14px] rounded-full bg-[#fa5151] px-[3px] text-[9px] font-medium leading-[14px] text-white"
+                className="absolute right-1 top-1 min-w-[14px] rounded-full bg-[color:var(--state-danger-bg)] px-[3px] text-[9px] font-medium leading-[14px] text-white"
               >
                 {pendingRequestCount > 99 ? "99+" : pendingRequestCount}
               </span>
@@ -629,9 +629,9 @@ function MobileAddFriend() {
               value={searchText}
               onChange={(event) => setSearchText(event.target.value)}
               placeholder={t(msg`隐界号 / 角色名`)}
-              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in，
+              // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in，
               // 这里 autoFocus 进来就直接抖。
-              className="min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              className="min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               autoFocus
               enterKeyHint="search"
               // 隐界号是带下划线的小写英数 ID（yinjie_alice123）；iOS 默认会
@@ -676,7 +676,7 @@ function MobileAddFriend() {
             <button
               type="button"
               onClick={clearSearch}
-              className="h-9 shrink-0 rounded-[8px] px-2 text-[13px] text-[color:var(--text-secondary)] active:bg-black/[0.05]"
+              className="h-9 shrink-0 rounded-[8px] px-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] active:bg-black/[0.05]"
             >
               {t(msg`取消`)}
             </button>
@@ -684,7 +684,7 @@ function MobileAddFriend() {
             <Button
               type="submit"
               variant="primary"
-              className="h-9 shrink-0 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[13px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+              className="h-9 shrink-0 rounded-full bg-[color:var(--brand-primary)] px-3.5 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
             >
               {t(msg`搜索`)}
             </Button>
@@ -696,7 +696,7 @@ function MobileAddFriend() {
         <div className="px-3 pt-2">
           <InlineNotice
             tone={notice.tone}
-            className="rounded-[12px] px-3 py-2 text-[12px] leading-5 shadow-none"
+            className="rounded-[var(--radius-sm)] px-3 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
           >
             {notice.message}
           </InlineNotice>
@@ -745,7 +745,7 @@ function MobileAddFriend() {
                     void friendRequestsQuery.refetch();
                     void blockedQuery.refetch();
                   }}
-                  className="rounded-full border border-[rgba(220,38,38,0.18)] bg-[color:var(--surface-card)] px-3 py-1 text-[11px] font-medium text-[color:var(--state-danger-text)]"
+                  className="rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {t(msg`重试读取`)}
                 </button>
@@ -856,22 +856,22 @@ function MobileAddFriendWelcomeState({
       <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--brand-primary)]/8 text-[color:var(--brand-primary)]">
         <Search aria-hidden="true" size={22} />
       </div>
-      <div className="mt-4 text-[16px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-4 text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
         {t(msg`搜索隐界号或角色名`)}
       </div>
-      <div className="mt-1.5 max-w-[280px] text-[12px] leading-5 text-[color:var(--text-muted)]">
+      <div className="mt-1.5 max-w-[280px] text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
         {t(msg`输入完整的隐界号能精确命中，也可以用角色名或资料关键词搜索。`)}
       </div>
       {history.length ? (
         <div className="mt-5 w-full max-w-[320px] text-left">
           <div className="flex items-center justify-between px-1">
-            <div className="text-[12px] font-medium text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-muted)]">
               {t(msg`最近搜索`)}
             </div>
             <button
               type="button"
               onClick={onClearHistory}
-              className="text-[11px] text-[color:var(--text-muted)] active:opacity-60"
+              className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)] active:opacity-60"
             >
               {t(msg`清空`)}
             </button>
@@ -880,7 +880,7 @@ function MobileAddFriendWelcomeState({
             {history.map((item) => (
               <div
                 key={item.keyword}
-                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]"
+                className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
               >
                 <button
                   type="button"
@@ -921,7 +921,7 @@ function MobileAddFriendNoResultsState({ keyword }: { keyword: string }) {
   const t = useRuntimeTranslator();
   return (
     <div className="flex flex-col items-center px-6 pt-12 text-center">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[rgba(60, 40, 110, 0.05)] text-[color:var(--text-secondary)]">
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--border-faint)] text-[color:var(--text-secondary)]">
         <Search aria-hidden="true" size={22} />
       </div>
       {/* 走查 R3：原版标题没 max-w / break-words，submittedKeyword 来自 URL
@@ -930,10 +930,10 @@ function MobileAddFriendNoResultsState({ keyword }: { keyword: string }) {
           滚动。Chinese 在字间会自然换行不踩；纯 ASCII 长串才会爆。加 mx-auto
           max-w-[280px] + break-words 跟下方描述统一收紧；description 已经有
           max-w-[280px] 就是这套防线，title 漏了一个。 */}
-      <div className="mx-auto mt-4 max-w-[280px] break-words text-[16px] font-medium text-[color:var(--text-primary)]">
+      <div className="mx-auto mt-4 max-w-[280px] break-words text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
         {t(msg`没有找到“${keyword}”`)}
       </div>
-      <div className="mt-1.5 max-w-[280px] text-[12px] leading-5 text-[color:var(--text-muted)]">
+      <div className="mt-1.5 max-w-[280px] text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
         {t(msg`请检查隐界号是否完整，或者换个关键词试试。`)}
       </div>
     </div>
@@ -1018,7 +1018,7 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
             className="block w-full text-left"
           >
             <div className="flex items-center gap-2">
-              <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {displayName}
               </div>
               {/* badge 跟按钮文案对齐：Bug W 之后 outbound pending 按钮显示
@@ -1031,10 +1031,10 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
                   : t(formatRelationshipStatus(item.status))}
               </span>
             </div>
-            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {subtitle}
             </div>
-            <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-dim)]">
+            <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
               {matchReasonText}
             </div>
           </button>
@@ -1047,7 +1047,7 @@ const MobileAddFriendResultRow = memo(function MobileAddFriendResultRow({
               disabled={meta.disabled}
               onClick={handlePrimaryClick}
               className={cn(
-                "h-8 rounded-full px-3.5 text-[12px] shadow-none",
+                "h-8 rounded-full px-3.5 text-[length:var(--text-caption)] shadow-none",
                 item.status === "available"
                   ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                   : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
@@ -1280,20 +1280,20 @@ function MobileAddFriendSendSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby="mobile-add-friend-sheet-title"
-        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-[color:var(--surface-card)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(60, 40, 110, 0.18)] sm:rounded-[16px]"
+        className="relative flex w-full max-w-[460px] flex-col rounded-t-[18px] bg-[color:var(--surface-card)] pb-[calc(max(env(safe-area-inset-bottom,0px),var(--keyboard-inset,0px))+0.75rem)] shadow-[0_-12px_32px_rgba(60, 40, 110, 0.18)] sm:rounded-[var(--radius-md)]"
       >
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
           <button
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="text-[14px] text-[color:var(--text-secondary)] disabled:opacity-60"
+            className="text-[length:var(--text-body)] text-[color:var(--text-secondary)] disabled:opacity-60"
           >
             {t(msg`取消`)}
           </button>
           <div
             id="mobile-add-friend-sheet-title"
-            className="text-[15px] font-medium text-[color:var(--text-primary)]"
+            className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]"
           >
             {t(msg`好友申请`)}
           </div>
@@ -1304,7 +1304,7 @@ function MobileAddFriendSendSheet({
             // 不必 void 包裹；保留 void 反而读着像有 promise 要兜，误导后续维护。
             onClick={() => onSubmit(trimmed)}
             className={cn(
-              "text-[14px] font-medium",
+              "text-[length:var(--text-body)] font-medium",
               pending || !trimmed
                 ? "text-[color:var(--text-dim)]"
                 : "text-[color:var(--brand-primary)] active:opacity-80",
@@ -1315,23 +1315,23 @@ function MobileAddFriendSendSheet({
         </div>
 
         <div className="px-4 pt-3.5">
-          <div className="flex items-center gap-3 rounded-[12px] bg-[color:var(--surface-secondary)] px-3 py-2.5">
+          <div className="flex items-center gap-3 rounded-[var(--radius-sm)] bg-[color:var(--surface-secondary)] px-3 py-2.5">
             <AvatarChip
               name={displayName}
               src={result.character.avatar}
               size="wechat"
             />
             <div className="min-w-0">
-              <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {displayName}
               </div>
-              <div className="mt-0.5 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {result.identifier}
               </div>
             </div>
           </div>
 
-          <div className="mt-3.5 text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-3.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {t(msg`发送验证申请，对方通过后即可成为朋友。`)}
           </div>
 
@@ -1343,10 +1343,10 @@ function MobileAddFriendSendSheet({
               onChange={(event) => setGreeting(event.target.value)}
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
-              // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
-              className="min-h-[112px] w-full resize-none rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/42"
+              // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+              className="min-h-[112px] w-full resize-none rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] leading-6 text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/42"
             />
-            <div className="mt-1 flex justify-end text-[11px] text-[color:var(--text-dim)]">
+            <div className="mt-1 flex justify-end text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
               {greeting.length}/60
             </div>
           </div>
@@ -1357,7 +1357,7 @@ function MobileAddFriendSendSheet({
           {errorMessage ? (
             <div
               role="alert"
-              className="mt-2.5 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.94)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+              className="mt-2.5 rounded-[var(--radius-sm)] border border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--state-danger-text)]"
             >
               {errorMessage}
             </div>

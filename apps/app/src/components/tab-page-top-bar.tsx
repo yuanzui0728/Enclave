@@ -100,13 +100,13 @@ export function TabPageTopBar({
               : undefined
           }
         >
-          {eyebrow ? <div className="truncate text-[11px] uppercase tracking-[0.26em] text-[color:var(--brand-primary)]">{eyebrow}</div> : null}
+          {eyebrow ? <div className="truncate text-[length:var(--text-eyebrow)] uppercase tracking-[0.26em] text-[color:var(--brand-primary)]">{eyebrow}</div> : null}
           <h1
             className={cn(
               "truncate tracking-[0.01em] text-current",
               titleAlign === "center"
-                ? "text-[17px] font-medium"
-                : "text-[22px] font-semibold",
+                ? "text-[length:var(--text-title)] font-medium"
+                : "text-[length:var(--text-section)] font-semibold",
               eyebrow ? "mt-1" : undefined,
               titleClassName,
             )}

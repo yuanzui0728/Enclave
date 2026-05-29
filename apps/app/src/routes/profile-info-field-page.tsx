@@ -264,7 +264,7 @@ export function ProfileInfoFieldPage() {
             disabled={!canSave || saveMutation.isPending}
             onClick={handleSave}
             className={cn(
-              "rounded-full px-3 py-1 text-[13px] font-medium transition-colors",
+              "rounded-full px-3 py-1 text-[length:var(--text-caption)] font-medium transition-colors",
               !canSave || saveMutation.isPending
                 ? "text-[color:var(--text-dim)]"
                 : "text-[color:var(--brand-primary)] active:bg-black/[0.05]",
@@ -291,7 +291,7 @@ export function ProfileInfoFieldPage() {
                     saveMutation.reset();
                   }}
                   className={cn(
-                    "flex-1 rounded-[12px] border px-3 py-2 text-[13px] font-medium transition-colors",
+                    "flex-1 rounded-[var(--radius-sm)] border px-3 py-2 text-[length:var(--text-caption)] font-medium transition-colors",
                     active
                       ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
@@ -316,7 +316,7 @@ export function ProfileInfoFieldPage() {
               setDraft(event.target.value);
               saveMutation.reset();
             }}
-            className="min-h-[96px] rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 shadow-none disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
+            className="min-h-[96px] rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] leading-6 shadow-none disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
           />
         ) : (
           <TextField
@@ -345,15 +345,15 @@ export function ProfileInfoFieldPage() {
                 if (canSave && !saveMutation.isPending) handleSave();
               }
             }}
-            // text-[16px]: iOS Safari focus <16px 会强制 zoom-in，autoFocus 进页就抖。
-            className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 shadow-none disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
+            // text-[length:var(--text-title)]: iOS Safari focus <16px 会强制 zoom-in，autoFocus 进页就抖。
+            className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] leading-6 shadow-none disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
           />
         )}
 
         {config.maxLength !== undefined && !isGender && !isNumber ? (
           <div
             className={cn(
-              "mt-1.5 text-right text-[11px]",
+              "mt-1.5 text-right text-[length:var(--text-eyebrow)]",
               overLimit
                 ? "text-[color:var(--state-danger-text)]"
                 : "text-[color:var(--text-dim)]",
@@ -366,24 +366,24 @@ export function ProfileInfoFieldPage() {
       </div>
 
       {config.hint ? (
-        <div className="px-4 pt-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+        <div className="px-4 pt-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
           {t(config.hint)}
         </div>
       ) : null}
 
       {/* 统一隐私说明：解释为什么收集、给谁看，打消顾虑。 */}
-      <div className="px-4 pt-2 text-[12px] leading-5 text-[color:var(--text-muted)]">
+      <div className="px-4 pt-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
         {t(
           msg`这些信息只用来让你的 AI 伙伴更懂你、回复更贴合，不会公开给其他用户。`,
         )}
       </div>
 
       {ageInvalid ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`请填写 ${AGE_MIN}-${AGE_MAX} 之间的年龄。`)}
         </div>
       ) : overLimit && config.maxLength !== undefined ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`内容太长啦，最多 ${config.maxLength} 个字符，请删掉一些。`)}
         </div>
       ) : null}
@@ -391,7 +391,7 @@ export function ProfileInfoFieldPage() {
       {errorMessage ? (
         <div
           role="alert"
-          className="mx-4 mt-3 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+          className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--state-danger-text)]"
         >
           {errorMessage}
         </div>

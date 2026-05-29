@@ -98,8 +98,8 @@ export function MiniProgramOpenPanel({
     <section
       className={cn(
         compact
-          ? "rounded-[16px] border p-3.5 shadow-none"
-          : "rounded-[24px] border p-5 shadow-[var(--shadow-soft)]",
+          ? "rounded-[var(--radius-md)] border p-3.5 shadow-none"
+          : "rounded-[var(--radius-xl)] border p-5 shadow-[var(--shadow-soft)]",
         tone.mutedPanelClassName,
       )}
     >
@@ -111,21 +111,21 @@ export function MiniProgramOpenPanel({
               <div
                 className={cn(
                   compact
-                    ? "rounded-full border px-2 py-0.5 text-[11px] font-medium"
+                    ? "rounded-full border px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium"
                     : "rounded-full border px-2.5 py-1 text-[10px] font-medium",
                   tone.badgeClassName,
                 )}
               >
                 {isActive ? t(msg`已打开`) : t(msg`待打开`)}
               </div>
-              <div className={cn("text-[color:var(--text-muted)]", compact ? "text-[11px]" : "text-[11px]")}>
+              <div className={cn("text-[color:var(--text-muted)]", compact ? "text-[length:var(--text-eyebrow)]" : "text-[length:var(--text-eyebrow)]")}>
                 {isActive ? t(msg`最近一次打开的小程序面板`) : t(msg`点击后写入最近使用和打开态`)}
               </div>
             </div>
             <div
               className={cn(
                 "font-semibold text-[color:var(--text-primary)]",
-                compact ? "mt-1.5 text-[14px]" : "mt-3 text-lg",
+                compact ? "mt-1.5 text-[length:var(--text-body)]" : "mt-3 text-lg",
               )}
             >
               {isActive
@@ -135,7 +135,7 @@ export function MiniProgramOpenPanel({
             <div
               className={cn(
                 "text-[color:var(--text-secondary)]",
-                compact ? "mt-1 text-[11px] leading-[1.35rem]" : "mt-2 text-sm leading-7",
+                compact ? "mt-1 text-[length:var(--text-eyebrow)] leading-[1.35rem]" : "mt-2 text-sm leading-7",
               )}
             >
               {miniProgram.openHint}
@@ -195,7 +195,7 @@ export function MiniProgramOpenPanel({
             key={tag}
             className={cn(
               "rounded-full bg-white/84 text-[color:var(--text-muted)]",
-              compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[11px]",
+              compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[length:var(--text-eyebrow)]",
             )}
           >
             {tag}
@@ -207,13 +207,13 @@ export function MiniProgramOpenPanel({
         <div
           className={cn(
             "mt-4.5 border border-white/80 bg-white/78",
-            compact ? "rounded-[16px] p-3" : "rounded-[24px] p-4",
+            compact ? "rounded-[var(--radius-md)] p-3" : "rounded-[var(--radius-xl)] p-4",
           )}
         >
           <div
             className={cn(
               "font-medium text-[color:var(--text-primary)]",
-              compact ? "text-[13px]" : "text-sm",
+              compact ? "text-[length:var(--text-caption)]" : "text-sm",
             )}
           >
             {t(msg`当前工作台`)}
@@ -232,8 +232,8 @@ export function MiniProgramOpenPanel({
               <div
                 key={task.id}
                 className={cn(
-                  "border border-[rgba(60, 40, 110, 0.06)] bg-white/86",
-                  compact ? "rounded-[16px] px-3 py-2.5" : "rounded-[20px] px-4 py-4",
+                  "border border-[color:var(--border-faint)] bg-white/86",
+                  compact ? "rounded-[var(--radius-md)] px-3 py-2.5" : "rounded-[var(--radius-lg)] px-4 py-4",
                 )}
               >
                 <div className="flex items-start justify-between gap-3">
@@ -242,7 +242,7 @@ export function MiniProgramOpenPanel({
                       <div
                         className={cn(
                           "font-medium text-[color:var(--text-primary)]",
-                          compact ? "text-[12px]" : "text-sm",
+                          compact ? "text-[length:var(--text-caption)]" : "text-sm",
                         )}
                       >
                         {task.title}
@@ -250,7 +250,7 @@ export function MiniProgramOpenPanel({
                       {task.completed ? (
                         <span
                           className={cn(
-                            "rounded-full bg-[rgba(47,122,63,0.1)] text-[#2f7a3f]",
+                            "rounded-full bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
                             compact ? "px-1.5 py-0.5 text-[10px]" : "px-2.5 py-1 text-[10px]",
                           )}
                         >
@@ -273,7 +273,7 @@ export function MiniProgramOpenPanel({
                     onClick={() => onToggleTask(miniProgram.id, task.id)}
                     className={cn(
                       "shrink-0 border-white/80 bg-[color:var(--surface-card)]",
-                      compact && "h-8 rounded-full px-3 text-[11px]",
+                      compact && "h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]",
                     )}
                   >
                     <CheckCircle2 size={14} />
@@ -290,7 +290,7 @@ export function MiniProgramOpenPanel({
         <Button
           variant="primary"
           onClick={() => onOpen(miniProgram.id)}
-          className={compact ? "h-8 rounded-full px-3.5 text-[11px]" : undefined}
+          className={compact ? "h-8 rounded-full px-3.5 text-[length:var(--text-eyebrow)]" : undefined}
         >
           {isActive ? t(msg`继续使用`) : t(msg`打开小程序`)}
         </Button>
@@ -300,7 +300,7 @@ export function MiniProgramOpenPanel({
             onClick={() => onCopyToMobile(miniProgram.id)}
             className={cn(
               "border-white/80 bg-white/88",
-              compact && "h-8 rounded-full px-3.5 text-[11px]",
+              compact && "h-8 rounded-full px-3.5 text-[length:var(--text-eyebrow)]",
             )}
           >
             {resolvedCopyActionIcon}
@@ -312,7 +312,7 @@ export function MiniProgramOpenPanel({
           onClick={() => onTogglePinned(miniProgram.id)}
           className={cn(
             "border-white/80 bg-white/88",
-            compact && "h-8 rounded-full px-3.5 text-[11px]",
+            compact && "h-8 rounded-full px-3.5 text-[length:var(--text-eyebrow)]",
           )}
         >
           {isPinned ? t(msg`移出我的小程序`) : t(msg`加入我的小程序`)}
@@ -320,7 +320,7 @@ export function MiniProgramOpenPanel({
         <div
           className={cn(
             "flex items-center text-[color:var(--text-muted)]",
-            compact ? "text-[11px] leading-[1.35rem]" : "text-xs leading-6",
+            compact ? "text-[length:var(--text-eyebrow)] leading-[1.35rem]" : "text-xs leading-6",
           )}
         >
           {isActive
@@ -351,13 +351,13 @@ function PanelMetric({
     <div
       className={cn(
         "border border-white/80 bg-white/84",
-        compact ? "rounded-[16px] px-2.5 py-2.5" : "rounded-[24px] px-4 py-4",
+        compact ? "rounded-[var(--radius-md)] px-2.5 py-2.5" : "rounded-[var(--radius-xl)] px-4 py-4",
       )}
     >
       <div
         className={cn(
           "flex items-center gap-2 uppercase text-[color:var(--text-muted)]",
-          compact ? "text-[11px] tracking-[0.12em]" : "text-[11px] tracking-[0.14em]",
+          compact ? "text-[length:var(--text-eyebrow)] tracking-[0.12em]" : "text-[length:var(--text-eyebrow)] tracking-[0.14em]",
         )}
       >
         {icon}
@@ -366,7 +366,7 @@ function PanelMetric({
       <div
         className={cn(
           "font-medium text-[color:var(--text-primary)]",
-          compact ? "mt-1 text-[12px] leading-5" : "mt-2 text-sm",
+          compact ? "mt-1 text-[length:var(--text-caption)] leading-5" : "mt-2 text-sm",
         )}
       >
         {value}
@@ -375,7 +375,7 @@ function PanelMetric({
         <div
           className={cn(
             "text-[color:var(--text-dim)]",
-            compact ? "mt-0.5 text-[11px] leading-4" : "mt-1 text-[11px] leading-5",
+            compact ? "mt-0.5 text-[length:var(--text-eyebrow)] leading-4" : "mt-1 text-[length:var(--text-eyebrow)] leading-5",
           )}
         >
           {detail}

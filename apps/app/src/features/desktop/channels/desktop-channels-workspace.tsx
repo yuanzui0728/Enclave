@@ -781,7 +781,7 @@ export function DesktopChannelsWorkspace({
   }, [authorPanelVisible, commentDrawerPostId, forwardPickerPost]);
 
   return (
-    <div className="relative flex h-full min-h-0 flex-col bg-[rgba(244,247,246,0.98)]">
+    <div className="relative flex h-full min-h-0 flex-col bg-[color:var(--surface-section)]">
       <div className="border-b border-[color:var(--border-faint)] bg-white/92 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between gap-4 px-6">
           {/*
@@ -873,7 +873,7 @@ export function DesktopChannelsWorkspace({
                       nextTab?.focus({ preventScroll: true });
                     });
                   }}
-                  className="relative flex h-full items-center text-[14px] outline-none"
+                  className="relative flex h-full items-center text-[length:var(--text-body)] outline-none"
                 >
                   <span
                     className={cn(
@@ -1337,10 +1337,10 @@ function ForwardNotice({
     <div
       role={isDanger ? "alert" : "status"}
       className={cn(
-        "fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full px-4 py-2 text-[13px] text-white shadow-lg",
+        "fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full px-4 py-2 text-[length:var(--text-caption)] text-white shadow-lg",
         isDanger
-          ? "bg-[rgba(185,28,28,0.94)]"
-          : "bg-[rgba(17,24,39,0.92)]",
+          ? "bg-[color:var(--state-danger-bg)]"
+          : "bg-[color:var(--state-info-bg)]",
       )}
     >
       {message}
@@ -1415,7 +1415,7 @@ function ChannelActionButton({
       </span>
       <span
         className={cn(
-          "text-[11px]",
+          "text-[length:var(--text-eyebrow)]",
           isDark
             ? active
               ? "font-medium text-[color:var(--brand-primary)]"
@@ -1624,7 +1624,7 @@ function ChannelMediaSurface({
             </div>
           ) : null}
           {textContent.trim() && textContent !== post.title ? (
-            <div className="mt-3 text-[15px] leading-[1.7] text-white/82 line-clamp-[10]">
+            <div className="mt-3 text-[length:var(--text-base)] leading-[1.7] text-white/82 line-clamp-[10]">
               {textContent}
             </div>
           ) : null}
@@ -1636,10 +1636,10 @@ function ChannelMediaSurface({
   return (
     <div className="flex flex-1 items-center justify-center text-center">
       <div className="px-6">
-        <div className="text-[16px] font-semibold text-white">
+        <div className="text-[length:var(--text-title)] font-semibold text-white">
           {t(msg`暂无可播放内容`)}
         </div>
-        <div className="mt-2 text-[13px] leading-6 text-white/72">
+        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-white/72">
           {t(msg`稍后再来看看`)}
         </div>
       </div>
@@ -1717,7 +1717,7 @@ function ChannelFallbackImage({
         // 是图片到底」。换成更贴语义的 ImageOff。
         <div className="flex flex-col items-center gap-2 text-white/70">
           <ImageOff size={48} className="text-white/40" />
-          <div className="text-[12px]">{t(msg`封面暂时无法显示`)}</div>
+          <div className="text-[length:var(--text-caption)]">{t(msg`封面暂时无法显示`)}</div>
         </div>
       ) : (
         <img
@@ -2042,14 +2042,14 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
               ? t(msg`${post.authorName}：${post.title}`)
               : t(msg`${post.authorName} 的视频号内容`)
           }
-          className="relative flex aspect-[9/16] h-[min(82vh,800px)] flex-shrink-0 overflow-hidden rounded-[20px] bg-[#0d0e12] shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
+          className="relative flex aspect-[9/16] h-[min(82vh,800px)] flex-shrink-0 overflow-hidden rounded-[var(--radius-lg)] bg-[#0d0e12] shadow-[0_24px_60px_rgba(0,0,0,0.55)]">
           <ChannelMediaSurface
             post={post}
             isActive={isActive}
             unmuted={unmuted}
             onToggleUnmuted={onToggleUnmuted}
           />
-          <div className="pointer-events-none absolute left-4 top-4 rounded-md bg-[rgba(15,23,42,0.68)] px-2.5 py-1 text-[11px] font-medium text-white">
+          <div className="pointer-events-none absolute left-4 top-4 rounded-md bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
             {sectionBadge}
           </div>
 
@@ -2091,10 +2091,10 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                   />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14px] font-semibold text-white">
+                  <div className="truncate text-[length:var(--text-body)] font-semibold text-white">
                     {post.authorName}
                   </div>
-                  <div className="mt-0.5 text-[11px] text-white/72">
+                  <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-white/72">
                     {formatTimestamp(post.createdAt)} ·{" "}
                     {formatChannelMeta(post)}
                   </div>
@@ -2129,7 +2129,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                   onClick={() => onToggleAuthorFollow(post)}
                   disabled={followPending}
                   className={cn(
-                    "rounded-full px-3 py-1 text-[12px] transition disabled:cursor-not-allowed disabled:opacity-70",
+                    "rounded-full px-3 py-1 text-[length:var(--text-caption)] transition disabled:cursor-not-allowed disabled:opacity-70",
                     post.ownerState?.isFollowingAuthor
                       ? "border border-white/28 bg-transparent text-white/85 hover:bg-white/10"
                       : "bg-[color:var(--brand-primary)] text-white hover:opacity-95",
@@ -2144,7 +2144,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
               ) : null}
             </div>
             {post.title ? (
-              <div className="mt-3 line-clamp-2 text-[15px] font-semibold text-white">
+              <div className="mt-3 line-clamp-2 text-[length:var(--text-base)] font-semibold text-white">
                 {post.title}
               </div>
             ) : null}
@@ -2152,7 +2152,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
               // 视频号 audio post 后端常把 title 和 text 都填成 "X·音乐"，标题和
               // 正文重复出现没意义；slideBodyText useMemo（同 slide 顶部）已经把
               // "cleanText===title" 的情况返回 null，本节点只负责显隐渲染。
-              <div className="mt-2 line-clamp-3 text-[13px] leading-6 text-white/82">
+              <div className="mt-2 line-clamp-3 text-[length:var(--text-caption)] leading-6 text-white/82">
                 {slideBodyText}
               </div>
             ) : null}
@@ -2480,19 +2480,19 @@ function ChannelCommentsDrawer({
         // 列里 —— focus trap 兜底：极端无 focusable child 时也能把焦点拉进来
         // 不漏。
         tabIndex={-1}
-        className="pointer-events-auto flex max-h-[85vh] w-[380px] flex-col overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.32)] sm:translate-x-[260px]"
+        className="pointer-events-auto flex max-h-[85vh] w-[380px] flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.32)] sm:translate-x-[260px]"
       >
         <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-3">
           <div>
             <div
               id="channels-comments-drawer-title"
-              className="text-[14px] font-medium text-[color:var(--text-primary)]"
+              className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]"
             >
               {t(msg`评论 ${selectedPost.commentCount}`)}
             </div>
             <div
               id="channels-comments-drawer-author"
-              className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]"
+              className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
             >
               {selectedPost.authorName}
             </div>
@@ -2778,7 +2778,7 @@ function ChannelAuthorOverlay({
         // tabIndex=-1 让 dialog 自身可程序聚焦但不在 sequential Tab 序列里 ——
         // focus trap 兜底：极端无 focusable child 时也能把焦点拉进来不漏。
         tabIndex={-1}
-        className="relative flex max-h-[90vh] w-full max-w-[720px] flex-col overflow-auto rounded-[24px] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative flex max-h-[90vh] w-full max-w-[720px] flex-col overflow-auto rounded-[var(--radius-xl)] bg-white shadow-[var(--shadow-overlay)]"
       >
         <DesktopChannelAuthorPanel
           authorId={authorId}
@@ -2993,30 +2993,30 @@ function DesktopChannelAuthorPanel({
                     的一部分（结合 generic "作者主页" 通用前缀）。 */}
                 <div
                   id="channels-author-overlay-author-name"
-                  className="truncate text-[16px] font-semibold text-[color:var(--text-primary)]"
+                  className="truncate text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]"
                 >
                   {profile.authorName}
                 </div>
-                <span className="rounded-full bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+                <span className="rounded-full bg-[color:var(--border-faint)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
                   {profile.authorType === "character"
                     ? t(msg`居民作者`)
                     : t(msg`世界主人`)}
                 </span>
               </div>
-              <div className="mt-2 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+              <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                 {profile.bio?.trim() || fallbackBio}
               </div>
             </div>
           </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
               {t(msg`${profile.followerCount} 关注者`)}
             </span>
-            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
               {t(msg`${postCount} 条内容`)}
             </span>
-            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)]">
+            <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
               {t(msg`${liveClipCount} 条直播回放`)}
             </span>
           </div>
@@ -3087,7 +3087,7 @@ function DesktopChannelAuthorPanel({
                     aria-current={selectedPostId === post.id ? "true" : undefined}
                     onClick={() => onOpenPost(post.id, profile.authorId)}
                     className={cn(
-                      "w-full rounded-[16px] border px-3 py-3 text-left transition",
+                      "w-full rounded-[var(--radius-md)] border px-3 py-3 text-left transition",
                       selectedPostId === post.id
                         ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]"
                         : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white hover:shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
@@ -3138,7 +3138,7 @@ function DesktopChannelAuthorPanel({
                         </div>
                       );
                     })()}
-                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-[color:var(--text-muted)]">
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                       <span>{formatTimestamp(post.createdAt)}</span>
                       <span>·</span>
                       <span>{formatChannelMeta(post, { includeTopicTag: true })}</span>
@@ -3154,7 +3154,7 @@ function DesktopChannelAuthorPanel({
                   </button>
                 ))
               ) : (
-                <div className="rounded-[16px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
+                <div className="rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-4 text-xs leading-6 text-[color:var(--text-muted)]">
                   {t(msg`这位作者暂时还没有可以展示的内容。`)}
                 </div>
               )}
@@ -3578,7 +3578,7 @@ function DesktopChannelCommentsPanel({
         </div>
       ) : null}
       {threadIdsWithReplies.length ? (
-        <div className="flex items-center justify-between rounded-[12px] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[11px] text-[color:var(--text-secondary)]">
+        <div className="flex items-center justify-between rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
           <span>
             {t(msg`共 ${threadIdsWithReplies.length} 个可折叠线程`)}
           </span>
@@ -3608,7 +3608,7 @@ function DesktopChannelCommentsPanel({
           {commentThreads.map(({ replies, rootComment }) => (
             <div
               key={rootComment.id}
-              className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3"
+              className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3"
             >
               <DesktopThreadCommentCard
                 comment={rootComment}
@@ -3637,9 +3637,9 @@ function DesktopChannelCommentsPanel({
         </div>
       ) : null}
 
-      <div className="rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
+      <div className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 py-3">
         {replyTarget ? (
-          <div className="mb-3 flex items-center justify-between gap-3 rounded-[12px] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]">
+          <div className="mb-3 flex items-center justify-between gap-3 rounded-[var(--radius-sm)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]">
             <div className="truncate">
               {t(msg`正在回复 ${replyTarget.authorName}`)}
             </div>
@@ -3816,7 +3816,7 @@ const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
         </span>
       </button>
       {collapsed ? (
-        <div className="mt-3 rounded-[12px] bg-[color:var(--surface-console)] px-3 py-3 text-[11px] leading-6 text-[color:var(--text-secondary)]">
+        <div className="mt-3 rounded-[var(--radius-sm)] bg-[color:var(--surface-console)] px-3 py-3 text-[length:var(--text-eyebrow)] leading-6 text-[color:var(--text-secondary)]">
           {latestReply && latestReplyCleanText ? (
             <div className="line-clamp-2">
               <span className="font-medium text-[color:var(--text-primary)]">
@@ -3939,11 +3939,11 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
                 : t(msg`世界主人`)}
             </span>
             {compact ? (
-              <span className="rounded-md bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+              <span className="rounded-md bg-[color:var(--border-faint)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
                 {t(msg`回复层`)}
               </span>
             ) : (
-              <span className="rounded-md bg-[rgba(15,23,42,0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+              <span className="rounded-md bg-[color:var(--border-faint)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
                 {t(msg`主评论`)}
               </span>
             )}
@@ -3960,7 +3960,7 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
             ) : null}
             {cleanText}
           </div>
-          <div className="mt-2 flex items-center gap-4 text-[11px] text-[color:var(--text-muted)]">
+          <div className="mt-2 flex items-center gap-4 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             <button
               type="button"
               onClick={() => onReplyToComment(comment)}

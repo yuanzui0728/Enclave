@@ -86,7 +86,7 @@ export function DesktopMomentsToolbar({
                 // 保证点击穿透到 Button。
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute -right-0.5 -top-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[#FA5151] ring-2 ring-white"
+                  className="pointer-events-none absolute -right-0.5 -top-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--state-danger-bg)] ring-2 ring-white"
                 />
               ) : null}
             </span>
@@ -121,7 +121,7 @@ export function DesktopMomentsToolbar({
             兜住语义。 */}
         {totalCount === null && loadedCount === 0 ? null : (
           <div className="mt-4 flex items-center justify-end">
-            <div className="text-[12px] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {totalCount !== null && totalCount > loadedCount
                 ? t(msg`已加载 ${loadedCount} / 共 ${totalCount} 条动态`)
                 : t(msg`共 ${loadedCount} 条动态`)}

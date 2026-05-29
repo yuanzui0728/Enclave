@@ -57,7 +57,7 @@ export function ProfileSettingsAccountSecurityPage() {
       <div className="mt-3 space-y-5 px-4 pb-6">
         <AccountSecurityPanel />
         <div className="space-y-2">
-          <h2 className="px-1 text-[13px] font-semibold text-[color:var(--text-primary)]">
+          <h2 className="px-1 text-[length:var(--text-caption)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`注销账号`)}
           </h2>
           <DeleteAccountPanel />

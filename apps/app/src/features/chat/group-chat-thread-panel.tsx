@@ -187,7 +187,7 @@ export function GroupChatThreadPanel({
         type="button"
         variant="secondary"
         size="sm"
-        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
         onClick={onBack}
       >
         {t(msg`返回上一页`)}
@@ -201,7 +201,7 @@ export function GroupChatThreadPanel({
         type="button"
         variant="secondary"
         size="sm"
-        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[11px]"
+        className="h-8 rounded-full border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3.5 text-[length:var(--text-eyebrow)]"
         onClick={() => {
           void query.refetch();
         }}
@@ -1443,10 +1443,10 @@ export function GroupChatThreadPanel({
       {isDesktop ? (
         <header className="relative z-20 flex items-center gap-3 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-3">
           <div className="min-w-0 flex-1 px-1 py-1">
-            <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
               {groupQuery.data?.name || t(msg`群聊`)}
             </div>
-            <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+            <div className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
               {membersQuery.data
                 ? t(msg`${membersQuery.data.length} 人群聊`)
                 : t(msg`群聊`)}
@@ -1517,10 +1517,10 @@ export function GroupChatThreadPanel({
               {t(msg`群公告`)}
             </span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[13px] text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-caption)] text-[color:var(--text-primary)]">
                 {announcement || t(msg`暂无群公告，点击填写本群说明。`)}
               </div>
-              <div className="mt-1 text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {announcement
                   ? t(msg`最近更新 ${formatTimestamp(groupQuery.data?.updatedAt)}`)
                   : t(msg`群接龙与群协作入口先收口到聊天信息侧栏`)}
@@ -1544,7 +1544,7 @@ export function GroupChatThreadPanel({
                 }),
               });
             }}
-            className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+            className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
             aria-label={t(msg`打开群公告页`)}
             title={t(msg`打开群公告页`)}
           >
@@ -1558,12 +1558,12 @@ export function GroupChatThreadPanel({
           <button
             type="button"
             onClick={openGroupDetails}
-            className="flex w-full items-center gap-2 rounded-[12px] border border-[color:var(--brand-primary)]/12 bg-[color:var(--surface-card)] px-2.5 py-1.5 text-left active:bg-[color:var(--surface-card)]"
+            className="flex w-full items-center gap-2 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/12 bg-[color:var(--surface-card)] px-2.5 py-1.5 text-left active:bg-[color:var(--surface-card)]"
           >
             <span className="shrink-0 rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]">
               {t(msg`群公告`)}
             </span>
-            <span className="min-w-0 flex-1 truncate text-[11px] text-[color:var(--text-primary)]">
+            <span className="min-w-0 flex-1 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)]">
               {announcement}
             </span>
             <span className="shrink-0 text-[10px] text-[color:var(--text-muted)]">
@@ -1627,9 +1627,9 @@ export function GroupChatThreadPanel({
             <div
               role="status"
               aria-live="polite"
-              className="rounded-[12px] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-2.5 py-1.5 shadow-none"
+              className="rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-2.5 py-1.5 shadow-none"
             >
-              <div className="text-[10px] leading-4 text-[#166534]">
+              <div className="text-[10px] leading-4 text-[color:var(--state-success-text)]">
                 {routeContextNotice.description}
               </div>
               <div className="mt-2 flex items-center justify-end gap-1.5">
@@ -2034,7 +2034,7 @@ function MobileGroupThreadStatusCard({
         tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
       }
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -2044,7 +2044,7 @@ function MobileGroupThreadStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -2054,13 +2054,13 @@ function MobileGroupThreadStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

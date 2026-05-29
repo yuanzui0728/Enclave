@@ -187,7 +187,7 @@ export function MobileMessageActionSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-[rgba(60, 40, 110, 0.14)]">
+    <div className="fixed inset-0 z-50 bg-[color:var(--border-strong)]">
       <button
         type="button"
         className="absolute inset-0"
@@ -213,19 +213,19 @@ export function MobileMessageActionSheet({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
+        className="absolute inset-x-0 bottom-0 flex max-h-[85dvh] flex-col rounded-t-[var(--radius-lg)] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
       >
         <div className="flex justify-center pb-1.5">
           <div className="h-1 w-10 rounded-full bg-[rgba(148,163,184,0.45)]" />
         </div>
         <div
           id={titleId}
-          className="pb-2.5 text-center text-[12px] text-[color:var(--text-muted)]"
+          className="pb-2.5 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
         >
           {title}
         </div>
         {preview ? (
-          <div className="mb-2.5 overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2.5">
+          <div className="mb-2.5 overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2.5">
             {preview.senderName ? (
               <div className="pb-1 text-[10px] text-[color:var(--text-muted)]">
                 {preview.senderName}
@@ -235,7 +235,7 @@ export function MobileMessageActionSheet({
               className={`flex ${preview.own ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[88%] rounded-[16px] px-3 py-2 text-[13px] leading-5 ${
+                className={`max-w-[88%] rounded-[var(--radius-md)] px-3 py-2 text-[length:var(--text-caption)] leading-5 ${
                   preview.own
                     ? "bg-[color:var(--brand-primary)]/16 text-[color:var(--text-primary)]"
                     : "border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] text-[color:var(--text-primary)]"
@@ -248,7 +248,7 @@ export function MobileMessageActionSheet({
             </div>
           </div>
         ) : null}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
           {onReply ? <ActionButton label={t(msg`回复`)} onClick={guardAction(onReply)!} /> : null}
           {onQuoteSelection ? (
             <ActionButton
@@ -304,7 +304,7 @@ export function MobileMessageActionSheet({
         <button
           type="button"
           onClick={guardClose}
-          className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
+          className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
         >
           {t(msg`取消`)}
         </button>
@@ -326,8 +326,8 @@ function ActionButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-[52px] w-full items-center justify-center border-b border-[color:var(--border-subtle)] px-4 py-2.5 text-[16px] transition active:bg-[color:var(--surface-card-hover)] last:border-b-0 ${
-        danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]"
+      className={`flex min-h-[52px] w-full items-center justify-center border-b border-[color:var(--border-subtle)] px-4 py-2.5 text-[length:var(--text-title)] transition active:bg-[color:var(--surface-card-hover)] last:border-b-0 ${
+        danger ? "text-[color:var(--state-danger-text)]" : "text-[color:var(--text-primary)]"
       }`}
     >
       {label}

@@ -186,7 +186,7 @@ export function renderHighlightedText(text: string, keyword: string): ReactNode 
     parts.push(
       <mark
         key={`m-${matchStart}`}
-        className="rounded bg-[#e6f4ea] px-0.5 text-current"
+        className="rounded bg-[color:var(--state-success-bg)] px-0.5 text-current"
       >
         {text.slice(matchStart, matchEnd)}
       </mark>,

@@ -172,7 +172,7 @@ export function ProfileInfoNamePage() {
             disabled={!canSave || saveMutation.isPending}
             onClick={handleSave}
             className={cn(
-              "rounded-full px-3 py-1 text-[13px] font-medium transition-colors",
+              "rounded-full px-3 py-1 text-[length:var(--text-caption)] font-medium transition-colors",
               !canSave || saveMutation.isPending
                 ? "text-[color:var(--text-dim)]"
                 : "text-[color:var(--brand-primary)] active:bg-black/[0.05]",
@@ -225,15 +225,15 @@ export function ProfileInfoNamePage() {
           enterKeyHint="done"
           maxLength={NAME_MAX_LENGTH}
           placeholder={t(msg`输入名字`)}
-          // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+          // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
           // 本输入框 autoFocus，进页就 focus，字号偏小会让整页抖一下。
           // disabled={isPending}: 上传中再敲字也会被 onSuccess→goBack 一起带走，
           //   见 profile-info-avatar-page 同款修法（commit 5fe4e7e3）。
-          className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
+          className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
         />
         <div
           className={cn(
-            "mt-1.5 text-right text-[11px]",
+            "mt-1.5 text-right text-[length:var(--text-eyebrow)]",
             // overLimit 时 counter 染红，让用户跟「完成」灰按钮对上原因。
             overLimit
               ? "text-[color:var(--state-danger-text)]"
@@ -245,7 +245,7 @@ export function ProfileInfoNamePage() {
         </div>
       </div>
 
-      <div className="px-4 pt-2 text-[11px] leading-5 text-[color:var(--text-muted)]">
+      <div className="px-4 pt-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
         {t(
           msg`好名字让朋友更容易找到你，至少 ${NAME_MIN_LENGTH} 个字、最多 ${NAME_MAX_LENGTH} 个字符。`,
         )}
@@ -253,7 +253,7 @@ export function ProfileInfoNamePage() {
 
       {/* sanitized.length < draft.length：用户输入带首尾/连续空白（如 "abc " / "a  b"），sanitize 折叠后短一截。counter 显示的是 sanitized.length，用户看着 input 里 4 个字符、计数器却显示 3，没说明的话会以为是 bug。跟同目录 signature-page 同款 hint。i18n-ignore-line */}
       {draft.length > 0 && sanitized.length < draft.length ? (
-        <div className="px-4 pt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <div className="px-4 pt-1 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
           {t(msg`名字保存时会去掉首尾空白、把连续空格合成一个。`)}
         </div>
       ) : null}
@@ -267,15 +267,15 @@ export function ProfileInfoNamePage() {
           ② 全空白/控制字符 → 文案 "请输入有效的名字（不能只有空白或换行符）"
           ③ 1 字符 → 文案 "至少 N 字符"  */}
       {sanitized.length === 0 && draft.length === 0 ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`请输入名字。`)}
         </div>
       ) : sanitized.length === 0 && draft.length > 0 ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`请输入有效的名字（不能只有空白或换行符）。`)}
         </div>
       ) : sanitized.length > 0 && sanitized.length < NAME_MIN_LENGTH ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`名字太短啦，至少要 ${NAME_MIN_LENGTH} 个字符。`)}
         </div>
       ) : overLimit ? (
@@ -283,7 +283,7 @@ export function ProfileInfoNamePage() {
         // 的旧 username（早期版本没卡上限）。这类用户一进编辑页 sanitized 立刻超限、
         // 「完成」永远灰着、计数器虽然变红但没文字说明，跟之前"clear 后看灰按钮以为
         // 是 bug"的体验同款。补一条 banner，让用户明确知道要删掉几个字。
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`名字太长啦，最多 ${NAME_MAX_LENGTH} 个字符，请删掉一些。`)}
         </div>
       ) : null}
@@ -292,7 +292,7 @@ export function ProfileInfoNamePage() {
         // role="alert"：屏幕阅读器立即朗读保存失败原因，跟红字 banner 视觉同步。
         <div
           role="alert"
-          className="mx-4 mt-3 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+          className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--state-danger-text)]"
         >
           {errorMessage}
         </div>

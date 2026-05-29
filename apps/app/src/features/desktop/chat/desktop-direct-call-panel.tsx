@@ -478,13 +478,13 @@ export function DesktopDirectCallPanel({
   };
 
   return (
-    <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] p-5 shadow-[var(--shadow-card)]">
+    <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] p-5 shadow-[var(--shadow-card)]">
       <audio ref={activeCall.audioRef} preload="auto" />
 
-      <div className="flex min-w-0 flex-[1.06] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+      <div className="flex min-w-0 flex-[1.06] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
               {kind === "video" ? <Video size={13} /> : <Mic size={13} />}
               {callLabel}
             </div>
@@ -495,7 +495,7 @@ export function DesktopDirectCallPanel({
                 size="xl"
               />
               <div className="min-w-0">
-                <div className="truncate text-[22px] font-semibold text-[color:var(--text-primary)]">
+                <div className="truncate text-[length:var(--text-section)] font-semibold text-[color:var(--text-primary)]">
                   {conversationTitle}
                 </div>
                 <div className="mt-1 text-sm text-[color:var(--text-secondary)]">
@@ -746,7 +746,7 @@ export function DesktopDirectCallPanel({
             variant="secondary"
             onClick={handleEndCall}
             disabled={endCallPending}
-            className="rounded-[10px] border-[rgba(220,38,38,0.14)] bg-[rgba(254,242,242,0.92)] text-[#d74b45] shadow-none hover:border-[rgba(220,38,38,0.2)] hover:bg-[rgba(254,226,226,0.96)]"
+            className="rounded-[10px] border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)] shadow-none hover:border-[color:var(--state-danger-bg)] hover:bg-[color:var(--state-danger-bg)]"
           >
             <PhoneOff size={16} />
             {endCallPending ? t(msg`结束中...`) : t(msg`结束通话`)}
@@ -754,7 +754,7 @@ export function DesktopDirectCallPanel({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-[0.94] flex-col rounded-[20px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+      <div className="flex min-w-0 flex-[0.94] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -768,7 +768,7 @@ export function DesktopDirectCallPanel({
           </div>
           <div
             className={cn(
-              "rounded-full border px-3 py-1 text-[11px] font-medium",
+              "rounded-full border px-3 py-1 text-[length:var(--text-eyebrow)] font-medium",
               activeCall.playbackState === "playing"
                 ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
                 : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
@@ -887,7 +887,7 @@ function CallMetricCard({
 }) {
   return (
     <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]">
-      <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+      <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
       <div className="mt-2 text-[18px] font-semibold text-[color:var(--text-primary)]">
@@ -953,9 +953,9 @@ function CameraPreviewCard({
   videoRef: RefObject<HTMLVideoElement | null>;
 }) {
   return (
-    <section className="overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] shadow-[var(--shadow-soft)]">
+    <section className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] shadow-[var(--shadow-soft)]">
       <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-white/82 px-4 py-3 backdrop-blur-xl">
-        <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+        <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
           {translateRuntimeMessage(msg`我的摄像头预览`)}
         </div>
         <div className="text-xs text-[color:var(--text-muted)]">
@@ -999,7 +999,7 @@ function CameraPreviewCard({
                 <CameraOff size={18} />
               )}
             </div>
-            <div className="text-[13px] leading-6">
+            <div className="text-[length:var(--text-caption)] leading-6">
               {cameraEnabled
                 ? status === "requesting-permission"
                   ? translateRuntimeMessage(msg`申请摄像头权限中`)
@@ -1031,10 +1031,10 @@ function TranscriptCard({
           : "border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
       )}
     >
-      <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+      <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
-      <div className="mt-2 text-[15px] leading-7 text-[color:var(--text-primary)]">
+      <div className="mt-2 text-[length:var(--text-base)] leading-7 text-[color:var(--text-primary)]">
         {text}
       </div>
     </section>

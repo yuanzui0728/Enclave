@@ -374,7 +374,7 @@ export function MobileFavoritesPage({
           value={searchText}
           onChange={(event) => setSearchText(event.target.value)}
           placeholder={t(msg`搜索已收藏内容`)}
-          className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-3 py-2 text-[14px] shadow-none"
+          className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-input)] px-3 py-2 text-[length:var(--text-body)] shadow-none"
         />
       </div>
 
@@ -386,7 +386,7 @@ export function MobileFavoritesPage({
               type="button"
               onClick={() => setActiveFilter(filter.id)}
               className={cn(
-                "rounded-full border px-3 py-1 text-[12px] transition-colors",
+                "rounded-full border px-3 py-1 text-[length:var(--text-caption)] transition-colors",
                 activeFilter === filter.id
                   ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]"
                   : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] active:bg-[color:var(--surface-card-hover)]",
@@ -581,7 +581,7 @@ function FavoriteRow({
       onPointerUp={clearTimer}
       onPointerCancel={clearTimer}
       onPointerLeave={clearTimer}
-      className="flex w-full items-start gap-3 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] px-3 py-3 text-left shadow-[var(--shadow-soft)] transition-colors active:bg-[color:var(--surface-card-hover)] active:bg-none"
+      className="flex w-full items-start gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] bg-[image:var(--surface-card-gradient)] px-3 py-3 text-left shadow-[var(--shadow-soft)] transition-colors active:bg-[color:var(--surface-card-hover)] active:bg-none"
       style={{ touchAction: "manipulation", WebkitUserSelect: "none" }}
     >
       <AvatarChip
@@ -591,7 +591,7 @@ function FavoriteRow({
       />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
             {item.title}
           </div>
           {item.badge ? (
@@ -601,12 +601,12 @@ function FavoriteRow({
           ) : null}
         </div>
         {item.description && item.description !== item.title ? (
-          <div className="mt-0.5 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]">
+          <div className="mt-0.5 line-clamp-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
             {item.description}
           </div>
         ) : null}
         {item.meta ? (
-          <div className="mt-1 truncate text-[11px] text-[color:var(--text-muted)]">
+          <div className="mt-1 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {item.meta}
           </div>
         ) : null}
@@ -623,7 +623,7 @@ function FavoriteRow({
               </span>
             ))}
             {noteSummary.assets.length ? (
-              <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+              <span className="rounded-full bg-[color:var(--border-faint)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                 {t(msg`附件 ${noteSummary.assets.length}`)}
               </span>
             ) : null}

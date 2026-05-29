@@ -82,7 +82,7 @@ export function ManagementPermissionsScreen({
   return (
     <div className="flex h-full flex-col">
       <div className="sticky top-0 z-[1] border-b border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2">
-        <label className="flex h-9 items-center gap-2 rounded-[12px] bg-[color:var(--surface-card)] px-3 text-[13px] text-[color:var(--text-dim)]">
+        <label className="flex h-9 items-center gap-2 rounded-[var(--radius-sm)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
           <Search aria-hidden="true" size={14} />
           <input
             type="search"
@@ -97,9 +97,9 @@ export function ManagementPermissionsScreen({
             autoCapitalize="off"
             spellCheck={false}
             enterKeyHint="search"
-            // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+            // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
             // zoom-in；管理 modal 弹起来就抖。
-            className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+            className="min-w-0 flex-1 bg-transparent text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
           />
           {search ? (
             // 对齐 mobile-add-friend 的搜索框：有输入时显示 X 一键清空，避免
@@ -122,7 +122,7 @@ export function ManagementPermissionsScreen({
       </div>
 
       {isLoading ? (
-        <div className="px-4 py-8 text-center text-[12px] text-[color:var(--text-muted)]">
+        <div className="px-4 py-8 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {t(msg`正在读取联系人...`)}
         </div>
       ) : friendsQuery.isError && friendsQuery.error instanceof Error ? (
@@ -132,7 +132,7 @@ export function ManagementPermissionsScreen({
         <div className="px-3 py-4">
           <InlineNotice
             tone="danger"
-            className="rounded-[12px] px-2.5 py-2 text-[12px] leading-5 shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-2 text-[length:var(--text-caption)] leading-5 shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">
@@ -141,7 +141,7 @@ export function ManagementPermissionsScreen({
               <button
                 type="button"
                 onClick={() => void friendsQuery.refetch()}
-                className="shrink-0 rounded-full border border-[rgba(220,38,38,0.18)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                className="shrink-0 rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
               >
                 {t(msg`重试读取`)}
               </button>
@@ -149,7 +149,7 @@ export function ManagementPermissionsScreen({
           </InlineNotice>
         </div>
       ) : !sections.length ? (
-        <div className="px-6 py-10 text-center text-[12px] text-[color:var(--text-muted)]">
+        <div className="px-6 py-10 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {trimmedSearch
             ? t(msg`没有找到匹配的联系人`)
             : t(msg`通讯录还是空的`)}
@@ -161,7 +161,7 @@ export function ManagementPermissionsScreen({
               <div className="px-1 pb-1 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 {section.title}
               </div>
-              <ul className="overflow-hidden rounded-[12px] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
+              <ul className="overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--surface-card)] shadow-[0_1px_0_rgba(60, 40, 110, 0.04)]">
                 {section.items.map((item, index) => (
                   <li
                     key={item.character.id}
@@ -187,7 +187,7 @@ export function ManagementPermissionsScreen({
                         src={item.character.avatar}
                         size="wechat"
                       />
-                      <div className="min-w-0 flex-1 truncate text-[14px] text-[color:var(--text-primary)]">
+                      <div className="min-w-0 flex-1 truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
                         {item.displayName}
                       </div>
                       <ChevronRight

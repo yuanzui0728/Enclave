@@ -249,7 +249,7 @@ function FarmPageInner() {
               </div>
             </button>
             <DogHouse state={state} />
-            <p className="hidden rounded-2xl border border-white/60 bg-white/55 p-3 text-[11px] leading-relaxed text-stone-600 shadow-sm backdrop-blur-md lg:block">
+            <p className="hidden rounded-2xl border border-white/60 bg-white/55 p-3 text-[length:var(--text-eyebrow)] leading-relaxed text-stone-600 shadow-sm backdrop-blur-md lg:block">
               {t(msg`作物按真实小时数成熟。下线时世界角色仍在自己的田里忙活——回来时看到的状态是世界自治后的结果。`)}
             </p>
           </aside>

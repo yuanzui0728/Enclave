@@ -126,7 +126,7 @@ export function DesktopContactsStarredFriendsPane({
 
   return (
     <div className="flex h-full min-h-0">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
         <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
           <div className="text-base font-medium text-[color:var(--text-primary)]">
             {t(msg`星标朋友`)}
@@ -137,7 +137,7 @@ export function DesktopContactsStarredFriendsPane({
               : t(msg`${friends.length} 位星标朋友`)}
           </div>
 
-          <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+          <label className="mt-3 flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -149,7 +149,7 @@ export function DesktopContactsStarredFriendsPane({
           </label>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] pb-4">
+        <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-shell)] pb-4">
           {actionError ? (
             <div className="px-3 pt-3">
               <ErrorBlock message={actionError} />
@@ -246,7 +246,7 @@ export function DesktopContactsStarredFriendsPane({
                     size="wechat"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[16px] text-[color:var(--text-primary)]">
+                    <div className="truncate text-[length:var(--text-title)] text-[color:var(--text-primary)]">
                       {getFriendDisplayName(item)}
                     </div>
                     <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
@@ -261,7 +261,7 @@ export function DesktopContactsStarredFriendsPane({
                   </div>
                   <Star
                     size={16}
-                    className="shrink-0 text-[#d4a72c]"
+                    className="shrink-0 text-[color:var(--state-warning-text)]"
                     fill="currentColor"
                   />
                 </button>

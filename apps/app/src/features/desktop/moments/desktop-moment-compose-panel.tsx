@@ -86,7 +86,7 @@ export function DesktopMomentComposePanel({
 
   return (
     <div
-      className="absolute inset-0 z-20 flex justify-end bg-[rgba(15,23,42,0.12)] backdrop-blur-[2px]"
+      className="absolute inset-0 z-20 flex justify-end bg-[color:var(--state-info-bg)] backdrop-blur-[2px]"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
@@ -96,10 +96,10 @@ export function DesktopMomentComposePanel({
       <div className="flex h-full w-full max-w-[380px] flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.96)] shadow-[-24px_0_48px_rgba(15,23,42,0.08)]">
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-white/82 px-5 py-4 backdrop-blur-xl">
           <div>
-            <div className="text-[11px] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
+            <div className="text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
               {t(msg`发朋友圈`)}
             </div>
-            <div className="mt-1 text-[16px] font-semibold text-[color:var(--text-primary)]">
+            <div className="mt-1 text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
               {t(msg`直接发到当前动态流`)}
             </div>
           </div>
@@ -113,21 +113,21 @@ export function DesktopMomentComposePanel({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto bg-[rgba(242,246,245,0.76)] px-5 py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto bg-[color:var(--surface-shell)] px-5 py-5">
           <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
             <div className="flex items-center gap-3">
               <AvatarChip name={ownerUsername} src={ownerAvatar} />
               <div className="min-w-0">
-                <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+                <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                   {ownerUsername ?? t(msg`我`)}
                 </div>
-                <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+                <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {t(msg`图文和单条视频都可以直接发到朋友圈`)}
                 </div>
               </div>
             </div>
 
-            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[12px] leading-6 text-[color:var(--text-secondary)]">
+            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
               {t(msg`图片最多 9 张，视频当前支持 1 条且不超过 5 分钟。图片和视频暂不混发。`)}
             </div>
 
@@ -156,7 +156,7 @@ export function DesktopMomentComposePanel({
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={!canAddImages || createPending}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[13px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ImagePlus size={15} />
                 {t(msg`添加图片`)}
@@ -165,7 +165,7 @@ export function DesktopMomentComposePanel({
                 type="button"
                 onClick={() => videoInputRef.current?.click()}
                 disabled={!canAddVideo || createPending}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[13px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Video size={15} />
                 {videoDraft ? t(msg`更换视频`) : t(msg`添加视频`)}
@@ -179,13 +179,13 @@ export function DesktopMomentComposePanel({
             ) : null}
 
             <div className="mt-5 border-t border-[color:var(--border-faint)] pt-4">
-              <div className="flex items-center justify-between gap-3 text-[12px] text-[color:var(--text-muted)]">
+              <div className="flex items-center justify-between gap-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 <span>{t(msg`发布后会直接插入到动态流顶部。`)}</span>
                 <span
                   className={cn(
-                    "rounded-full border px-2.5 py-1 text-[11px]",
+                    "rounded-full border px-2.5 py-1 text-[length:var(--text-eyebrow)]",
                     trimmedTextLength > MOMENT_TEXT_MAX_LENGTH
-                      ? "border-[#fdb6b6] bg-[#fff2f2] text-[#d23535]"
+                      ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
                       : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
                   )}
                 >

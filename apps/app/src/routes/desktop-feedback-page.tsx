@@ -339,7 +339,7 @@ export function DesktopFeedbackPage() {
                   history.map((item) => (
                     <div
                       key={item.id}
-                      className="rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
+                      className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4"
                     >
                       <div className="flex items-center gap-2 text-xs text-[color:var(--text-muted)]">
                         <span>
@@ -364,13 +364,13 @@ export function DesktopFeedbackPage() {
                       <div className="mt-2 line-clamp-3 text-xs leading-5 text-[color:var(--text-secondary)]">
                         {item.detail}
                       </div>
-                      <div className="mt-3 text-[11px] text-[color:var(--text-muted)]">
+                      <div className="mt-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                         {formatTimestamp(item.submittedAt)}
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4 text-sm leading-7 text-[color:var(--text-secondary)]">
+                  <div className="rounded-[var(--radius-sm)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-4 text-sm leading-7 text-[color:var(--text-secondary)]">
                     {t(msg`还没有保存过反馈。`)}
                   </div>
                 )}
@@ -403,7 +403,7 @@ export function DesktopFeedbackPage() {
           </div>
         ) : null}
 
-        <section className="mt-4 rounded-[16px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+        <section className="mt-4 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
             {t(msg`提交反馈`)}
           </div>
@@ -434,7 +434,7 @@ export function DesktopFeedbackPage() {
                         setError(null);
                       }}
                       className={cn(
-                        "rounded-[12px] border p-4 text-left transition",
+                        "rounded-[var(--radius-sm)] border p-4 text-left transition",
                         draft.category === item.id
                           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_4%,transparent)]"
                           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
@@ -543,7 +543,7 @@ export function DesktopFeedbackPage() {
               }}
             />
 
-            <label className="flex items-start gap-3 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
+            <label className="flex items-start gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 py-3">
               <input
                 type="checkbox"
                 checked={draft.includeSystemSnapshot}
@@ -812,7 +812,7 @@ function FeedbackTextarea({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-h-[116px] w-full rounded-[12px] border border-[color:var(--border-faint)] bg-white px-4 py-3.5 text-sm leading-7 text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
+        className="min-h-[116px] w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-4 py-3.5 text-sm leading-7 text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
       />
     </div>
   );
@@ -826,7 +826,7 @@ function FeedbackStatCard({
   value: string;
 }) {
   return (
-    <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 font-medium text-[color:var(--text-primary)] text-base">
         {value}

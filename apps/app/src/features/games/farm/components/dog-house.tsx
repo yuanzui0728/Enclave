@@ -95,19 +95,19 @@ export function DogHouse({ state }: DogHouseProps) {
       {expanded && (
         <div className="mt-2 flex flex-col gap-2">
           {errorMsg && (
-            <div className="rounded-md bg-rose-100 px-2 py-1 text-[11px] text-rose-600">
+            <div className="rounded-md bg-rose-100 px-2 py-1 text-[length:var(--text-eyebrow)] text-rose-600">
               {errorMsg}
             </div>
           )}
 
           {!eligibleToBuy && dog.level <= 0 && (
-            <div className="rounded-md bg-stone-100 px-2 py-1 text-[11px] text-stone-500">
+            <div className="rounded-md bg-stone-100 px-2 py-1 text-[length:var(--text-eyebrow)] text-stone-500">
               {t(msg`等级达到 ${FARM_DOG_UNLOCK_LEVEL} 级即可买狗看家`)}
             </div>
           )}
 
           {dog.level > 0 && (
-            <div className="text-[11px] text-stone-600">
+            <div className="text-[length:var(--text-eyebrow)] text-stone-600">
               {t(
                 msg`狗会随机拦截想偷你菜的人；能量越足越凶。能量低于 30 时防御减半。`,
               )}

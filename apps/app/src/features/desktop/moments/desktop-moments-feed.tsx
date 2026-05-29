@@ -94,7 +94,7 @@ export function DesktopMomentsFeed({
       {isLoading ? (
         <LoadingBlock
           label={t(msg`正在读取朋友圈...`)}
-          className="rounded-[20px] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
+          className="rounded-[var(--radius-lg)] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
         />
       ) : null}
 

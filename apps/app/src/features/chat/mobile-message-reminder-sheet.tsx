@@ -110,7 +110,7 @@ export function MobileMessageReminderSheet({
       className={`fixed inset-0 z-50 ${
         isDesktop
           ? "flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-6 backdrop-blur-[3px]"
-          : "bg-[rgba(60, 40, 110, 0.14)]"
+          : "bg-[color:var(--border-strong)]"
       }`}
     >
       <button
@@ -143,8 +143,8 @@ export function MobileMessageReminderSheet({
         aria-labelledby={titleId}
         className={
           isDesktop
-            ? "relative w-full max-w-[440px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 px-5 py-4 shadow-[var(--shadow-overlay)]"
-            : "absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[20px] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
+            ? "relative w-full max-w-[440px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white/96 px-5 py-4 shadow-[var(--shadow-overlay)]"
+            : "absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[var(--radius-lg)] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
         }
       >
         {isDesktop ? null : (
@@ -157,8 +157,8 @@ export function MobileMessageReminderSheet({
             id={titleId}
             className={
               isDesktop
-                ? "text-[15px] font-medium text-[color:var(--text-primary)]"
-                : "text-center text-[12px] text-[color:var(--text-muted)]"
+                ? "text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]"
+                : "text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
             }
           >
             {title}
@@ -167,8 +167,8 @@ export function MobileMessageReminderSheet({
             <div
               className={
                 isDesktop
-                  ? "mt-2 line-clamp-2 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
-                  : "mt-2 line-clamp-2 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+                  ? "mt-2 line-clamp-2 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]"
+                  : "mt-2 line-clamp-2 rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]"
               }
             >
               {previewText}
@@ -178,8 +178,8 @@ export function MobileMessageReminderSheet({
         <div
           className={
             isDesktop
-              ? "mt-3 overflow-hidden rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
-              : "overflow-hidden rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
+              ? "mt-3 overflow-hidden rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
+              : "overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
           }
         >
           {options.map((option) => (
@@ -197,8 +197,8 @@ export function MobileMessageReminderSheet({
                 <div
                   className={
                     isDesktop
-                      ? "text-[14px] text-[color:var(--text-primary)]"
-                      : "text-[15px] text-[color:var(--text-primary)]"
+                      ? "text-[length:var(--text-body)] text-[color:var(--text-primary)]"
+                      : "text-[length:var(--text-base)] text-[color:var(--text-primary)]"
                   }
                 >
                   {option.label}
@@ -206,14 +206,14 @@ export function MobileMessageReminderSheet({
                 <div
                   className={
                     isDesktop
-                      ? "mt-0.5 text-[11px] text-[color:var(--text-muted)]"
-                      : "mt-0.5 text-[11px] text-[color:var(--text-muted)]"
+                      ? "mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
+                      : "mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
                   }
                 >
                   {option.detail}
                 </div>
               </div>
-              <div className="shrink-0 text-[11px] text-[color:var(--brand-primary)]">
+              <div className="shrink-0 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]">
                 {t(msg`设为提醒`)}
               </div>
             </button>
@@ -225,7 +225,7 @@ export function MobileMessageReminderSheet({
               type="button"
               variant="secondary"
               onClick={onClose}
-              className="rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`取消`)}
             </Button>
@@ -234,7 +234,7 @@ export function MobileMessageReminderSheet({
           <button
             type="button"
             onClick={onClose}
-            className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[15px] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
+            className="mt-2.5 flex h-11 w-full items-center justify-center rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)] transition active:bg-[color:var(--surface-card-hover)]"
           >
             {t(msg`取消`)}
           </button>

@@ -62,7 +62,7 @@ export const WeChatMomentsCover = memo(function WeChatMomentsCover({
     >
       {/* i18n-ignore-line: dev comment - 封面背景层 */}
       <div
-        className="absolute inset-x-0 top-0 overflow-hidden bg-[#9aaec4]"
+        className="absolute inset-x-0 top-0 overflow-hidden bg-[color:var(--state-info-bg)]"
         style={{ height: 260, ...coverStyle }}
       >
         {!coverUrl ? (
@@ -70,7 +70,7 @@ export const WeChatMomentsCover = memo(function WeChatMomentsCover({
         ) : null}
 
         {showCoverEditHint ? (
-          <div className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-1 text-[11px] text-white/85 backdrop-blur-sm">
+          <div className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-1 text-[length:var(--text-eyebrow)] text-white/85 backdrop-blur-sm">
             <Camera size={13} />
           </div>
         ) : null}
@@ -84,7 +84,7 @@ export const WeChatMomentsCover = memo(function WeChatMomentsCover({
       {/* i18n-ignore-end */}
       <div className="absolute bottom-7 right-4 flex items-end gap-3">
         <div
-          className="max-w-[60vw] truncate text-right text-[17px] font-semibold leading-[22px] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.32)]"
+          className="max-w-[60vw] truncate text-right text-[length:var(--text-title)] font-semibold leading-[22px] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.32)]"
           aria-label={safeNickname}
         >
           {safeNickname}

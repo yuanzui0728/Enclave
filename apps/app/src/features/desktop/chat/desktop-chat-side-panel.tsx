@@ -51,10 +51,10 @@ export function DesktopChatSidePanel({
       className={cn(
         "absolute bottom-0 right-0 top-[64px] z-30 hidden w-[352px] border-l border-[rgba(0,0,0,0.06)] transition-[background-color] duration-150 xl:flex xl:flex-col",
         historyMode
-          ? "bg-[#f7f7f7]"
+          ? "bg-[color:var(--surface-card)]"
           : wechatDetails
-            ? "bg-[#ededed]"
-            : "bg-[#f5f5f5]",
+            ? "bg-[color:var(--surface-soft)]"
+            : "bg-[color:var(--surface-card)]",
         className,
       )}
       data-mode={mode}
@@ -66,7 +66,7 @@ export function DesktopChatSidePanel({
             ? "bg-white px-4 pb-2 pt-3"
             : wechatDetails
               ? "bg-white px-4 py-3"
-              : "bg-[#f5f5f5] px-4 py-3",
+              : "bg-[color:var(--surface-card)] px-4 py-3",
         )}
       >
         {historyMode ? (
@@ -86,7 +86,7 @@ export function DesktopChatSidePanel({
               )}
               <div
                 id={sidePanelTitleId}
-                className="truncate text-center text-[15px] font-medium text-[color:var(--text-primary)]"
+                className="truncate text-center text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]"
               >
                 {title}
               </div>
@@ -99,7 +99,7 @@ export function DesktopChatSidePanel({
                 <X size={15} />
               </button>
             </div>
-            <div className="mt-1 truncate px-8 text-center text-[12px] text-[color:var(--text-muted)]">
+            <div className="mt-1 truncate px-8 text-center text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {subtitle ?? t(msg`聊天记录`)}
             </div>
           </>
@@ -108,7 +108,7 @@ export function DesktopChatSidePanel({
             <div aria-hidden="true" className="h-7 w-7" />
             <div
               id={sidePanelTitleId}
-              className="truncate text-center text-[15px] font-medium text-[color:var(--text-primary)]"
+              className="truncate text-center text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]"
             >
               {title}
             </div>
@@ -126,11 +126,11 @@ export function DesktopChatSidePanel({
             <div className="min-w-0">
               <div
                 id={sidePanelTitleId}
-                className="truncate text-[15px] font-medium text-[color:var(--text-primary)]"
+                className="truncate text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]"
               >
                 {title}
               </div>
-              <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+              <div className="mt-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {subtitle ?? t(msg`聊天信息`)}
               </div>
             </div>
@@ -150,10 +150,10 @@ export function DesktopChatSidePanel({
         className={cn(
           "min-h-0 flex-1 overflow-auto transition-[background-color] duration-150",
           historyMode
-            ? "bg-[#f7f7f7]"
+            ? "bg-[color:var(--surface-card)]"
             : wechatDetails
-              ? "bg-[#ededed]"
-              : "bg-[#f5f5f5]",
+              ? "bg-[color:var(--surface-soft)]"
+              : "bg-[color:var(--surface-card)]",
         )}
       >
         {children}
@@ -173,10 +173,10 @@ export function DesktopChatSidePanelPlaceholder({
 
   return (
     <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-      <div className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)] shadow-[var(--shadow-soft)]">
+      <div className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)] shadow-[var(--shadow-soft)]">
         {t(msg`侧栏面板`)}
       </div>
-      <div className="mt-4 text-[15px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-4 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
       <div className="mt-2 text-sm leading-6 text-[color:var(--text-muted)]">

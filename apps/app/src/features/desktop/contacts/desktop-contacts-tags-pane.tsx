@@ -405,7 +405,7 @@ export function DesktopContactsTagsPane() {
 
   return (
     <div className="flex h-full min-h-0">
-      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+      <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
         <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
           <div className="text-base font-medium text-[color:var(--text-primary)]">
             {t(msg`标签`)}
@@ -414,7 +414,7 @@ export function DesktopContactsTagsPane() {
             {t(msg`${tagGroups.length} 个标签 · ${taggedFriendCount} 位联系人`)}
           </div>
 
-          <label className="mt-3 flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+          <label className="mt-3 flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -426,7 +426,7 @@ export function DesktopContactsTagsPane() {
           </label>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-[rgba(242,246,245,0.76)] pb-4">
+        <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-shell)] pb-4">
           {notice ? (
             <div className="px-3 pt-3">
               <InlineNotice tone="info">{notice}</InlineNotice>
@@ -499,7 +499,7 @@ export function DesktopContactsTagsPane() {
                         : "hover:bg-[color:var(--surface-console)]",
                     )}
                   >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[#17803d]">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] border border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--state-success-text)]">
                       <Tag size={16} />
                     </div>
                     <div className="min-w-0 flex-1">

@@ -33,7 +33,7 @@ export function CallTimer({
       : waitingLabel;
 
   return (
-    <div className={cn("text-[15px] tabular-nums text-white/75", className)}>
+    <div className={cn("text-[length:var(--text-base)] tabular-nums text-white/75", className)}>
       {text}
     </div>
   );

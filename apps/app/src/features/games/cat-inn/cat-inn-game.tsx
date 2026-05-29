@@ -44,7 +44,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
   const isEnded = state.status === "ended";
   const containerCls =
     variant === "embedded"
-      ? "rounded-[16px] bg-white"
+      ? "rounded-[var(--radius-md)] bg-white"
       : "min-h-screen bg-[color:var(--bg-app)]";
 
   const currentGuest =
@@ -56,21 +56,21 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
     <section className={cn("flex flex-col gap-3 p-3", containerCls)}>
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`猫咖旅馆`)}
           </span>
           {isRunning ? (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] text-amber-800">
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-amber-800">
               {t(msg`第 ${state.servedOutcomes.length + 1} / ${GUESTS_PER_ROUND} 位`)}
             </span>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[12px] font-medium text-rose-700">
+          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-rose-700">
             <Heart size={12} />
             {state.affection}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[12px] font-medium text-amber-800">
+          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-amber-800">
             <Ticket size={12} />
             ×{state.springTickets}
           </span>
@@ -89,20 +89,20 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
 
       {/* 当前客人 */}
       {currentGuest ? (
-        <div className="rounded-[12px] border border-amber-200 bg-amber-50 p-3">
+        <div className="rounded-[var(--radius-sm)] border border-amber-200 bg-amber-50 p-3">
           <div className="flex items-start gap-3">
-            <span className="text-[28px] leading-none">{currentGuest.emoji}</span>
+            <span className="text-[length:var(--text-display)] leading-none">{currentGuest.emoji}</span>
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-medium text-amber-900">
+              <div className="text-[length:var(--text-caption)] font-medium text-amber-900">
                 {currentGuest.name}
-                <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[11px] text-amber-800">
+                <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-[length:var(--text-eyebrow)] text-amber-800">
                   {t(msg`想去 ${getRoomSpec(currentGuest.preferredRoom).name}`)}
                 </span>
               </div>
-              <div className="mt-1 text-[12px] leading-[1.5rem] text-amber-900/80">
+              <div className="mt-1 text-[length:var(--text-caption)] leading-[1.5rem] text-amber-900/80">
                 {currentGuest.quote}
               </div>
-              <div className="mt-1 flex flex-wrap gap-1 text-[11px] text-amber-900/80">
+              <div className="mt-1 flex flex-wrap gap-1 text-[length:var(--text-eyebrow)] text-amber-900/80">
                 {t(msg`偏爱`)}
                 {currentGuest.prefersFurniture.map((kind) => {
                   const f = getFurnitureSpec(kind);
@@ -122,14 +122,14 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
             <button
               type="button"
               onClick={actions.skip}
-              className="rounded-full border border-[color:var(--border-faint)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]"
+              className="rounded-full border border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
             >
               {t(msg`婉拒`)}
             </button>
             <button
               type="button"
               onClick={actions.welcome}
-              className="flex items-center gap-1 rounded-full bg-amber-500 px-4 py-1.5 text-[13px] font-medium text-white hover:bg-amber-600"
+              className="flex items-center gap-1 rounded-full bg-amber-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-amber-600"
             >
               <Sparkles size={13} />
               {t(msg`迎客入住`)}
@@ -148,7 +148,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
             <div
               key={roomSpec.kind}
               className={cn(
-                "rounded-[12px] border bg-white p-3 transition-colors",
+                "rounded-[var(--radius-sm)] border bg-white p-3 transition-colors",
                 isPreferred
                   ? "border-amber-300 ring-2 ring-amber-100"
                   : "border-[color:var(--border-faint)]",
@@ -157,10 +157,10 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
               <div className="mb-2 flex items-center gap-2">
                 <span className="text-[20px]">{roomSpec.emoji}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                     {roomSpec.name}
                   </div>
-                  <div className="text-[11px] text-[color:var(--text-secondary)]">
+                  <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     {roomSpec.blurb}
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
                           )
                         }
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-[12px] border px-2 py-2 text-left text-[12px] transition-colors",
+                          "flex w-full items-center gap-2 rounded-[var(--radius-sm)] border px-2 py-2 text-left text-[length:var(--text-caption)] transition-colors",
                           placedSpec
                             ? "border-emerald-200 bg-emerald-50"
                             : "border-dashed border-[color:var(--border-faint)] bg-white",
@@ -204,8 +204,8 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
                         )}
                       </button>
                       {isPicker ? (
-                        <div className="absolute z-10 mt-1 w-[260px] rounded-[12px] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
-                          <div className="mb-1 text-[11px] text-[color:var(--text-secondary)]">
+                        <div className="absolute z-10 mt-1 w-[260px] rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
+                          <div className="mb-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                             {t(msg`选一件家具放进 ${roomSpec.name}`)}
                           </div>
                           <ul className="grid grid-cols-2 gap-1">
@@ -224,7 +224,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
                                       setPicker(null);
                                     }}
                                     className={cn(
-                                      "flex w-full items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-[12px]",
+                                      "flex w-full items-center gap-1.5 rounded-[8px] px-2 py-1.5 text-[length:var(--text-caption)]",
                                       active
                                         ? "bg-amber-50 text-amber-900"
                                         : "hover:bg-[color:var(--bg-app)]",
@@ -250,7 +250,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
                               actions.place(roomSpec.kind, slotIndex, null);
                               setPicker(null);
                             }}
-                            className="mt-1 w-full rounded-[8px] border border-dashed border-[color:var(--border-faint)] py-1 text-[11px] text-[color:var(--text-secondary)]"
+                            className="mt-1 w-full rounded-[8px] border border-dashed border-[color:var(--border-faint)] py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
                           >
                             {t(msg`清空这一格`)}
                           </button>
@@ -270,24 +270,24 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
         <button
           type="button"
           onClick={actions.start}
-          className="flex items-center justify-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-[13px] font-medium text-white hover:bg-amber-600"
+          className="flex items-center justify-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-[length:var(--text-caption)] font-medium text-white hover:bg-amber-600"
         >
           <Play size={14} />
           {isEnded ? t(msg`再开一晚`) : t(msg`今晚营业（${GUESTS_PER_ROUND} 位客人）`)}
         </button>
       ) : (
-        <div className="rounded-[12px] bg-amber-50 px-3 py-1.5 text-center text-[12px] text-amber-900">
+        <div className="rounded-[var(--radius-sm)] bg-amber-50 px-3 py-1.5 text-center text-[length:var(--text-caption)] text-amber-900">
           {t(msg`剩余时间 ${formatRemaining(state.remainingMs)}`)}
         </div>
       )}
 
       {/* 结算 */}
       {isEnded && state.servedOutcomes.length > 0 ? (
-        <div className="rounded-[12px] border border-amber-200 bg-amber-50 p-3 text-center">
-          <p className="text-[13px] font-medium text-amber-900">
+        <div className="rounded-[var(--radius-sm)] border border-amber-200 bg-amber-50 p-3 text-center">
+          <p className="text-[length:var(--text-caption)] font-medium text-amber-900">
             {t(msg`今晚结算`)}
           </p>
-          <p className="mt-1 text-[12px] text-amber-900/80">
+          <p className="mt-1 text-[length:var(--text-caption)] text-amber-900/80">
             {t(
               msg`满意 ${state.servedOutcomes.filter((o) => o.outcome === "happy").length} / 一般 ${state.servedOutcomes.filter((o) => o.outcome === "ok").length} / 离开 ${state.servedOutcomes.filter((o) => o.outcome === "left").length}`,
             )}
@@ -296,14 +296,14 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
             <button
               type="button"
               onClick={actions.start}
-              className="rounded-full bg-amber-500 px-4 py-1.5 text-[13px] font-medium text-white hover:bg-amber-600"
+              className="rounded-full bg-amber-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-amber-600"
             >
               {t(msg`再开一晚`)}
             </button>
             <button
               type="button"
               onClick={actions.backIdle}
-              className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[13px] text-[color:var(--text-secondary)]"
+              className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
             >
               {t(msg`先打烊`)}
             </button>
@@ -312,13 +312,13 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
       ) : null}
 
       {/* 日志 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`旅馆日志`)}</span>
           <button
             type="button"
             onClick={actions.reset}
-            className="flex items-center gap-1 text-[11px] text-[color:var(--text-secondary)]"
+            className="flex items-center gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
           >
             <RotateCcw size={11} />
             {t(msg`重置`)}
@@ -326,7 +326,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
         </div>
         <ul className="max-h-44 overflow-y-auto px-3 py-2">
           {state.log.length === 0 ? (
-            <li className="py-1 text-[12px] text-[color:var(--text-tertiary)]">
+            <li className="py-1 text-[length:var(--text-caption)] text-[color:var(--text-tertiary)]">
               {t(msg`等待开张…`)}
             </li>
           ) : (
@@ -334,7 +334,7 @@ export function CatInnGame({ variant = "fullscreen", onExit }: CatInnGameProps) 
               <li
                 key={entry.id}
                 className={cn(
-                  "py-1 text-[12px] leading-[1.5rem]",
+                  "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
                   entry.tone === "success" && "text-emerald-700",
                   entry.tone === "warn" && "text-amber-700",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",

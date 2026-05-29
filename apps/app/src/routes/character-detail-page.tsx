@@ -1304,7 +1304,7 @@ export function CharacterDetailPage() {
               <ArrowLeft size={18} />
             </button>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-[16px] font-medium text-[color:var(--text-primary)]">
+              <div className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
                 {friendInfoLabel}
               </div>
             </div>
@@ -1516,11 +1516,11 @@ export function CharacterDetailPage() {
             <ArrowLeft size={18} />
           </button>
           <div className="pointer-events-none absolute inset-x-12 text-center">
-            <div className="truncate text-[17px] font-medium text-[color:var(--text-primary)]">
+            <div className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
               {isFriend ? friendInfoLabel : detailInfoLabel}
             </div>
             {isDesktopLayout ? (
-              <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+              <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {/* 新一轮走查：桌面顶栏副标题用 character.relationship 当 fallback，
                     跟头卡 / 主标题 同口径补 strip。 */}
                 {stripBidiControl(character?.relationship) ||
@@ -1617,7 +1617,7 @@ export function CharacterDetailPage() {
                 className={
                   isDesktopLayout
                     ? undefined
-                    : "rounded-[12px] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+                    : "rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
                 }
               >
                 {!isDesktopLayout &&
@@ -1843,7 +1843,7 @@ export function CharacterDetailPage() {
               className={cn(
                 "overflow-hidden bg-[color:var(--surface-card)]",
                 isDesktopLayout
-                  ? "rounded-[20px] border border-[color:var(--border-faint)]"
+                  ? "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)]"
                   : "-mx-3 border-y border-[color:var(--border-faint)]",
               )}
             >
@@ -1853,7 +1853,7 @@ export function CharacterDetailPage() {
                     <div
                       className={cn(
                         "truncate font-medium text-[color:var(--text-primary)]",
-                        isDesktopLayout ? "text-[24px]" : "text-[22px]",
+                        isDesktopLayout ? "text-[24px]" : "text-[length:var(--text-section)]",
                       )}
                     >
                       {displayName}
@@ -1861,7 +1861,7 @@ export function CharacterDetailPage() {
                     {friendship?.isStarred ? (
                       <Star
                         size={16}
-                        className="shrink-0 text-[#d4a72c]"
+                        className="shrink-0 text-[color:var(--state-warning-text)]"
                         fill="currentColor"
                       />
                     ) : null}
@@ -1869,7 +1869,7 @@ export function CharacterDetailPage() {
                   <div
                     className={cn(
                       "mt-1 text-[color:var(--text-secondary)]",
-                      isDesktopLayout ? "text-sm" : "text-[13px]",
+                      isDesktopLayout ? "text-sm" : "text-[length:var(--text-caption)]",
                     )}
                   >
                     {remarkName
@@ -1880,7 +1880,7 @@ export function CharacterDetailPage() {
                   <div
                     className={cn(
                       "mt-1 text-[color:var(--text-muted)]",
-                      isDesktopLayout ? "text-sm" : "text-[12px]",
+                      isDesktopLayout ? "text-sm" : "text-[length:var(--text-caption)]",
                     )}
                   >
                     {t(msg`隐界号：${buildYinjieId(character.id)}`)}
@@ -1894,7 +1894,7 @@ export function CharacterDetailPage() {
                     <div
                       className={cn(
                         "mt-1 text-[color:var(--text-muted)]",
-                        isDesktopLayout ? "text-sm" : "text-[12px]",
+                        isDesktopLayout ? "text-sm" : "text-[length:var(--text-caption)]",
                       )}
                     >
                       {t(
@@ -1915,7 +1915,7 @@ export function CharacterDetailPage() {
                     "text-[color:var(--text-secondary)]",
                     isDesktopLayout
                       ? "text-sm leading-6"
-                      : "text-[13px] leading-6",
+                      : "text-[length:var(--text-caption)] leading-6",
                   )}
                 >
                   {signature}
@@ -1924,7 +1924,7 @@ export function CharacterDetailPage() {
             </section>
 
             {isDesktopLayout ? (
-              <section className="overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
+              <section className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
                 <div
                   className={cn(
                     "grid gap-2",
@@ -1939,7 +1939,7 @@ export function CharacterDetailPage() {
                           setNotice(null);
                           startChatMutation.mutate();
                         }}
-                        className="h-11 rounded-full bg-[color:var(--brand-primary)] text-[15px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+                        className="h-11 rounded-full bg-[color:var(--brand-primary)] text-[length:var(--text-base)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                         disabled={startChatMutation.isPending}
                       >
                         {startChatMutation.isPending
@@ -1952,7 +1952,7 @@ export function CharacterDetailPage() {
                           setNotice(null);
                           handleVoiceCall();
                         }}
-                        className="h-11 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
+                        className="h-11 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[length:var(--text-base)] text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                         disabled={openCallMutation.isPending}
                       >
                         {openCallMutation.isPending
@@ -1967,7 +1967,7 @@ export function CharacterDetailPage() {
                         setNotice(null);
                         handleAddToContacts();
                       }}
-                      className="h-11 rounded-full bg-[color:var(--brand-primary)] text-[15px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+                      className="h-11 rounded-full bg-[color:var(--brand-primary)] text-[length:var(--text-base)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                       // 走查新 R1：disabled 没把 friendsQuery.isLoading 算进去。
                       // characterQuery 命中缓存秒回时底部 bar 已经渲染，friendsQuery
                       // 还在拉就 isAlreadyFriend=false 走非好友 layout，按钮显示
@@ -2003,7 +2003,7 @@ export function CharacterDetailPage() {
                       setNotice(null);
                       setGiftSheetOpen(true);
                     }}
-                    className="mt-2 h-11 w-full rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[15px] text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
+                    className="mt-2 h-11 w-full rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[length:var(--text-base)] text-[color:var(--text-primary)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                   >
                     {t(msg`送礼物`)}
                   </Button>
@@ -2059,7 +2059,7 @@ export function CharacterDetailPage() {
                           remarkName: friendship?.remarkName ?? "",
                         }));
                       }}
-                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[13px] shadow-none hover:bg-[color:var(--surface-card-hover)]"
+                      className="h-9 flex-1 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                       disabled={updateProfileMutation.isPending}
                     >
                       {cancelLabel}
@@ -2067,7 +2067,7 @@ export function CharacterDetailPage() {
                     <Button
                       variant="primary"
                       onClick={() => void handleSaveProfile("remark")}
-                      className="h-9 flex-1 rounded-[16px] bg-[color:var(--brand-primary)] px-3 text-[13px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+                      className="h-9 flex-1 rounded-[var(--radius-md)] bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                       disabled={
                         updateProfileMutation.isPending ||
                         profileForm.remarkName.length > REMARK_NAME_MAX_LENGTH
@@ -2121,7 +2121,7 @@ export function CharacterDetailPage() {
                           tags: friendship?.tags?.join("，") ?? "",
                         }));
                       }}
-                      className="h-9 flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[13px] shadow-none hover:bg-[color:var(--surface-card-hover)]"
+                      className="h-9 flex-1 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
                       disabled={updateProfileMutation.isPending}
                     >
                       {cancelLabel}
@@ -2129,7 +2129,7 @@ export function CharacterDetailPage() {
                     <Button
                       variant="primary"
                       onClick={() => void handleSaveProfile("tags")}
-                      className="h-9 flex-1 rounded-[16px] bg-[color:var(--brand-primary)] px-3 text-[13px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+                      className="h-9 flex-1 rounded-[var(--radius-md)] bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
                       disabled={
                         updateProfileMutation.isPending ||
                         profileForm.tags.length > TAGS_INPUT_MAX_LENGTH
@@ -2232,7 +2232,7 @@ export function CharacterDetailPage() {
                           streak={friendship?.sparkStreak}
                           size="md"
                         />
-                        <span className="text-[12px] text-[color:var(--text-muted)]">
+                        <span className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                           {t(msg`已连续 ${friendship?.sparkStreak ?? 0} 天`)}
                         </span>
                       </span>
@@ -2525,7 +2525,7 @@ function MobileCharacterStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -2535,7 +2535,7 @@ function MobileCharacterStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -2545,13 +2545,13 @@ function MobileCharacterStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}
@@ -2569,7 +2569,7 @@ function MobileCharacterErrorNotice({
   return (
     <InlineNotice
       tone="danger"
-      className="rounded-[12px] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
+      className="rounded-[var(--radius-sm)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-2.5 py-1.5 text-[10px] leading-4 shadow-none"
     >
       {action ? (
         <div className="flex items-start justify-between gap-2">
@@ -2600,7 +2600,7 @@ function MobileProfileActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        "flex min-h-11 items-center justify-center rounded-[12px] border px-4 text-[15px] font-medium transition disabled:opacity-45",
+        "flex min-h-11 items-center justify-center rounded-[var(--radius-sm)] border px-4 text-[length:var(--text-base)] font-medium transition disabled:opacity-45",
         primary
           ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]",
@@ -2628,15 +2628,15 @@ function ProfileSection({
         "overflow-hidden bg-[color:var(--surface-card)]",
         flatOnMobile
           ? "-mx-3 rounded-none border-y border-[color:var(--border-faint)]"
-          : "rounded-[20px] border border-[color:var(--border-faint)]",
+          : "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)]",
       )}
     >
       <div
         className={cn(
           flatOnMobile
             ? compact
-              ? "px-4 py-2 text-[11px] text-[color:var(--text-muted)]"
-              : "px-4 py-2.5 text-[12px] text-[color:var(--text-muted)]"
+              ? "px-4 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
+              : "px-4 py-2.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
             : "px-4 py-3 text-xs uppercase tracking-[0.16em] text-[color:var(--text-muted)]",
         )}
       >
@@ -2681,7 +2681,7 @@ function ProfileRow({
         disabled={disabled}
         className={cn(
           "flex w-full items-center gap-4 text-left transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60",
-          compact ? "px-4 py-3 text-[13px]" : "px-4 py-4 text-sm",
+          compact ? "px-4 py-3 text-[length:var(--text-caption)]" : "px-4 py-4 text-sm",
         )}
       >
         <div
@@ -2689,7 +2689,7 @@ function ProfileRow({
             compact
             ? "min-w-[5.5rem] shrink-0 whitespace-nowrap"
             : "min-w-24 shrink-0 whitespace-nowrap",
-            danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
+            danger ? "text-[color:var(--state-danger-text)]" : "text-[color:var(--text-primary)]",
           )}
         >
           {label}
@@ -2700,14 +2700,14 @@ function ProfileRow({
             multiline
               ? "whitespace-pre-wrap break-words text-[color:var(--text-muted)]"
               : "truncate text-[color:var(--text-muted)]",
-            danger ? "text-[#d74b45]" : undefined,
+            danger ? "text-[color:var(--state-danger-text)]" : undefined,
           )}
         >
           {value}
         </div>
         <ChevronRight
           size={compact ? 16 : 18}
-          className="shrink-0 text-[#c7c7cc]"
+          className="shrink-0 text-[color:var(--text-dim)]"
         />
       </button>
     );
@@ -2717,7 +2717,7 @@ function ProfileRow({
     <div
       className={cn(
         "flex w-full items-center gap-4 text-left",
-        compact ? "px-4 py-3 text-[13px]" : "px-4 py-4 text-sm",
+        compact ? "px-4 py-3 text-[length:var(--text-caption)]" : "px-4 py-4 text-sm",
       )}
     >
       <div
@@ -2725,7 +2725,7 @@ function ProfileRow({
           compact
             ? "min-w-[5.5rem] shrink-0 whitespace-nowrap"
             : "min-w-24 shrink-0 whitespace-nowrap",
-          danger ? "text-[#d74b45]" : "text-[color:var(--text-primary)]",
+          danger ? "text-[color:var(--state-danger-text)]" : "text-[color:var(--text-primary)]",
         )}
       >
         {label}
@@ -2734,7 +2734,7 @@ function ProfileRow({
         className={cn(
           "min-w-0 flex-1 text-right text-[color:var(--text-muted)]",
           multiline ? "whitespace-pre-wrap break-words" : "truncate",
-          danger ? "text-[#d74b45]" : undefined,
+          danger ? "text-[color:var(--state-danger-text)]" : undefined,
         )}
       >
         {value}
@@ -2771,7 +2771,7 @@ function ProfileSwitchRow({
       <span
         className={cn(
           "text-[color:var(--text-primary)]",
-          compact ? "text-[14px]" : "text-[16px]",
+          compact ? "text-[length:var(--text-body)]" : "text-[length:var(--text-title)]",
         )}
       >
         {label}
@@ -2781,7 +2781,7 @@ function ProfileSwitchRow({
           compact
             ? "relative h-7 w-11 rounded-full transition-colors"
             : "relative h-8 w-13 rounded-full transition-colors",
-          checked ? "bg-[color:var(--brand-primary)]" : "bg-[#d5d5d5]",
+          checked ? "bg-[color:var(--brand-primary)]" : "bg-[color:var(--surface-soft)]",
         )}
       >
         <span
@@ -2827,7 +2827,7 @@ function DetailInputField({
       <div
         className={cn(
           "mb-2 flex items-center justify-between gap-2 text-[color:var(--text-muted)]",
-          compact ? "text-[11px]" : "text-xs uppercase tracking-[0.12em]",
+          compact ? "text-[length:var(--text-eyebrow)]" : "text-xs uppercase tracking-[0.12em]",
         )}
       >
         <span>{label}</span>
@@ -2849,16 +2849,16 @@ function DetailInputField({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         maxLength={maxLength}
-        // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
-        // zoom-in。原本 compact (mobile) 给 text-[13px]、desktop 给 text-sm
+        // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+        // zoom-in。原本 compact (mobile) 给 text-[length:var(--text-caption)]、desktop 给 text-sm
         // (14px) 都不够；mobile 走 DetailInputField 在角色详情页里铺了 10+ 处
         // (备注名 / 备注标签 / 朋友圈权限 ...)，挨个点过去整页会反复弹缩。
         // 移动端固定 16px；桌面端没有 zoom 问题继续用 14px 维持视觉密度。
         className={cn(
           "w-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]/18 focus:bg-[color:var(--surface-card)] placeholder:text-[color:var(--text-dim)]",
           compact
-            ? "rounded-[12px] py-2.5 text-[16px]"
-            : "rounded-[12px] py-3 text-sm",
+            ? "rounded-[var(--radius-sm)] py-2.5 text-[length:var(--text-title)]"
+            : "rounded-[var(--radius-sm)] py-3 text-sm",
         )}
       />
     </label>

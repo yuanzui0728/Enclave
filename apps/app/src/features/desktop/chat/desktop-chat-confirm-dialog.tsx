@@ -203,7 +203,7 @@ export function DesktopChatConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full max-w-[520px] overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[520px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
       >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
           <div className="min-w-0">
@@ -215,7 +215,7 @@ export function DesktopChatConfirmDialog({
             </div>
             <div
               id={descId}
-              className="mt-2 text-[13px] leading-7 text-[color:var(--text-muted)]"
+              className="mt-2 text-[length:var(--text-caption)] leading-7 text-[color:var(--text-muted)]"
             >
               {description}
             </div>
@@ -255,7 +255,7 @@ export function DesktopChatConfirmDialog({
             disabled={pending}
             className={
               danger
-                ? "rounded-[10px] bg-[#e14c45] px-6 text-white hover:bg-[#cf433d]"
+                ? "rounded-[10px] bg-[color:var(--state-danger-bg)] px-6 text-white hover:bg-[color:var(--state-danger-bg)]"
                 : "rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
             }
           >

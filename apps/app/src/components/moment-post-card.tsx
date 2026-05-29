@@ -59,10 +59,10 @@ export function MomentPostCard({
       {/* Right: Content */}
       <div className="min-w-0 flex-1">
         {/* Author name */}
-        <div className="text-[15px] font-medium text-[color:var(--brand-primary)]">{authorName}</div>
+        <div className="text-[length:var(--text-base)] font-medium text-[color:var(--brand-primary)]">{authorName}</div>
 
         {/* Post text */}
-        <div className="mt-1 text-[15px] leading-[1.6] text-[color:var(--text-primary)]">{text}</div>
+        <div className="mt-1 text-[length:var(--text-base)] leading-[1.6] text-[color:var(--text-primary)]">{text}</div>
 
         {/* Location */}
         {location ? (
@@ -96,7 +96,7 @@ export function MomentPostCard({
 
         {/* Likes + Comments interaction area */}
         {(likes.length > 0 || comments.length > 0) ? (
-          <div className="mt-2 rounded-[6px] bg-[color:var(--surface-secondary)] px-3 py-2 text-[13px] leading-[1.7]">
+          <div className="mt-2 rounded-[6px] bg-[color:var(--surface-secondary)] px-3 py-2 text-[length:var(--text-caption)] leading-[1.7]">
             {/* Likes */}
             {likes.length > 0 ? (
               <div className="flex flex-wrap items-center gap-x-1">
@@ -145,7 +145,7 @@ export function MomentPostCard({
               pending={commentLoading}
               placeholder={t(msg`评论...`)}
               className="w-full"
-              inputClassName="rounded-full py-1.5 text-[16px]"
+              inputClassName="rounded-full py-1.5 text-[length:var(--text-title)]"
               buttonClassName="bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
             />
           </div>

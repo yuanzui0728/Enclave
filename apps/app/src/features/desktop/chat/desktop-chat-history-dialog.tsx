@@ -104,7 +104,7 @@ export function DesktopChatHistoryDialog({
         role="dialog"
         aria-modal="true"
         aria-label={t(msg`查找聊天记录`)}
-        className="relative flex max-h-[85vh] w-full max-w-[960px] flex-col overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative flex max-h-[85vh] w-full max-w-[960px] flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
       >
         <div className="flex items-center gap-2 bg-white px-4 py-2">
           {canReturnToDetails && onBackToDetails ? (
@@ -118,7 +118,7 @@ export function DesktopChatHistoryDialog({
             </button>
           ) : null}
 
-          <div className="min-w-0 flex-1 truncate text-[13px] text-[color:var(--text-secondary)]">
+          <div className="min-w-0 flex-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
             <span className="text-[color:var(--text-primary)]">
               {t(msg`查找聊天记录`)}
             </span>
@@ -139,7 +139,7 @@ export function DesktopChatHistoryDialog({
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-hidden bg-[#f7f7f7]">
+        <div className="min-h-0 flex-1 overflow-hidden bg-[color:var(--surface-card)]">
           <DesktopChatHistoryPanel
             conversation={conversation}
             focusRequestKey={focusRequestKey}

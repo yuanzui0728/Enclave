@@ -188,10 +188,10 @@ export function CheckoutContactDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={hint ? descId : undefined}
-        className="relative w-full max-w-[400px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
+        className="relative w-full max-w-[400px] overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_80px_rgba(0,0,0,0.18)]"
       >
         <div className="px-6 pt-6 pb-2">
-          <div className="text-[11px] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
+          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.24em] text-[color:var(--text-muted)]">
             {t(msg`联系开通`)}
           </div>
           <h2
@@ -205,7 +205,7 @@ export function CheckoutContactDialog({
           {hint ? (
             <p
               id={descId}
-              className="mt-3 text-[13px] leading-6 text-[color:var(--text-secondary)]"
+              className="mt-3 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
             >
               {hint}
             </p>
@@ -217,20 +217,20 @@ export function CheckoutContactDialog({
             {contacts.map((item) => (
               <div
                 key={`${item.label}:${item.value}`}
-                className="flex items-center justify-between gap-3 rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-[var(--radius-md)] bg-[color:var(--surface-secondary)] px-3 py-2"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="text-[11px] text-[color:var(--text-muted)]">
+                  <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                     {item.label}
                   </div>
-                  <div className="mt-0.5 truncate font-mono text-[13px] font-medium text-[color:var(--text-primary)]">
+                  <div className="mt-0.5 truncate font-mono text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                     {item.value}
                   </div>
                 </div>
                 <Button
                   type="button"
                   variant="secondary"
-                  className="shrink-0 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[12px] shadow-none"
+                  className="shrink-0 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1.5 text-[length:var(--text-caption)] shadow-none"
                   onClick={() => void handleCopy(item.value, item.successMessage)}
                 >
                   {t(msg`复制`)}
@@ -240,7 +240,7 @@ export function CheckoutContactDialog({
           </div>
         ) : contact ? (
           <div className="px-6 pt-3 pb-2">
-            <div className="rounded-[16px] bg-[color:var(--surface-secondary)] px-3 py-2 text-[13px] leading-6 break-all text-[color:var(--text-secondary)]">
+            <div className="rounded-[var(--radius-md)] bg-[color:var(--surface-secondary)] px-3 py-2 text-[length:var(--text-caption)] leading-6 break-all text-[color:var(--text-secondary)]">
               {contact}
             </div>
           </div>
@@ -257,7 +257,7 @@ export function CheckoutContactDialog({
             <Button
               type="button"
               variant="secondary"
-              className="flex-1 rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] py-2 shadow-none"
+              className="flex-1 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--bg-canvas)] py-2 shadow-none"
               onClick={() =>
                 void handleCopy(combinedText, t(msg`已复制全部信息。`))
               }
@@ -268,7 +268,7 @@ export function CheckoutContactDialog({
           <Button
             type="button"
             variant="primary"
-            className="flex-1 rounded-[16px] bg-[color:var(--brand-primary)] py-2 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+            className="flex-1 rounded-[var(--radius-md)] bg-[color:var(--brand-primary)] py-2 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
             onClick={onClose}
           >
             {t(msg`我知道了`)}

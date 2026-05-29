@@ -61,7 +61,7 @@ export function DesktopChatHeaderActions({
   return (
     <div
       ref={containerRef}
-      className="flex items-center gap-1 rounded-[12px] bg-[rgba(247,247,247,0.92)] p-1"
+      className="flex items-center gap-1 rounded-[var(--radius-sm)] bg-[color:var(--surface-soft)] p-1"
     >
       <DesktopChatHeaderButton
         active={historyActive}
@@ -208,7 +208,7 @@ function CallMenuButton({
       // menuitem，否则 VoiceOver/JAWS menu 模式跳过这些 button。
       role="menuitem"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[12px] px-2 py-2 text-left text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-2 py-2 text-left text-sm text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
     >
       <span className="shrink-0 text-[color:var(--text-secondary)]">
         {icon}

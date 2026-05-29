@@ -386,7 +386,7 @@ function MobileDiscoverScenePage() {
       notice={
         message ? (
           <InlineNotice
-            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
             tone={tone}
             // 走查 R1（移动端发现-场景相遇）：success / fallback / "暂时没有新相遇了"
             // 三种 notice 是异步 mutation 4-20s 后才 settle 的反馈，屏幕阅读器用户
@@ -457,20 +457,20 @@ function MobileDiscoverScenePage() {
         <div
           role="status"
           aria-live="polite"
-          className="text-center text-[11px] text-[color:var(--text-secondary)]"
+          className="text-center text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
         >
           {t(msg`今天的场景相遇次数已经用完，明天再试试。`)}
         </div>
       ) : cooldownActive && !sceneMutation.isPending ? (
         <div
           aria-hidden="true"
-          className="text-center text-[11px] text-[color:var(--text-secondary)]"
+          className="text-center text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
         >
           {t(msg`稍等 ${cooldownRemainSec} 秒再出发吧。`)}
         </div>
       ) : null}
 
-      <section className="overflow-hidden rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
+      <section className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
         <div className="grid grid-cols-2 gap-0.5 bg-black/5 p-0.5">
           {scenes.map((scene) => {
             const Icon = scene.icon;
@@ -501,14 +501,14 @@ function MobileDiscoverScenePage() {
                   discover-encounter-page 的视觉：busy 时把场景图标替成 LoaderCircle
                   自旋，明确告诉用户"正在跑、不要乱点"。
                 */}
-                <div className="flex h-10 w-10 items-center justify-center rounded-[16px] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-[color:var(--brand-primary)]/12 text-[color:var(--brand-primary)]">
                   {busy ? (
                     <LoaderCircle size={18} className="animate-spin" />
                   ) : (
                     <Icon size={18} />
                   )}
                 </div>
-                <div className="mt-3 text-[15px] font-medium text-[color:var(--text-primary)]">
+                <div className="mt-3 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                   {busy
                     ? t(msg`正在前往${t(scene.label)}...`)
                     : t(scene.label)}
@@ -521,7 +521,7 @@ function MobileDiscoverScenePage() {
 
       {sceneMutation.isError && sceneMutation.error instanceof Error ? (
         <InlineNotice
-          className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+          className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
           tone="danger"
           // 走查 R1（移动端发现-场景相遇）：错误条目是阻塞用户继续动作的硬反馈
           // （DAILY_LIMIT / INVALID / 网络异常），用 role=alert 让屏幕阅读器
@@ -568,7 +568,7 @@ function MobileDiscoverScenePage() {
                 <button
                   type="button"
                   onClick={() => sceneMutation.mutate(sceneMutation.variables)}
-                  className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试场景相遇`)}
                 </button>
@@ -576,7 +576,7 @@ function MobileDiscoverScenePage() {
               <button
                 type="button"
                 onClick={handleErrorNoticeBack}
-                className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                className="rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
               >
                 {routeState.returnPath && !isDesktopOnlyPath(routeState.returnPath)
                   ? t(msg`返回上一页`)

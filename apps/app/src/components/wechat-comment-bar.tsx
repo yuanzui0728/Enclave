@@ -231,12 +231,12 @@ export function WeChatCommentBar({
           // 住，用户什么都看不到。直接在 bar 内 textarea 上方渲一行：颜色
           // 跟 wechat 错误条对齐 (#fa5151)，限制 2 行 + 截断防超长 server
           // 错把整条 bar 撑开（比如评论太长 server 把上限值都塞进 message）。
-          <div className="mx-3 mt-2 rounded-[4px] bg-[rgba(250,81,81,0.08)] px-2.5 py-1.5 text-[12px] leading-[18px] text-[#fa5151]">
+          <div className="mx-3 mt-2 rounded-[4px] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[length:var(--text-caption)] leading-[18px] text-[color:var(--state-danger-text)]">
             <div className="line-clamp-2">{errorMessage}</div>
           </div>
         ) : null}
         <div className="flex items-end gap-2 px-3 py-2.5">
-          <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-[15px] text-[color:var(--text-primary)]">
+          <div className="min-w-0 flex-1 rounded-[6px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-input)] px-3 py-2 text-[length:var(--text-base)] text-[color:var(--text-primary)]">
             <textarea
               ref={textAreaRef}
               value={value}
@@ -246,12 +246,12 @@ export function WeChatCommentBar({
               // 500 字软上限，跟后端 MOMENT_COMMENT_TOO_LONG 对齐——之前没有任何
               // 上限，长文评论会把整段 footer 撑开把卡片正文挤压到看不见。
               maxLength={500}
-              // text-[16px]: iOS Safari/WKWebView 在 input/textarea focus 时只要
+              // text-[length:var(--text-title)]: iOS Safari/WKWebView 在 input/textarea focus 时只要
               // 字段字号 <16px 就强制 viewport zoom-in。朋友圈/广场每条 post 点
               // 评论都会让整页放大、回弹时还得双指捏才能回正，反复操作非常难受。
-              // 父级 wrapper 保留 text-[15px] 不动（控制 placeholder / 容器视
+              // 父级 wrapper 保留 text-[length:var(--text-base)] 不动（控制 placeholder / 容器视
               // 觉），只把字段本身放到 16px。
-              className="block w-full resize-none border-0 bg-transparent text-[16px] leading-[22px] outline-none placeholder:text-[#B0B0B0]"
+              className="block w-full resize-none border-0 bg-transparent text-[length:var(--text-title)] leading-[22px] outline-none placeholder:text-[color:var(--text-dim)]"
               onKeyDown={(event) => {
                 if (event.key !== "Enter" || event.shiftKey) return;
                 // 走查新一轮 Round 3：Android Chrome 部分 IME（搜狗 / 百度键盘
@@ -277,10 +277,10 @@ export function WeChatCommentBar({
             disabled={!canSubmit}
             onClick={handleSubmit}
             className={cn(
-              "h-[36px] shrink-0 rounded-full px-4 text-[14px] font-medium transition-colors",
+              "h-[36px] shrink-0 rounded-full px-4 text-[length:var(--text-body)] font-medium transition-colors",
               canSubmit
                 ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:bg-[color:var(--brand-primary)]"
-                : "bg-[#E5E5E5] text-[#B0B0B0]",
+                : "bg-[color:var(--surface-soft)] text-[color:var(--text-dim)]",
             )}
           >
             {pending ? t(msg`发送中`) : t(msg`发送`)}

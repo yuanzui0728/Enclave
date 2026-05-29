@@ -165,7 +165,7 @@ export function ProfileInfoSignaturePage() {
             disabled={!canSave || saveMutation.isPending}
             onClick={handleSave}
             className={cn(
-              "rounded-full px-3 py-1 text-[13px] font-medium transition-colors",
+              "rounded-full px-3 py-1 text-[length:var(--text-caption)] font-medium transition-colors",
               !canSave || saveMutation.isPending
                 ? "text-[color:var(--text-dim)]"
                 : "text-[color:var(--brand-primary)] active:bg-black/[0.05]",
@@ -215,15 +215,15 @@ export function ProfileInfoSignaturePage() {
           enterKeyHint="done"
           maxLength={SIGNATURE_MAX_LENGTH}
           placeholder={t(msg`写一句此刻想说的话`)}
-          // text-[16px]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
+          // text-[length:var(--text-title)]: iOS Safari focus 时 <16px 会强制 viewport zoom-in。
           // 本 textarea autoFocus，进页就 focus，字号偏小会让整页抖一下。
           // disabled={isPending}: 上传中继续敲会被 onSuccess→goBack 一起带走，
           //   见 profile-info-avatar-page 同款修法（commit 5fe4e7e3）。
-          className="min-h-[5.5rem] resize-none rounded-[12px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[16px] leading-6 shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
+          className="min-h-[5.5rem] resize-none rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-title)] leading-6 shadow-none focus:translate-y-0 disabled:bg-[color:var(--bg-canvas)] disabled:text-[color:var(--text-muted)]"
         />
         <div
           className={cn(
-            "mt-1.5 text-right text-[11px]",
+            "mt-1.5 text-right text-[length:var(--text-eyebrow)]",
             // overLimit 时 counter 染红 → 跟 disabled「完成」按钮一起给用户两个
             // 视觉信号：知道「为什么不让我保存」。
             overLimit
@@ -245,14 +245,14 @@ export function ProfileInfoSignaturePage() {
           里仍然是 raw 形态会困惑「打了 5 个字怎么算 3 个」。加一行短 hint 把口径
           统一。draft 为空时不显示，避免空页面下出现一个永远 false 的位置浪费版面。*/}
       {draft.length > 0 && sanitized.length < draft.length ? (
-        <div className="px-4 pt-2 text-[11px] leading-5 text-[color:var(--text-muted)]">
+        <div className="px-4 pt-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
           {t(msg`签名按单行保存：换行和多余空白会被折叠为一个空格。`)}
         </div>
       ) : null}
 
       {/* overLimit 走查 R1：legacy DB 里超过 SIGNATURE_MAX_LENGTH 的旧签名进编辑页时 sanitized 直接超限、「完成」灰着但没文字说明，跟 name-page 同款修。i18n-ignore-line */}
       {overLimit ? (
-        <div className="mx-4 mt-3 rounded-[12px] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[12px] leading-5 text-[color:var(--brand-primary)]">
+        <div className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/20 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--brand-primary)]">
           {t(msg`签名太长啦，最多 ${SIGNATURE_MAX_LENGTH} 个字符，请删掉一些。`)}
         </div>
       ) : null}
@@ -261,7 +261,7 @@ export function ProfileInfoSignaturePage() {
         // role="alert"：屏幕阅读器立即朗读保存失败原因，跟红字 banner 视觉同步。
         <div
           role="alert"
-          className="mx-4 mt-3 rounded-[12px] border border-[rgba(220,38,38,0.18)] bg-[rgba(254,242,242,0.96)] px-3 py-2 text-[12px] leading-5 text-[color:var(--state-danger-text)]"
+          className="mx-4 mt-3 rounded-[var(--radius-sm)] border border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--state-danger-text)]"
         >
           {errorMessage}
         </div>

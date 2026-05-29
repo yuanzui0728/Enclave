@@ -61,10 +61,10 @@ export function DesktopContactsFriendRequestsPane({
     // 外层不能再背 overflow-auto，否则 header 会跟着列表一起往上卷出视区。
     // 改成 header + 独立滚动容器（content），跟 starred-friends pane 同款结构，
     // 用户批处理时顶端的"x 条待处理"一直可见。
-    <div className="flex h-full min-h-0 flex-col bg-[rgba(245,247,247,0.96)]">
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-soft)]">
       <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-8 py-6 backdrop-blur-xl">
         <div className="min-w-0">
-          <div className="text-[22px] font-medium text-[color:var(--text-primary)]">
+          <div className="text-[length:var(--text-section)] font-medium text-[color:var(--text-primary)]">
             {t(msg`新的朋友`)}
           </div>
           <div className="mt-2 text-sm text-[color:var(--text-secondary)]">
@@ -146,7 +146,7 @@ export function DesktopContactsFriendRequestsPane({
                         <div className="min-w-0">
                           <div
                             className={cn(
-                              "truncate text-[16px] font-medium text-[color:var(--text-primary)]",
+                              "truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]",
                               expired ? "opacity-70" : undefined,
                             )}
                           >
@@ -154,7 +154,7 @@ export function DesktopContactsFriendRequestsPane({
                           </div>
                           <div
                             className={cn(
-                              "mt-1 flex flex-wrap items-center gap-2 text-[12px] text-[color:var(--text-muted)]",
+                              "mt-1 flex flex-wrap items-center gap-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]",
                               expired ? "opacity-70" : undefined,
                             )}
                           >
@@ -170,7 +170,7 @@ export function DesktopContactsFriendRequestsPane({
                           </div>
                         </div>
                         {expired ? (
-                          <div className="shrink-0 rounded-full bg-[rgba(245,158,11,0.12)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--state-warning-text)]">
+                          <div className="shrink-0 rounded-full bg-[color:var(--state-warning-bg)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-warning-text)]">
                             {t(msg`已过期`)}
                           </div>
                         ) : null}
@@ -181,7 +181,7 @@ export function DesktopContactsFriendRequestsPane({
                           // whitespace-pre-line：好友申请的招呼语可能多行（角色 AI
                           // 生成的偶尔会换行），不加这条会全部压成一行；break-words：
                           // 极长 token（URL、纯英文 100 字符）才不会把卡片撑爆横向。
-                          "mt-4 whitespace-pre-line break-words rounded-[16px] bg-[rgba(245,247,247,0.92)] px-4 py-3 text-[14px] leading-7 text-[color:var(--text-secondary)]",
+                          "mt-4 whitespace-pre-line break-words rounded-[var(--radius-md)] bg-[color:var(--surface-soft)] px-4 py-3 text-[length:var(--text-body)] leading-7 text-[color:var(--text-secondary)]",
                           expired ? "opacity-70" : undefined,
                         )}
                       >
@@ -201,7 +201,7 @@ export function DesktopContactsFriendRequestsPane({
                               ? t(msg`清除 ${request.characterName} 的过期好友申请`)
                               : t(msg`拒绝 ${request.characterName} 的好友申请`)
                           }
-                          className="rounded-[12px] border-[color:var(--border-faint)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+                          className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
                         >
                           {declinePendingId === request.id
                             ? expired
@@ -220,7 +220,7 @@ export function DesktopContactsFriendRequestsPane({
                             aria-label={t(
                               msg`接受 ${request.characterName} 的好友申请`,
                             )}
-                            className="rounded-[12px] bg-[color:var(--brand-primary)] px-5 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
+                            className="rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-5 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
                           >
                             {acceptPendingId === request.id
                               ? t(msg`接受中...`)

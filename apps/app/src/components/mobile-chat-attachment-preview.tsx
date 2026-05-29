@@ -32,7 +32,7 @@ export function MobileChatAttachmentPreview({
   const t = translateRuntimeMessage;
 
   return (
-    <div className="mb-1.5 rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] p-2.5 shadow-none">
+    <div className="mb-1.5 rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] p-2.5 shadow-none">
       <div className="flex items-center gap-2.5">
         {kind === "images" && imagePreviews?.length ? (
           <div className="grid max-h-[10rem] w-[10rem] grid-cols-3 gap-1 overflow-auto pr-1">
@@ -55,7 +55,7 @@ export function MobileChatAttachmentPreview({
                   // textarea 里。
                   decoding="async"
                   draggable={false}
-                  className="h-12 w-12 rounded-[12px] border border-white/75 bg-[color:var(--surface-soft)] object-cover"
+                  className="h-12 w-12 rounded-[var(--radius-sm)] border border-white/75 bg-[color:var(--surface-soft)] object-cover"
                 />
                 {onRemoveImage ? (
                   <button
@@ -72,17 +72,17 @@ export function MobileChatAttachmentPreview({
             ))}
           </div>
         ) : (
-          <div className="flex h-14 w-14 items-center justify-center rounded-[16px] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-[var(--radius-md)] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]">
             <FileText size={22} />
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             {kind === "images" && imagePreviews && imagePreviews.length > 1
               ? t(msg`已选 ${imagePreviews.length} 张图片`)
               : fileName}
           </div>
-          <div className="mt-0.5 text-[11px] leading-[18px] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-muted)]">
             {kind === "images"
               ? t(msg`将按顺序逐张发送图片。`)
               : t(msg`发送前确认一下文件内容。`)}
@@ -108,7 +108,7 @@ export function MobileChatAttachmentPreview({
           variant="ghost"
           onClick={onCancel}
           disabled={pending}
-          className="h-8 rounded-full px-3 text-[12px] hover:bg-black/4"
+          className="h-8 rounded-full px-3 text-[length:var(--text-caption)] hover:bg-black/4"
         >
           {t(msg`取消`)}
         </Button>
@@ -117,7 +117,7 @@ export function MobileChatAttachmentPreview({
           variant="primary"
           onClick={() => void onSend()}
           disabled={pending}
-          className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[12px] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
+          className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)]"
         >
           {pending
             ? t(msg`发送中...`)

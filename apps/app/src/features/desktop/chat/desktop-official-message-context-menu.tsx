@@ -138,14 +138,14 @@ function ContextMenuButton({
       disabled={disabled}
       className={`flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition ${
         danger
-          ? "text-[#dc2626] hover:bg-[rgba(220,38,38,0.06)]"
+          ? "text-[color:var(--state-danger-text)] hover:bg-[color:var(--state-danger-bg)]"
           : "text-[color:var(--text-primary)] hover:bg-[color:var(--surface-console)]"
       } disabled:cursor-not-allowed disabled:opacity-50`}
     >
       <span
         className={
           danger
-            ? "text-[rgba(220,38,38,0.88)]"
+            ? "text-[color:var(--state-danger-text)]"
             : "text-[color:var(--text-secondary)]"
         }
       >

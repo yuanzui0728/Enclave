@@ -189,7 +189,7 @@ export function DesktopNoteSendDialog({
         aria-describedby={descId}
         className="relative flex h-[min(760px,84vh)] w-full max-w-[1040px] min-w-0 overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
       >
-        <section className="flex w-[344px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)]">
+        <section className="flex w-[344px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
           <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
             <div
               id={titleId}
@@ -199,7 +199,7 @@ export function DesktopNoteSendDialog({
             </div>
             <div
               id={descId}
-              className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+              className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]"
             >
               {t(msg`把这条收藏笔记发到最近会话。`)}
             </div>
@@ -213,10 +213,10 @@ export function DesktopNoteSendDialog({
         <section className="flex min-w-0 flex-1 flex-col bg-[rgba(255,255,255,0.62)]">
           <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
             <div className="min-w-0">
-              <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+              <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`最近会话`)}
               </div>
-              <div className="mt-2 text-[15px] font-medium text-[color:var(--text-primary)]">
+              <div className="mt-2 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`选择要接收笔记的聊天`)}
               </div>
             </div>
@@ -270,7 +270,7 @@ export function DesktopNoteSendDialog({
             !error &&
             conversations.length > 0 &&
             !filteredConversations.length ? (
-              <div className="rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-4 py-5 text-sm text-[color:var(--text-secondary)]">
+              <div className="rounded-[var(--radius-sm)] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-4 py-5 text-sm text-[color:var(--text-secondary)]">
                 {t(msg`没有匹配的最近会话。`)}
               </div>
             ) : null}
@@ -329,7 +329,7 @@ export function DesktopNoteSendDialog({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 text-[12px] text-[color:var(--text-muted)] backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 text-[length:var(--text-caption)] text-[color:var(--text-muted)] backdrop-blur-xl">
             <div>{t(msg`发送后会在目标会话里显示成一张可打开的笔记卡片。`)}</div>
             <Button
               type="button"
@@ -356,9 +356,9 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
   ).length;
 
   return (
-    <div className="overflow-hidden rounded-[20px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-soft)]">
+    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-soft)]">
       {previewImage?.url ? (
-        <div className="h-[184px] overflow-hidden bg-[rgba(15,23,42,0.05)]">
+        <div className="h-[184px] overflow-hidden bg-[color:var(--border-faint)]">
           {/* 走查 R131：和 R130 (NoteViewerOverlay 内嵌 <img>) 一脉。本 preview
               卡渲在「发送给好友 / 群聊」dialog 顶部，用户打开 dialog 时第一眼
               就盯着这张封面缩略图，下意识用鼠标按住拖向背后某个会话行试图
@@ -380,7 +380,7 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
         </div>
       ) : (
         <div className="flex h-[184px] items-end bg-[linear-gradient(160deg,#f3f6f5_0%,#dde6e3_100%)] px-5 py-5">
-          <div className="rounded-[16px] border border-[rgba(15,23,42,0.08)] bg-white/88 px-4 py-3 text-[11px] tracking-[0.16em] text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
+          <div className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-white/88 px-4 py-3 text-[length:var(--text-eyebrow)] tracking-[0.16em] text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
             {t(msg`收藏笔记`)}
           </div>
         </div>
@@ -388,15 +388,15 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
 
       <div className="space-y-4 px-5 py-5">
         <div>
-          <div className="line-clamp-2 text-[17px] font-medium leading-7 text-[color:var(--text-primary)]">
+          <div className="line-clamp-2 text-[length:var(--text-title)] font-medium leading-7 text-[color:var(--text-primary)]">
             {note.title}
           </div>
-          <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {t(msg`更新于 ${formatMessageTimestamp(note.updatedAt)}`)}
           </div>
         </div>
 
-        <div className="line-clamp-5 text-[13px] leading-7 text-[color:var(--text-secondary)]">
+        <div className="line-clamp-5 text-[length:var(--text-caption)] leading-7 text-[color:var(--text-secondary)]">
           {note.excerpt || t(msg`这条笔记还没有正文摘要。`)}
         </div>
 
@@ -405,7 +405,7 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
             {note.tags.slice(0, 6).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-1 text-[11px] text-[color:var(--brand-primary)]"
+                className="rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
               >
                 #{tag}
               </span>
@@ -413,7 +413,7 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
           </div>
         ) : null}
 
-        <div className="flex items-center gap-2 text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+        <div className="flex items-center gap-2 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
           {imageCount ? <span>{t(msg`${imageCount} 张图片`)}</span> : null}
           {fileCount ? <span>{t(msg`${fileCount} 个文件`)}</span> : null}
           {!imageCount && !fileCount ? <span>{t(msg`纯文本笔记`)}</span> : null}

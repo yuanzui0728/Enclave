@@ -233,7 +233,7 @@ export function AudioCard({
             className="h-1 w-full min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-white/20 accent-white"
             disabled={!duration}
           />
-          <span className="flex-none whitespace-nowrap text-right font-mono text-[11px] leading-none text-white/70">
+          <span className="flex-none whitespace-nowrap text-right font-mono text-[length:var(--text-eyebrow)] leading-none text-white/70">
             {formatSeconds(progress)}/{formatSeconds(duration)}
           </span>
         </div>

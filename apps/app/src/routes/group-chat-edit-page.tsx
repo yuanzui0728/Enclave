@@ -323,7 +323,7 @@ function MobileGroupChatEditPage({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={() => {
                     void groupQuery.refetch();
                   }}
@@ -333,7 +333,7 @@ function MobileGroupChatEditPage({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={openGroupDetails}
                 >
                   {t(msg`返回群聊信息`)}
@@ -355,7 +355,7 @@ function MobileGroupChatEditPage({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={() => {
                     void membersQuery.refetch();
                   }}
@@ -365,7 +365,7 @@ function MobileGroupChatEditPage({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={openGroupDetails}
                 >
                   {t(msg`返回群聊信息`)}
@@ -386,7 +386,7 @@ function MobileGroupChatEditPage({
             // createMutation error R(新一轮 R1) 同款修法。
             role="alert"
             tone="danger"
-            className="rounded-[12px] px-2.5 py-1.5 text-[11px] leading-[1.35rem] shadow-none"
+            className="rounded-[var(--radius-sm)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] shadow-none"
           >
             <div className="flex items-center justify-between gap-2">
               <span className="min-w-0 flex-1">{describeRequestError(saveMutation.error)}</span>
@@ -394,14 +394,14 @@ function MobileGroupChatEditPage({
                 <button
                   type="button"
                   onClick={handleRetrySave}
-                  className="rounded-full border border-[rgba(60, 40, 110, 0.08)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
+                  className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试保存`)}
                 </button>
                 <button
                   type="button"
                   onClick={openGroupDetails}
-                  className="rounded-full border border-[rgba(220,38,38,0.14)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
+                  className="rounded-full border border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--state-danger-text)]"
                 >
                   {t(msg`返回群聊信息`)}
                 </button>
@@ -422,7 +422,7 @@ function MobileGroupChatEditPage({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={handleRetryLoad}
                 >
                   {t(msg`重试读取`)}
@@ -430,7 +430,7 @@ function MobileGroupChatEditPage({
                 <Button
                   type="button"
                   size="sm"
-                  className="h-8 rounded-full px-3 text-[11px]"
+                  className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                   onClick={handleMissingGroupBack}
                 >
                   {safeReturnPath ? t(msg`返回上一页`) : t(msg`返回消息列表`)}
@@ -495,9 +495,9 @@ function MobileGroupChatEditPage({
                   event.preventDefault();
                   handleSave();
                 }}
-                className="h-11 w-full rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/18 focus:bg-[color:var(--surface-card)]"
+                className="h-11 w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--brand-primary)]/18 focus:bg-[color:var(--surface-card)]"
               />
-              <div className="mt-2 flex items-center justify-between gap-3 text-[12px] leading-5 text-[color:var(--text-muted)]">
+              <div className="mt-2 flex items-center justify-between gap-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-muted)]">
                 <span>
                   {mode === "name"
                     ? t(msg`会同步显示在聊天顶部和消息列表。`)
@@ -505,7 +505,7 @@ function MobileGroupChatEditPage({
                 </span>
                 <span>{t(msg`${trimmedDraft.length} 字`)}</span>
               </div>
-              <div className="mt-3 rounded-[12px] bg-[color:var(--surface-console)] px-3 py-2.5 text-[13px] leading-6 text-[color:var(--text-secondary)]">
+              <div className="mt-3 rounded-[var(--radius-sm)] bg-[color:var(--surface-console)] px-3 py-2.5 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]">
                 {t(msg`当前内容：${initialValue.trim() || t(msg`暂未设置`)}`)}
               </div>
             </div>
@@ -518,7 +518,7 @@ function MobileGroupChatEditPage({
               size="lg"
               disabled={submitDisabled}
               onClick={handleSave}
-              className="h-10 w-full rounded-[12px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              className="h-10 w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
             >
               {saveMutation.isPending ? t(msg`正在保存...`) : t(msg`保存`)}
             </Button>
@@ -555,7 +555,7 @@ function MobileGroupEditStatusCard({
         tone === "danger" ? "assertive" : tone === "loading" ? "polite" : undefined
       }
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -565,7 +565,7 @@ function MobileGroupEditStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -575,13 +575,13 @@ function MobileGroupEditStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

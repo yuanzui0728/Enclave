@@ -56,7 +56,7 @@ export function CloudFarmGame({
 
   const containerCls =
     variant === "embedded"
-      ? "rounded-[16px] bg-white"
+      ? "rounded-[var(--radius-md)] bg-white"
       : "min-h-screen bg-[color:var(--bg-app)]";
   const completedOrders = state.weeklyOrders.filter((o) => o.completed).length;
 
@@ -64,15 +64,15 @@ export function CloudFarmGame({
     <section className={cn("flex flex-col gap-3 p-3", containerCls)}>
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`云上农场`)}
           </span>
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] text-emerald-800">
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-emerald-800">
             Lv.{state.level}
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[12px] font-medium text-amber-800">
+          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-amber-800">
             <Coins size={12} />
             {state.coin}
           </span>
@@ -90,7 +90,7 @@ export function CloudFarmGame({
       </header>
 
       {/* 经验进度 */}
-      <div className="rounded-[12px] bg-emerald-50 px-3 py-2 text-[12px] text-emerald-900">
+      <div className="rounded-[var(--radius-sm)] bg-emerald-50 px-3 py-2 text-[length:var(--text-caption)] text-emerald-900">
         <div className="flex items-center justify-between">
           <span>{t(msg`经验 ${state.experience} / ${state.level * 30}`)}</span>
           <span>
@@ -127,8 +127,8 @@ export function CloudFarmGame({
               }}
             />
             {picker === plot.id ? (
-              <div className="absolute z-10 mt-1 w-[200px] rounded-[12px] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
-                <div className="mb-1 text-[11px] text-[color:var(--text-secondary)]">
+              <div className="absolute z-10 mt-1 w-[200px] rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-2 shadow-lg">
+                <div className="mb-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                   {t(msg`种什么`)}
                 </div>
                 <ul className="space-y-1">
@@ -145,7 +145,7 @@ export function CloudFarmGame({
                             setPicker(null);
                           }}
                           className={cn(
-                            "flex w-full items-center justify-between rounded-[8px] px-2 py-1.5 text-[12px]",
+                            "flex w-full items-center justify-between rounded-[8px] px-2 py-1.5 text-[length:var(--text-caption)]",
                             canAfford
                               ? "hover:bg-emerald-50"
                               : "cursor-not-allowed opacity-50",
@@ -168,7 +168,7 @@ export function CloudFarmGame({
                 <button
                   type="button"
                   onClick={() => setPicker(null)}
-                  className="mt-1 w-full rounded-[8px] border border-dashed py-1 text-[11px] text-[color:var(--text-secondary)]"
+                  className="mt-1 w-full rounded-[8px] border border-dashed py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
                 >
                   {t(msg`取消`)}
                 </button>
@@ -185,7 +185,7 @@ export function CloudFarmGame({
           onClick={actions.helpNeighbor}
           disabled={now < state.neighborCooldownUntilMs}
           className={cn(
-            "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium",
+            "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--text-caption)] font-medium",
             now >= state.neighborCooldownUntilMs
               ? "bg-emerald-500 text-white hover:bg-emerald-600"
               : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",
@@ -205,17 +205,17 @@ export function CloudFarmGame({
               if (plot.stage === "ripe") actions.harvest(plot.id);
             }
           }}
-          className="rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]"
+          className="rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
         >
           {t(msg`一键收菜`)}
         </button>
       </div>
 
       {/* 周任务 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-3">
-        <div className="mb-2 flex items-center justify-between text-[13px] font-medium">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+        <div className="mb-2 flex items-center justify-between text-[length:var(--text-caption)] font-medium">
           <span>{t(msg`本周联营订单`)}</span>
-          <span className="text-[11px] text-[color:var(--text-secondary)]">
+          <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
             {completedOrders} / {state.weeklyOrders.length}
           </span>
         </div>
@@ -227,7 +227,7 @@ export function CloudFarmGame({
             );
             return (
               <li key={order.id}>
-                <div className="flex items-center justify-between text-[12px]">
+                <div className="flex items-center justify-between text-[length:var(--text-caption)]">
                   <span
                     className={cn(
                       "truncate",
@@ -238,7 +238,7 @@ export function CloudFarmGame({
                   >
                     {order.label}
                   </span>
-                  <span className="ml-2 shrink-0 text-[11px] text-[color:var(--text-secondary)]">
+                  <span className="ml-2 shrink-0 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     {order.done}/{order.target} · +{order.reward}
                   </span>
                 </div>
@@ -255,13 +255,13 @@ export function CloudFarmGame({
       </div>
 
       {/* 日志 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`农场日志`)}</span>
           <button
             type="button"
             onClick={actions.reset}
-            className="flex items-center gap-1 text-[11px] text-[color:var(--text-secondary)]"
+            className="flex items-center gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
           >
             <RotateCcw size={11} />
             {t(msg`重置`)}
@@ -269,7 +269,7 @@ export function CloudFarmGame({
         </div>
         <ul className="max-h-44 overflow-y-auto px-3 py-2">
           {state.log.length === 0 ? (
-            <li className="py-1 text-[12px] text-[color:var(--text-tertiary)]">
+            <li className="py-1 text-[length:var(--text-caption)] text-[color:var(--text-tertiary)]">
               {t(msg`点空地开始种植…`)}
             </li>
           ) : (
@@ -277,7 +277,7 @@ export function CloudFarmGame({
               <li
                 key={entry.id}
                 className={cn(
-                  "py-1 text-[12px] leading-[1.5rem]",
+                  "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
                   entry.tone === "success" && "text-emerald-700",
                   entry.tone === "warn" && "text-amber-700",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",
@@ -360,7 +360,7 @@ function PlotCard({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex h-[100px] flex-col items-center justify-between rounded-[12px] border p-2 text-[10px] transition-colors",
+        "flex h-[100px] flex-col items-center justify-between rounded-[var(--radius-sm)] border p-2 text-[10px] transition-colors",
         tone,
       )}
     >

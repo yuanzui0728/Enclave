@@ -1894,8 +1894,8 @@ export function StickerPanel({
       aria-labelledby={panelTitleId}
       className={
         isMobile
-          ? "mt-1.5 overflow-hidden rounded-[20px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]"
-          : "absolute bottom-full left-0 z-50 mb-3 w-[430px] overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,248,244,0.98))] p-3 shadow-[0_18px_34px_rgba(60, 40, 110, 0.16)]"
+          ? "mt-1.5 overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)]"
+          : "absolute bottom-full left-0 z-50 mb-3 w-[430px] overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(250,248,244,0.98))] p-3 shadow-[0_18px_34px_rgba(60, 40, 110, 0.16)]"
       }
     >
       <div className={isMobile ? "flex h-[284px] flex-col" : undefined}>
@@ -1911,14 +1911,14 @@ export function StickerPanel({
               id={panelTitleId}
               className={
                 isMobile
-                  ? "text-[13px] font-medium text-[color:var(--text-primary)]"
+                  ? "text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]"
                   : "text-sm font-medium text-[color:var(--text-primary)]"
               }
             >
               {panelTitle}
             </div>
             {!isMobile ? (
-              <div className="pt-0.5 text-[11px] text-[color:var(--text-secondary)]">
+              <div className="pt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                 {panelSubtitle}
               </div>
             ) : null}
@@ -1943,9 +1943,9 @@ export function StickerPanel({
                 title={desktopManageButtonTitle}
                 className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   showManageSearchPauseHint
-                    ? "bg-[rgba(124, 91, 217, 0.14)] text-[color:var(--brand-primary)] hover:bg-[rgba(124, 91, 217, 0.18)]"
+                    ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
                     : customManageMode
-                      ? "bg-[rgba(60, 40, 110, 0.08)] text-[color:var(--text-primary)]"
+                      ? "bg-[color:var(--border-subtle)] text-[color:var(--text-primary)]"
                       : "text-[color:var(--text-secondary)] hover:bg-white/80"
                 }`}
               >
@@ -1979,10 +1979,10 @@ export function StickerPanel({
               title={headerUploadButtonTitle}
               className={
                 isMobile
-                  ? "rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)] transition active:bg-[color:var(--bg-canvas)] disabled:opacity-45"
+                  ? "rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)] transition active:bg-[color:var(--bg-canvas)] disabled:opacity-45"
                   : `inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:opacity-45 ${
                       headerUploadButtonTone === "resume"
-                        ? "border-[rgba(124, 91, 217, 0.18)] bg-[rgba(124, 91, 217, 0.12)] text-[color:var(--brand-primary)] hover:bg-[rgba(124, 91, 217, 0.18)]"
+                        ? "border-[color:var(--brand-soft)] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] hover:bg-[color:var(--brand-soft)]"
                         : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-console)]"
                     }`
               }
@@ -2004,7 +2004,7 @@ export function StickerPanel({
               title={closePanelTitle}
               className={
                 isMobile
-                  ? "rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[color:var(--text-muted)] transition active:bg-[color:var(--bg-canvas)]"
+                  ? "rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)] transition active:bg-[color:var(--bg-canvas)]"
                   : "rounded-full px-2 py-1 text-xs text-[color:var(--text-secondary)] transition hover:bg-white/80"
               }
             >
@@ -2017,8 +2017,8 @@ export function StickerPanel({
           <label
             className={
               isMobile
-                ? "flex items-center gap-2 rounded-[16px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2"
-                : "flex items-center gap-2 rounded-[16px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+                ? "flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-2"
+                : "flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
             }
           >
             <Search size={14} className="text-[color:var(--text-secondary)]" />
@@ -2036,10 +2036,10 @@ export function StickerPanel({
               // 用稳定的「搜索表情」（管理模式 / Esc 提示等条件 placeholder
               // 文案是 visual hint，不属于核心字段语义）。
               aria-label={t(msg`搜索表情`)}
-              // mobile: text-[16px] 防 iOS Safari focus 时 viewport zoom-in；
+              // mobile: text-[length:var(--text-title)] 防 iOS Safari focus 时 viewport zoom-in；
               // desktop 沿用 13px 紧凑布局。
               className={`w-full border-none bg-transparent text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-muted)] ${
-                isMobile ? "text-[16px]" : "text-[13px]"
+                isMobile ? "text-[length:var(--text-title)]" : "text-[length:var(--text-caption)]"
               }`}
             />
             {trimmedKeyword.length > 0 ? (
@@ -2060,7 +2060,7 @@ export function StickerPanel({
           </label>
           {showManageSearchPauseHint ? (
             <div className="px-1 pt-2">
-              <div className="flex items-start justify-between gap-3 rounded-[16px] border border-[rgba(124, 91, 217, 0.18)] bg-[color:var(--surface-card)] px-3 py-2 text-[11px] text-[color:var(--text-secondary)]">
+              <div className="flex items-start justify-between gap-3 rounded-[var(--radius-md)] border border-[color:var(--brand-soft)] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                 <div className="min-w-0 flex-1">
                   <div>{pausedManagePrimaryHint}</div>
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
@@ -2085,7 +2085,7 @@ export function StickerPanel({
                     type="button"
                     onClick={clearSearchAndOpenUpload}
                     title={resumeUploadShortcutTitle}
-                    className="shrink-0 rounded-full bg-[rgba(124, 91, 217, 0.14)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)] transition hover:bg-[rgba(124, 91, 217, 0.18)]"
+                    className="shrink-0 rounded-full bg-[color:var(--brand-soft)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)] transition hover:bg-[color:var(--brand-soft)]"
                   >
                     {addNowLabel}
                   </button>
@@ -2094,7 +2094,7 @@ export function StickerPanel({
                   type="button"
                   onClick={clearSearchAndResumeManage}
                   title={resumeManageShortcutTitle}
-                  className="shrink-0 rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)] transition hover:bg-[color:var(--surface-console)]"
+                  className="shrink-0 rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)] transition hover:bg-[color:var(--surface-console)]"
                 >
                   {resumeManageLabel}
                 </button>
@@ -2105,17 +2105,17 @@ export function StickerPanel({
             <div className="px-1 pt-2">
               {highlightedSearchItem ? (
                 <div
-                  className={`mb-2 flex items-center justify-between gap-3 rounded-[16px] border px-3 py-2 text-[11px] transition ${
+                  className={`mb-2 flex items-center justify-between gap-3 rounded-[var(--radius-md)] border px-3 py-2 text-[length:var(--text-eyebrow)] transition ${
                     searchPreviewFlashKey === highlightedSearchStickerKey
-                      ? "border-[rgba(124, 91, 217, 0.26)] bg-[color:var(--surface-secondary)] shadow-[0_8px_18px_rgba(60, 40, 110, 0.12)]"
-                      : "border-[rgba(124, 91, 217, 0.18)] bg-[color:var(--surface-card)]"
+                      ? "border-[color:var(--state-info-bg)] bg-[color:var(--surface-secondary)] shadow-[0_8px_18px_rgba(60, 40, 110, 0.12)]"
+                      : "border-[color:var(--brand-soft)] bg-[color:var(--surface-card)]"
                   }`}
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <div
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[12px] border bg-[color:var(--surface-card)] transition ${
+                      className={`flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-sm)] border bg-[color:var(--surface-card)] transition ${
                         searchPreviewFlashKey === highlightedSearchStickerKey
-                          ? "border-[rgba(124, 91, 217, 0.26)] shadow-[0_6px_14px_rgba(60, 40, 110, 0.12)]"
+                          ? "border-[color:var(--state-info-bg)] shadow-[0_6px_14px_rgba(60, 40, 110, 0.12)]"
                           : "border-white/90"
                       }`}
                     >
@@ -2169,7 +2169,7 @@ export function StickerPanel({
                         {recommendedSearchSection &&
                         recommendedSearchSection.id !==
                           highlightedSearchSection?.id ? (
-                          <span className="rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[10px] text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]">
+                          <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[10px] text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]">
                             {t(
                               msg`${searchDefaultEnterLabel} · ${recommendedSearchSection.label}`,
                             )}
@@ -2236,13 +2236,13 @@ export function StickerPanel({
                                 firstSearchResultItem.sticker.stickerId}
                             </span>
                             {recommendedSearchSection ? (
-                              <span className="rounded-full bg-[rgba(124, 91, 217, 0.12)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
+                              <span className="rounded-full bg-[color:var(--brand-soft)] px-1.5 py-0.5 text-[9px] text-[color:var(--brand-primary)]">
                                 {recommendedSearchSection.label}
                               </span>
                             ) : null}
                           </div>
                           {searchSectionOffsetLabel ? (
-                            <span className="rounded-full bg-[rgba(124, 91, 217, 0.12)] px-1.5 py-1 text-[10px] text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]">
+                            <span className="rounded-full bg-[color:var(--brand-soft)] px-1.5 py-1 text-[10px] text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]">
                               {searchSectionOffsetLabel}
                             </span>
                           ) : null}
@@ -2252,7 +2252,7 @@ export function StickerPanel({
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {highlightedSearchPosition === 1 ? (
-                      <span className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]">
+                      <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]">
                         {searchRecommendedLabel}
                       </span>
                     ) : null}
@@ -2299,7 +2299,7 @@ export function StickerPanel({
                   </div>
                 </div>
               ) : null}
-              <div className="text-[11px] text-[color:var(--text-muted)]">
+              <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 <span className="rounded-full bg-white/88 px-2 py-1">
                   {searchSelectHintLabel}
                 </span>
@@ -2341,52 +2341,52 @@ export function StickerPanel({
             <div
               className={
                 isMobile
-                  ? `mb-2 rounded-[16px] border px-3 py-2.5 transition ${
+                  ? `mb-2 rounded-[var(--radius-md)] border px-3 py-2.5 transition ${
                       customStorageTone === "danger"
-                        ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
+                        ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)]"
                         : customStorageTone === "warning"
                           ? "border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)]"
                           : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
                     } ${
                       customDeleteFeedbackFlashActive
-                        ? "shadow-[0_10px_24px_rgba(60, 40, 110, 0.12)] ring-1 ring-[rgba(124, 91, 217, 0.16)]"
+                        ? "shadow-[0_10px_24px_rgba(60, 40, 110, 0.12)] ring-1 ring-[color:var(--brand-soft)]"
                         : ""
                     }`
-                  : `mb-3 rounded-[20px] border px-3 py-3 transition ${
+                  : `mb-3 rounded-[var(--radius-lg)] border px-3 py-3 transition ${
                       customStorageTone === "danger"
-                        ? "border-[rgba(239,68,68,0.22)] bg-[rgba(254,242,242,0.96)]"
+                        ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)]"
                         : customStorageTone === "warning"
                           ? "border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)]"
                           : "border-[color:var(--border-subtle)] bg-white/84"
                     } ${
                       customDeleteFeedbackFlashActive
-                        ? "shadow-[0_12px_28px_rgba(60, 40, 110, 0.14)] ring-1 ring-[rgba(124, 91, 217, 0.18)]"
+                        ? "shadow-[0_12px_28px_rgba(60, 40, 110, 0.14)] ring-1 ring-[color:var(--brand-soft)]"
                         : ""
                     }`
               }
             >
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="text-[12px] font-medium text-[color:var(--text-primary)]">
+                  <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                     {customLibraryTitle}
                   </div>
-                  <div className="pt-0.5 text-[11px] text-[color:var(--text-secondary)]">
+                  <div className="pt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     {customLibrarySavedLabel}
                   </div>
                 </div>
                 <div
-                  className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                  className={`shrink-0 rounded-full px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium ${
                     customStorageTone === "danger"
-                      ? "bg-[rgba(239,68,68,0.12)] text-[#b91c1c]"
+                      ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
                       : customStorageTone === "warning"
                         ? "bg-[color:var(--brand-primary)]/14 text-[color:var(--brand-primary)]"
-                        : "bg-[rgba(60, 40, 110, 0.06)] text-[color:var(--text-primary)]"
+                        : "bg-[color:var(--border-faint)] text-[color:var(--text-primary)]"
                   } ${customDeleteFeedbackFlashActive ? "animate-pulse" : ""}`}
                 >
                   {customStorageStatusLabel}
                 </div>
               </div>
-              <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[rgba(60, 40, 110, 0.08)]">
+              <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[color:var(--border-subtle)]">
                 <div
                   className={`h-full rounded-full transition-[width] ${
                     customStorageTone === "danger"
@@ -2406,14 +2406,14 @@ export function StickerPanel({
               </div>
               {isMobile ? (
                 <div className="mt-2.5 space-y-2">
-                  <div className="flex items-start justify-between gap-2 text-[11px] text-[color:var(--text-secondary)]">
+                  <div className="flex items-start justify-between gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     <span className="min-w-0 flex-1 leading-4">
                       {mobileCustomStorageSummary}
                     </span>
                     <div className="flex shrink-0 items-center gap-1.5">
                       {customDeleteFeedback ? (
                         <span
-                          className={`rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] ${
+                          className={`rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] ${
                             customDeleteFeedbackFlashActive
                               ? "animate-pulse"
                               : ""
@@ -2456,7 +2456,7 @@ export function StickerPanel({
                           onClick={openUploadPicker}
                           title={continueUploadShortcutTitle}
                           disabled={uploadMutation.isPending}
-                          className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--brand-primary)] transition active:bg-[rgba(124, 91, 217, 0.18)] disabled:opacity-45"
+                          className="rounded-full bg-[color:var(--brand-soft)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)] transition active:bg-[color:var(--brand-soft)] disabled:opacity-45"
                         >
                           {continueUploadLabel}
                         </button>
@@ -2468,7 +2468,7 @@ export function StickerPanel({
                             onClick={openUploadPicker}
                             title={addFirstUploadShortcutTitle}
                             disabled={uploadMutation.isPending}
-                            className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--brand-primary)] transition active:bg-[rgba(124, 91, 217, 0.18)] disabled:opacity-45"
+                            className="rounded-full bg-[color:var(--brand-soft)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)] transition active:bg-[color:var(--brand-soft)] disabled:opacity-45"
                           >
                             {addFirstLabel}
                           </button>
@@ -2476,7 +2476,7 @@ export function StickerPanel({
                             type="button"
                             onClick={switchToFeatured}
                             title={featuredShortcutTitle}
-                            className="rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
+                            className="rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
                           >
                             {viewFeaturedLabel}
                           </button>
@@ -2487,7 +2487,7 @@ export function StickerPanel({
                           type="button"
                           onClick={switchCustomSortToAdded}
                           title={recentAddedShortcutTitle}
-                          className="rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[11px] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
+                          className="rounded-full bg-[color:var(--surface-card)] px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-console)]"
                         >
                           {viewRecentAddedLabel}
                         </button>
@@ -2502,7 +2502,7 @@ export function StickerPanel({
                 </div>
               ) : (
                 <>
-                  <div className="mt-2.5 flex items-center justify-between gap-3 text-[11px] text-[color:var(--text-secondary)]">
+                  <div className="mt-2.5 flex items-center justify-between gap-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     <span>
                       {customDeleteFeedback
                         ? customDeleteFeedback.slotsRemaining > 0
@@ -2527,7 +2527,7 @@ export function StickerPanel({
                     <div className="flex items-center gap-2">
                       {customDeleteFeedback ? (
                         <span
-                          className={`rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] ${
+                          className={`rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)] ${
                             customDeleteFeedbackFlashActive
                               ? "animate-pulse"
                               : ""
@@ -2544,7 +2544,7 @@ export function StickerPanel({
                       <span
                         className={`max-w-[180px] truncate rounded-full px-2 py-1 ${
                           manageFocusFlashKey === focusedManageDeleteKey
-                            ? "bg-[rgba(124, 91, 217, 0.14)] text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]"
+                            ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]"
                             : "bg-white/88"
                         }`}
                       >
@@ -2558,7 +2558,7 @@ export function StickerPanel({
                         </span>
                       ) : null}
                       {nextManageDeleteOutcomeLabel ? (
-                        <span className="rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[color:var(--brand-primary)]">
+                        <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[color:var(--brand-primary)]">
                           {nextManageDeleteOutcomeLabel}
                         </span>
                       ) : null}
@@ -2576,7 +2576,7 @@ export function StickerPanel({
                           type="button"
                           onClick={openUploadPicker}
                           title={addFirstUploadShortcutTitle}
-                          className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition hover:bg-[rgba(124, 91, 217, 0.18)]"
+                          className="rounded-full bg-[color:var(--brand-soft)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition hover:bg-[color:var(--brand-soft)]"
                         >
                           {addFirstLabel}
                         </button>
@@ -2596,7 +2596,7 @@ export function StickerPanel({
                             type="button"
                             onClick={exitManageModeAndOpenUpload}
                             title={resumeUploadShortcutTitle}
-                            className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition hover:bg-[rgba(124, 91, 217, 0.18)]"
+                            className="rounded-full bg-[color:var(--brand-soft)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition hover:bg-[color:var(--brand-soft)]"
                           >
                             {addNowLabel}
                           </button>
@@ -2643,18 +2643,18 @@ export function StickerPanel({
           ) : null}
           {showCustomManageHint ? (
             <div
-              className={`mb-3 flex items-center justify-between gap-3 rounded-[16px] border px-3 py-2.5 text-xs text-[color:var(--text-secondary)] transition ${
+              className={`mb-3 flex items-center justify-between gap-3 rounded-[var(--radius-md)] border px-3 py-2.5 text-xs text-[color:var(--text-secondary)] transition ${
                 customDeleteFeedbackFlashActive
-                  ? "border-[rgba(124, 91, 217, 0.18)] bg-[color:var(--surface-card)] shadow-[0_8px_20px_rgba(60, 40, 110, 0.08)]"
-                  : "border-[rgba(60, 40, 110, 0.08)] bg-white/82"
+                  ? "border-[color:var(--brand-soft)] bg-[color:var(--surface-card)] shadow-[0_8px_20px_rgba(60, 40, 110, 0.08)]"
+                  : "border-[color:var(--border-subtle)] bg-white/82"
               }`}
             >
               <span>{manageSummaryLabel}</span>
               <div className="flex shrink-0 items-center gap-2">
-                <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                <span className="rounded-full bg-white/88 px-2 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                   {manageSwitchHintLabel}
                 </span>
-                <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                <span className="rounded-full bg-white/88 px-2 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                   {manageDeleteHintLabel}
                 </span>
                 {customDeleteFeedback?.slotsRemaining ? (
@@ -2662,17 +2662,17 @@ export function StickerPanel({
                     type="button"
                     onClick={exitManageModeAndOpenUpload}
                     title={resumeUploadShortcutTitle}
-                    className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-2.5 py-1 text-[11px] font-medium text-[color:var(--brand-primary)] transition hover:bg-[rgba(124, 91, 217, 0.18)]"
+                    className="rounded-full bg-[color:var(--brand-soft)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)] transition hover:bg-[color:var(--brand-soft)]"
                   >
                     {addNowLabel}
                   </button>
                 ) : null}
                 {focusedManageSticker ? (
                   <span
-                    className={`max-w-[140px] truncate rounded-full px-2 py-1 text-[11px] text-[color:var(--text-primary)] transition ${
+                    className={`max-w-[140px] truncate rounded-full px-2 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)] transition ${
                       manageFocusFlashKey === focusedManageDeleteKey
-                        ? "bg-[rgba(124, 91, 217, 0.14)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.12)]"
-                        : "bg-[rgba(60, 40, 110, 0.06)]"
+                        ? "bg-[color:var(--brand-soft)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.12)]"
+                        : "bg-[color:var(--border-faint)]"
                     }`}
                   >
                     {manageCurrentLabel}
@@ -2681,30 +2681,30 @@ export function StickerPanel({
                   </span>
                 ) : null}
                 {focusedManageStickerPosition ? (
-                  <span className="rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                  <span className="rounded-full bg-white/88 px-2 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     {manageCurrentPositionLabel}
                   </span>
                 ) : null}
                 {nextManageSticker && manageableCustomItems.length > 1 ? (
-                  <span className="max-w-[150px] truncate rounded-full bg-white/88 px-2 py-1 text-[11px] text-[color:var(--text-secondary)]">
+                  <span className="max-w-[150px] truncate rounded-full bg-white/88 px-2 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     {manageNextLabel}
                   </span>
                 ) : null}
                 {nextManageDeleteOutcomeLabel ? (
-                  <span className="rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[11px] text-[color:var(--brand-primary)]">
+                  <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]">
                     {nextManageDeleteOutcomeLabel}
                   </span>
                 ) : null}
                 {customDeleteFeedback?.lastDeletedLabel ? (
                   <span
-                    className={`rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[11px] text-[color:var(--brand-primary)] ${
+                    className={`rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)] ${
                       customDeleteFeedbackFlashActive ? "animate-pulse" : ""
                     }`}
                   >
                     {t(msg`最近删除：${customDeleteFeedback.lastDeletedLabel}`)}
                   </span>
                 ) : null}
-                <span className="rounded-full bg-[rgba(60, 40, 110, 0.06)] px-2 py-1 text-[11px] text-[color:var(--text-primary)]">
+                <span className="rounded-full bg-[color:var(--border-faint)] px-2 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)]">
                   {manageRemainingLabel}
                 </span>
               </div>
@@ -2746,14 +2746,14 @@ export function StickerPanel({
                     }
                     className={
                       isMobile
-                        ? `rounded-full px-2.5 py-1 text-[11px] transition ${
+                        ? `rounded-full px-2.5 py-1 text-[length:var(--text-eyebrow)] transition ${
                             active
-                              ? "bg-[rgba(124, 91, 217, 0.14)] text-[color:var(--brand-primary)]"
+                              ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
                               : "bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
                           }`
                         : `rounded-full px-3 py-1.5 text-xs font-medium transition ${
                             active
-                              ? "bg-[rgba(124, 91, 217, 0.14)] text-[color:var(--brand-primary)]"
+                              ? "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]"
                               : "bg-white/82 text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card)]"
                           }`
                     }
@@ -2768,8 +2768,8 @@ export function StickerPanel({
             <div
               className={
                 isMobile
-                  ? "mb-2 rounded-[16px] border border-[color:var(--brand-primary)]/28 bg-[color:var(--surface-card)] px-3 py-2 text-[11px] text-[color:var(--brand-primary)]"
-                  : "mb-3 flex items-center justify-between gap-3 rounded-[16px] border border-[color:var(--brand-primary)]/26 bg-[color:var(--surface-card)] px-3 py-2.5 text-xs text-[color:var(--brand-primary)]"
+                  ? "mb-2 rounded-[var(--radius-md)] border border-[color:var(--brand-primary)]/28 bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
+                  : "mb-3 flex items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[color:var(--brand-primary)]/26 bg-[color:var(--surface-card)] px-3 py-2.5 text-xs text-[color:var(--brand-primary)]"
               }
             >
               <span>{customCapacityNotice}</span>
@@ -2783,7 +2783,7 @@ export function StickerPanel({
                       type="button"
                       onClick={switchCustomSortToAdded}
                       title={recentAddedShortcutTitle}
-                      className="rounded-full bg-white/88 px-3 py-1 text-[11px] font-medium text-[color:var(--text-secondary)] shadow-[0_1px_3px_rgba(60, 40, 110, 0.06)]"
+                      className="rounded-full bg-white/88 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)] shadow-[0_1px_3px_rgba(60, 40, 110, 0.06)]"
                     >
                       {viewRecentAddedLabel}
                     </button>
@@ -2793,7 +2793,7 @@ export function StickerPanel({
                       type="button"
                       onClick={openCustomManageMode}
                       title={manageShortcutTitle}
-                      className="rounded-full bg-[color:var(--surface-card)] px-3 py-1 text-[11px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_3px_rgba(60, 40, 110, 0.06)]"
+                      className="rounded-full bg-[color:var(--surface-card)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_3px_rgba(60, 40, 110, 0.06)]"
                     >
                       {searchManageActionLabel}
                     </button>
@@ -2811,7 +2811,7 @@ export function StickerPanel({
             searching ? (
               <div className={isMobile ? "space-y-3" : "space-y-4"}>
                 {mobileSearchPreview ? (
-                  <div className="rounded-[16px] border border-[rgba(124, 91, 217, 0.16)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[11px] text-[color:var(--text-secondary)]">
+                  <div className="rounded-[var(--radius-md)] border border-[color:var(--brand-soft)] bg-[color:var(--surface-card)] px-3 py-2.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium text-[color:var(--brand-primary)]">
                         {searchRecommendedFromLabel}
@@ -2839,9 +2839,9 @@ export function StickerPanel({
                       className={
                         isMobile
                           ? "space-y-1.5"
-                          : `space-y-2 rounded-[20px] px-2 py-2 transition ${
+                          : `space-y-2 rounded-[var(--radius-lg)] px-2 py-2 transition ${
                               sectionState.containsHighlighted
-                                ? "bg-[color:var(--surface-secondary)] ring-1 ring-[rgba(124, 91, 217, 0.12)]"
+                                ? "bg-[color:var(--surface-secondary)] ring-1 ring-[color:var(--brand-soft)]"
                                 : sectionState.containsRecommended
                                   ? "bg-white/52"
                                   : ""
@@ -2850,12 +2850,12 @@ export function StickerPanel({
                     >
                       <div className="flex items-center justify-between px-0.5">
                         <div className="inline-flex items-center gap-2 text-[color:var(--text-secondary)]">
-                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[rgba(124, 91, 217, 0.12)] px-1.5 text-[10px] font-semibold text-[color:var(--brand-primary)]">
+                          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[color:var(--brand-soft)] px-1.5 text-[10px] font-semibold text-[color:var(--brand-primary)]">
                             {section.badgeText}
                           </span>
                           <span
                             className={
-                              isMobile ? "text-[11px]" : "text-xs font-medium"
+                              isMobile ? "text-[length:var(--text-eyebrow)]" : "text-xs font-medium"
                             }
                           >
                             {section.label}
@@ -2866,7 +2866,7 @@ export function StickerPanel({
                             </span>
                           ) : null}
                           {!isMobile && sectionState.containsHighlighted ? (
-                            <span className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)]">
+                            <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[10px] font-medium text-[color:var(--brand-primary)]">
                               {t(msg`当前高亮`)}
                             </span>
                           ) : null}
@@ -2907,7 +2907,7 @@ export function StickerPanel({
               renderStickerGrid(activeItems)
             )
           ) : (
-            <div className="flex min-h-[160px] items-center justify-center rounded-[20px] border border-dashed border-[color:var(--border-subtle)] bg-white/70 px-5 text-center text-sm text-[color:var(--text-secondary)]">
+            <div className="flex min-h-[160px] items-center justify-center rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-subtle)] bg-white/70 px-5 text-center text-sm text-[color:var(--text-secondary)]">
               <div className="flex max-w-[240px] flex-col items-center gap-3">
                 <div>{emptyStatePrimaryLabel}</div>
                 {searching ? (
@@ -2917,7 +2917,7 @@ export function StickerPanel({
                       <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-[color:var(--text-secondary)]">
                         {showManageSearchPauseHint ? (
                           <>
-                            <span className="rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[color:var(--brand-primary)]">
+                            <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[color:var(--brand-primary)]">
                               {pausedManageResumeLabel}
                             </span>
                             <span className="rounded-full bg-white/88 px-2 py-1">
@@ -2932,7 +2932,7 @@ export function StickerPanel({
                         ) : null}
                         {!showManageSearchPauseHint &&
                         searchResumeUploadHintLabel ? (
-                          <span className="rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[color:var(--brand-primary)]">
+                          <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[color:var(--brand-primary)]">
                             {searchResumeUploadHintLabel}
                           </span>
                         ) : null}
@@ -2947,7 +2947,7 @@ export function StickerPanel({
                             : clearSearch
                         }
                         title={clearSearchShortcutTitle}
-                        className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition hover:bg-[rgba(124, 91, 217, 0.18)]"
+                        className="rounded-full bg-[color:var(--brand-soft)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition hover:bg-[color:var(--brand-soft)]"
                       >
                         {searchRetryLabel}
                       </button>
@@ -3005,7 +3005,7 @@ export function StickerPanel({
                         </button>
                       ) : null}
                     </div>
-                    <div className="text-[11px] text-[color:var(--text-muted)]">
+                    <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                       {searchFallbackHint}
                     </div>
                   </div>
@@ -3014,7 +3014,7 @@ export function StickerPanel({
                   <div className="flex flex-col items-center gap-2">
                     {customDeleteFeedback?.deletedCount ? (
                       <div className="flex flex-wrap items-center justify-center gap-1.5 text-[10px] text-[color:var(--text-secondary)]">
-                        <span className="rounded-full bg-[rgba(124, 91, 217, 0.12)] px-2 py-1 text-[color:var(--brand-primary)]">
+                        <span className="rounded-full bg-[color:var(--brand-soft)] px-2 py-1 text-[color:var(--brand-primary)]">
                           {customEmptyDeletedSummary}
                         </span>
                         <span className="rounded-full bg-white/88 px-2 py-1">
@@ -3042,7 +3042,7 @@ export function StickerPanel({
                         disabled={
                           uploadMutation.isPending || customStickerLibraryFull
                         }
-                        className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition disabled:opacity-45"
+                        className="rounded-full bg-[color:var(--brand-soft)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition disabled:opacity-45"
                       >
                         {customEmptyActionLabel}
                       </button>
@@ -3058,11 +3058,11 @@ export function StickerPanel({
                       ) : null}
                     </div>
                     {!customDeleteFeedback?.deletedCount ? (
-                      <div className="text-[11px] text-[color:var(--text-muted)]">
+                      <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                         {customEmptyUploadHint}
                       </div>
                     ) : isMobile ? (
-                      <div className="text-[11px] text-[color:var(--text-muted)]">
+                      <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                         {mobileCustomEmptyHint}
                       </div>
                     ) : null}
@@ -3073,7 +3073,7 @@ export function StickerPanel({
                     type="button"
                     onClick={switchToFeatured}
                     title={featuredShortcutTitle}
-                    className="rounded-full bg-[rgba(124, 91, 217, 0.14)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition"
+                    className="rounded-full bg-[color:var(--brand-soft)] px-3 py-1.5 text-xs font-medium text-[color:var(--brand-primary)] transition"
                   >
                     {viewFeaturedLabel}
                   </button>
@@ -3116,14 +3116,14 @@ export function StickerPanel({
                 }}
                 className={
                   isMobile
-                    ? `shrink-0 rounded-[12px] border px-2.5 py-1 text-[11px] transition ${
+                    ? `shrink-0 rounded-[var(--radius-sm)] border px-2.5 py-1 text-[length:var(--text-eyebrow)] transition ${
                         active
                           ? "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
                           : "border-transparent bg-transparent text-[color:var(--text-muted)]"
                       }`
-                    : `flex shrink-0 flex-col items-center gap-1 rounded-[16px] px-1.5 pb-1 pt-1.5 transition ${
+                    : `flex shrink-0 flex-col items-center gap-1 rounded-[var(--radius-md)] px-1.5 pb-1 pt-1.5 transition ${
                         active
-                          ? "bg-[rgba(124, 91, 217, 0.12)] shadow-[0_6px_14px_rgba(60, 40, 110, 0.14)]"
+                          ? "bg-[color:var(--brand-soft)] shadow-[0_6px_14px_rgba(60, 40, 110, 0.14)]"
                           : "bg-transparent hover:bg-white/76"
                       }`
                 }
@@ -3134,9 +3134,9 @@ export function StickerPanel({
                 ) : (
                   <>
                     <span
-                      className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-[12px] border text-xs font-semibold ${
+                      className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-[var(--radius-sm)] border text-xs font-semibold ${
                         active
-                          ? "border-[rgba(124, 91, 217, 0.35)] bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
+                          ? "border-[color:var(--state-info-bg)] bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
                           : "border-white/80 bg-white/84 text-[color:var(--text-secondary)]"
                       }`}
                     >
@@ -3246,18 +3246,18 @@ function StickerButton({
       onMouseEnter={onHover}
       className={
         compact
-          ? `group relative flex flex-col items-center justify-center rounded-[12px] border p-2 transition-[transform,opacity,filter,box-shadow,background-color] duration-150 ease-out active:bg-[color:var(--surface-card-hover)] ${
+          ? `group relative flex flex-col items-center justify-center rounded-[var(--radius-sm)] border p-2 transition-[transform,opacity,filter,box-shadow,background-color] duration-150 ease-out active:bg-[color:var(--surface-card-hover)] ${
               searchRecommended
-                ? "border-[rgba(124, 91, 217, 0.28)] bg-[color:var(--surface-secondary)] shadow-[0_6px_14px_rgba(60, 40, 110, 0.12)]"
+                ? "border-[color:var(--state-info-bg)] bg-[color:var(--surface-secondary)] shadow-[0_6px_14px_rgba(60, 40, 110, 0.12)]"
                 : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
             } ${
               deleting
                 ? "pointer-events-none scale-[0.84] opacity-0 saturate-50"
                 : ""
-            } ${deleteFocused ? "border-[rgba(124, 91, 217, 0.35)]" : ""}`
-          : `group relative flex flex-col items-center gap-1 rounded-[20px] border bg-white/76 p-2 transition-[transform,opacity,filter,box-shadow,background-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-[color:var(--surface-card)] hover:shadow-[0_8px_18px_rgba(60, 40, 110, 0.12)] ${
+            } ${deleteFocused ? "border-[color:var(--state-info-bg)]" : ""}`
+          : `group relative flex flex-col items-center gap-1 rounded-[var(--radius-lg)] border bg-white/76 p-2 transition-[transform,opacity,filter,box-shadow,background-color] duration-150 ease-out hover:-translate-y-0.5 hover:bg-[color:var(--surface-card)] hover:shadow-[0_8px_18px_rgba(60, 40, 110, 0.12)] ${
               highlighted
-                ? "border-[rgba(124, 91, 217, 0.38)] bg-[color:var(--surface-card)] shadow-[0_10px_22px_rgba(60, 40, 110, 0.18)]"
+                ? "border-[color:var(--state-info-bg)] bg-[color:var(--surface-card)] shadow-[0_10px_22px_rgba(60, 40, 110, 0.18)]"
                 : "border-white/80"
             } ${
               deleting
@@ -3265,7 +3265,7 @@ function StickerButton({
                 : ""
             } ${
               deleteFocused
-                ? "border-[rgba(124, 91, 217, 0.42)] bg-[color:var(--surface-card)] shadow-[0_10px_24px_rgba(60, 40, 110, 0.16)] ring-1 ring-[rgba(124, 91, 217, 0.18)]"
+                ? "border-[color:var(--state-info-bg)] bg-[color:var(--surface-card)] shadow-[0_10px_24px_rgba(60, 40, 110, 0.16)] ring-1 ring-[color:var(--brand-soft)]"
                 : ""
             } ${
               deleteFocusFlashing
@@ -3282,8 +3282,8 @@ function StickerButton({
         <span
           className={
             compact
-              ? "absolute left-1 top-1 z-10 rounded-full bg-[rgba(124, 91, 217, 0.14)] px-1.5 py-0.5 text-[9px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]"
-              : "absolute left-1.5 top-1.5 z-10 rounded-full bg-[rgba(124, 91, 217, 0.14)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]"
+              ? "absolute left-1 top-1 z-10 rounded-full bg-[color:var(--brand-soft)] px-1.5 py-0.5 text-[9px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]"
+              : "absolute left-1.5 top-1.5 z-10 rounded-full bg-[color:var(--brand-soft)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.06)]"
           }
         >
           {t(msg`首推`)}
@@ -3305,7 +3305,7 @@ function StickerButton({
             className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-white transition ${
               deleteFocused
                 ? "bg-[color:var(--brand-primary)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.28)]"
-                : "bg-[rgba(15,23,42,0.72)]"
+                : "bg-[color:var(--state-info-bg)]"
             } ${deleteFocusFlashing ? "scale-110" : ""} ${
               deleteAlwaysVisible
                 ? "opacity-100"
@@ -3341,8 +3341,8 @@ function StickerButton({
           alt={sticker.label || sticker.stickerId}
           className={
             compact
-              ? "h-12 w-12 rounded-[12px] object-contain"
-              : "h-16 w-16 rounded-[16px] object-contain"
+              ? "h-12 w-12 rounded-[var(--radius-sm)] object-contain"
+              : "h-16 w-16 rounded-[var(--radius-md)] object-contain"
           }
           loading="lazy"
           // 走查电脑端单聊 R138：和姊妹 chat-message-list R84 sticker preview /
@@ -3372,7 +3372,7 @@ function StickerButton({
         />
         {!compact ? (
           <span
-            className={`line-clamp-1 text-[11px] ${
+            className={`line-clamp-1 text-[length:var(--text-eyebrow)] ${
               highlighted
                 ? "text-[color:var(--brand-primary)]"
                 : "text-[color:var(--text-secondary)]"

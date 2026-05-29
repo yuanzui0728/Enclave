@@ -191,7 +191,7 @@ export function ReminderTaskPanel({
             ? isDesktop
               ? "px-4 py-3"
               : "px-4 py-3"
-            : "rounded-[20px] border border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(60, 40, 110, 0.45)]",
+            : "rounded-[var(--radius-lg)] border border-[color:var(--brand-primary)]/16 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(246,251,247,0.98))] shadow-[0_14px_32px_-26px_rgba(60, 40, 110, 0.45)]",
           !isDetailsSurface && (isDesktop ? "px-4 py-3" : "px-3 py-2.5"),
         )}
       >
@@ -207,10 +207,10 @@ export function ReminderTaskPanel({
                 <BellRing size={16} />
               </span>
               <div className="min-w-0">
-                <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`小盯替你记着 ${tasks.length} 件事`)}
                 </div>
-                <div className="mt-0.5 text-[11px] text-[color:var(--text-secondary)]">
+                <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                   {expanded
                     ? t(msg`直接点按就能完成、延后或删掉提醒。`)
                     : t(msg`点按展开查看提醒。`)}
@@ -219,7 +219,7 @@ export function ReminderTaskPanel({
             </div>
           </div>
 
-          <span className="mt-0.5 flex shrink-0 items-center gap-1 text-[11px] text-[color:var(--text-secondary)]">
+          <span className="mt-0.5 flex shrink-0 items-center gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
             {expanded ? t(msg`收起`) : t(msg`展开`)}
             {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </span>
@@ -235,7 +235,7 @@ export function ReminderTaskPanel({
                 role={notice.tone === "success" ? "status" : "alert"}
                 aria-live={notice.tone === "success" ? "polite" : "assertive"}
                 tone={notice.tone === "success" ? "success" : "danger"}
-                className="mt-3 rounded-[16px] px-3 py-2 text-[11px]"
+                className="mt-3 rounded-[var(--radius-md)] px-3 py-2 text-[length:var(--text-eyebrow)]"
               >
                 {notice.message}
               </InlineNotice>
@@ -248,19 +248,19 @@ export function ReminderTaskPanel({
                 role="alert"
                 aria-live="assertive"
                 tone="danger"
-                className="mt-3 rounded-[16px] px-3 py-2 text-[11px]"
+                className="mt-3 rounded-[var(--radius-md)] px-3 py-2 text-[length:var(--text-eyebrow)]"
               >
                 {error}
               </InlineNotice>
             ) : null}
 
             {isLoading ? (
-              <div className="mt-3 flex items-center gap-2 text-[11px] text-[color:var(--text-secondary)]">
+              <div className="mt-3 flex items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                 <LoaderCircle size={14} className="animate-spin" />
                 {t(msg`正在同步提醒任务…`)}
               </div>
             ) : tasks.length === 0 ? (
-              <div className="mt-3 rounded-[16px] border border-dashed border-[rgba(60, 40, 110, 0.1)] bg-[color:var(--surface-card)] px-3 py-3 text-[11px] leading-5 text-[color:var(--text-secondary)]">
+              <div className="mt-3 rounded-[var(--radius-md)] border border-dashed border-[color:var(--state-info-bg)] bg-[color:var(--surface-card)] px-3 py-3 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-secondary)]">
                 {t(msg`还没有在替你记的事。直接发一句“明早8点提醒我吃药”或“每周五提醒我买猫粮”就行。`)}
               </div>
             ) : (
@@ -274,12 +274,12 @@ export function ReminderTaskPanel({
                   return (
                     <article
                       key={task.id}
-                      className="rounded-[16px] border border-[rgba(60, 40, 110, 0.08)] bg-white/95 px-3 py-3"
+                      className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-white/95 px-3 py-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-1.5">
-                            <div className="truncate text-[13px] font-medium text-[color:var(--text-primary)]">
+                            <div className="truncate text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                               {task.title}
                             </div>
                             <TagBadge
@@ -289,7 +289,7 @@ export function ReminderTaskPanel({
                               {getReminderTaskBadgeLabel(task)}
                             </TagBadge>
                           </div>
-                          <div className="mt-1.5 flex items-center gap-1.5 text-[11px] text-[color:var(--text-secondary)]">
+                          <div className="mt-1.5 flex items-center gap-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                             <Clock3 size={12} />
                             <span>{buildReminderTaskMeta(task)}</span>
                           </div>
@@ -369,7 +369,7 @@ function ActionButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "h-8 rounded-full px-3 text-[11px]",
+        "h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]",
         tone === "danger"
           ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
           : "",

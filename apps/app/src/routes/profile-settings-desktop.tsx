@@ -460,7 +460,7 @@ export function ProfileSettingsDesktop() {
                 onChange={(event) => setDraftName(event.target.value)}
                 maxLength={MAX_OWNER_NAME_LENGTH}
                 placeholder={t(msg`输入显示名称`)}
-                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] shadow-none focus:translate-y-0"
               />
               <div className="mt-1 flex items-center justify-between text-[10px] text-[color:var(--text-dim)]">
                 <span>
@@ -478,7 +478,7 @@ export function ProfileSettingsDesktop() {
                 value={draftSignature}
                 onChange={(event) => setDraftSignature(event.target.value)}
                 maxLength={MAX_OWNER_SIGNATURE_LENGTH}
-                className="min-h-[5.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
+                className="min-h-[5.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] leading-[1.35rem] shadow-none focus:translate-y-0"
                 placeholder={t(msg`介绍一下你自己，或者写一句当前状态`)}
               />
               <div className="mt-1 text-right text-[10px] text-[color:var(--text-dim)]" data-i18n-skip="true">
@@ -492,7 +492,7 @@ export function ProfileSettingsDesktop() {
               onClick={() => saveProfileMutation.mutate()}
               disabled={!canSaveProfile || saveProfileMutation.isPending}
               variant="primary"
-              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[12px] text-white shadow-none hover:opacity-95"
+              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-white shadow-none hover:opacity-95"
             >
               {saveProfileMutation.isPending
                 ? t(msg`保存中...`)
@@ -517,7 +517,7 @@ export function ProfileSettingsDesktop() {
           <div className="space-y-3">
             {/* 性别：三选一 toggle，再次点选当前项可清空（同移动端字段页） */}
             <div className="block">
-              <div className="mb-1 text-[11px] font-medium text-[color:var(--text-secondary)]">
+              <div className="mb-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)]">
                 {t(msg`性别`)}
               </div>
               <div className="flex gap-2">
@@ -531,7 +531,7 @@ export function ProfileSettingsDesktop() {
                         setDraftGender(active ? "" : option.value)
                       }
                       className={cn(
-                        "flex-1 rounded-[10px] border px-3 py-2 text-[12px] font-medium transition-colors",
+                        "flex-1 rounded-[10px] border px-3 py-2 text-[length:var(--text-caption)] font-medium transition-colors",
                         active
                           ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
                           : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card-hover)]",
@@ -553,7 +553,7 @@ export function ProfileSettingsDesktop() {
                 onChange={(event) =>
                   setDraftAge(event.target.value.replace(/\D/g, ""))
                 }
-                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] shadow-none focus:translate-y-0"
               />
               {ageDirty && ageInvalid ? (
                 <div className="mt-1 text-[10px] text-[color:var(--state-danger-text)]">
@@ -572,7 +572,7 @@ export function ProfileSettingsDesktop() {
                     event.target.value.replace(/[\r\n\t]/g, " "),
                   )
                 }
-                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] shadow-none focus:translate-y-0"
               />
             </SettingsFieldGroup>
 
@@ -584,7 +584,7 @@ export function ProfileSettingsDesktop() {
                 onChange={(event) =>
                   setDraftRegion(event.target.value.replace(/[\r\n\t]/g, " "))
                 }
-                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] shadow-none focus:translate-y-0"
               />
             </SettingsFieldGroup>
 
@@ -594,7 +594,7 @@ export function ProfileSettingsDesktop() {
                 maxLength={MAX_INTERESTS_LENGTH}
                 placeholder={t(msg`你的兴趣爱好，例如 爬山、摄影、独立游戏`)}
                 onChange={(event) => setDraftInterests(event.target.value)}
-                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
+                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] leading-[1.35rem] shadow-none focus:translate-y-0"
               />
               <div
                 className="mt-1 text-right text-[10px] text-[color:var(--text-dim)]"
@@ -612,7 +612,7 @@ export function ProfileSettingsDesktop() {
                   msg`希望角色怎么称呼你、用什么语气，例如 叫我老王，轻松一点`,
                 )}
                 onChange={(event) => setDraftAddressTone(event.target.value)}
-                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
+                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] leading-[1.35rem] shadow-none focus:translate-y-0"
               />
               <div
                 className="mt-1 text-right text-[10px] text-[color:var(--text-dim)]"
@@ -628,7 +628,7 @@ export function ProfileSettingsDesktop() {
                 maxLength={MAX_AVOID_TOPICS_LENGTH}
                 placeholder={t(msg`不希望被聊到的话题，例如 催婚、工作压力`)}
                 onChange={(event) => setDraftAvoidTopics(event.target.value)}
-                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] leading-[1.35rem] shadow-none focus:translate-y-0"
+                className="min-h-[4.5rem] resize-none rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] leading-[1.35rem] shadow-none focus:translate-y-0"
               />
               <div
                 className="mt-1 text-right text-[10px] text-[color:var(--text-dim)]"
@@ -646,7 +646,7 @@ export function ProfileSettingsDesktop() {
                 !canSaveSupplementary || saveSupplementaryMutation.isPending
               }
               variant="primary"
-              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[12px] text-white shadow-none hover:opacity-95"
+              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-white shadow-none hover:opacity-95"
             >
               {saveSupplementaryMutation.isPending
                 ? t(msg`保存中...`)
@@ -693,7 +693,7 @@ export function ProfileSettingsDesktop() {
                   )}
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+                    <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                       {t(option.label)}
                     </div>
                     <div className="mt-0.5 text-[10px] leading-4 text-[color:var(--text-muted)]">
@@ -750,7 +750,7 @@ export function ProfileSettingsDesktop() {
             </InlineNotice>
           ) : null}
 
-          <div className="space-y-2.5 rounded-[16px] border border-[color:var(--border-faint)] bg-white px-3.5 py-3">
+          <div className="space-y-2.5 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-3.5 py-3">
             <SettingsFieldGroup label={t(msg`专属 API Key`)}>
               <TextField
                 type="password"
@@ -761,7 +761,7 @@ export function ProfileSettingsDesktop() {
                     ? t(msg`已保存专属 API Key，输入新的值可替换`)
                     : t(msg`输入你的专属 API Key`)
                 }
-                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] shadow-none focus:translate-y-0"
               />
             </SettingsFieldGroup>
             <SettingsFieldGroup label={t(msg`兼容 Base URL`)}>
@@ -769,7 +769,7 @@ export function ProfileSettingsDesktop() {
                 value={apiBaseDraft}
                 onChange={(event) => setApiBaseDraft(event.target.value)}
                 placeholder={t(msg`可选，例如 https://api.openai.com/v1`)}
-                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[13px] shadow-none focus:translate-y-0"
+                className="rounded-[11px] border-[color:var(--border-faint)] px-3.5 py-2.5 text-[length:var(--text-caption)] shadow-none focus:translate-y-0"
               />
             </SettingsFieldGroup>
           </div>
@@ -779,7 +779,7 @@ export function ProfileSettingsDesktop() {
               onClick={() => saveApiKeyMutation.mutate()}
               disabled={aiSettingsBusy || !apiKeyDraft.trim()}
               variant="primary"
-              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[12px] text-white shadow-none hover:opacity-95"
+              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-white shadow-none hover:opacity-95"
             >
               {saveApiKeyMutation.isPending
                 ? t(msg`保存中...`)
@@ -789,7 +789,7 @@ export function ProfileSettingsDesktop() {
               onClick={() => clearApiKeyMutation.mutate()}
               disabled={aiSettingsBusy || !ownerQuery.data?.hasCustomApiKey}
               variant="secondary"
-              className="h-9 w-full rounded-[10px] border-[color:var(--border-faint)] bg-white text-[12px] shadow-none hover:bg-[#f5f7f7]"
+              className="h-9 w-full rounded-[10px] border-[color:var(--border-faint)] bg-white text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
             >
               {clearApiKeyMutation.isPending
                 ? t(msg`清除中...`)
@@ -844,7 +844,7 @@ export function ProfileSettingsDesktop() {
           <div
             role="radiogroup"
             aria-label={t(msg`协议与规范文档`)}
-            className="flex gap-1 rounded-[12px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-1"
+            className="flex gap-1 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-1"
           >
             {legalTabs.map((tab) => {
               const selected = activeLegalTab === tab.id;
@@ -856,7 +856,7 @@ export function ProfileSettingsDesktop() {
                   aria-checked={selected}
                   onClick={() => setActiveLegalTab(tab.id)}
                   className={cn(
-                    "flex-1 rounded-[10px] py-2 text-[12px] font-medium transition-all duration-[var(--motion-fast)]",
+                    "flex-1 rounded-[10px] py-2 text-[length:var(--text-caption)] font-medium transition-all duration-[var(--motion-fast)]",
                     selected
                       ? "bg-white text-[color:var(--text-primary)] shadow-sm"
                       : "text-[color:var(--text-muted)] hover:bg-white/70",
@@ -958,7 +958,7 @@ export function ProfileSettingsDesktop() {
         <Button
           onClick={() => navigate({ to: desktopBackTo })}
           variant="secondary"
-          className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[#f5f7f7]"
+          className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
         >
           {desktopBackLabel}
         </Button>
@@ -979,7 +979,7 @@ export function ProfileSettingsDesktop() {
                   type="button"
                   onClick={() => setActiveTab(tab.id)}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left text-sm transition",
+                    "flex w-full items-center justify-between rounded-[var(--radius-sm)] px-3 py-2.5 text-left text-sm transition",
                     activeTab === tab.id
                       ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--text-primary)]"
                       : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
@@ -998,7 +998,7 @@ export function ProfileSettingsDesktop() {
               <button
                 type="button"
                 onClick={() => setLogoutConfirmOpen(true)}
-                className="flex w-full items-center justify-between rounded-[12px] px-3 py-2.5 text-left text-sm text-[#b42318] transition hover:bg-[#fff5f5]"
+                className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-3 py-2.5 text-left text-sm text-[color:var(--state-danger-text)] transition hover:bg-[color:var(--state-danger-bg)]"
               >
                 <span>{t(msg`退出登录`)}</span>
               </button>
@@ -1022,16 +1022,16 @@ function SettingsSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-2 rounded-[20px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]">
+    <section className="space-y-2 rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]">
       {title || description ? (
         <div>
           {title ? (
-            <div className="text-[15px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {title}
             </div>
           ) : null}
           {description ? (
-            <div className="mt-0.5 text-[11px] leading-[1.35rem] text-[color:var(--text-muted)]">
+            <div className="mt-0.5 text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-muted)]">
               {description}
             </div>
           ) : null}
@@ -1051,7 +1051,7 @@ function SettingsFieldGroup({
 }) {
   return (
     <label className="block">
-      <div className="mb-1 text-[11px] font-medium text-[color:var(--text-secondary)]">
+      <div className="mb-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)]">
         {label}
       </div>
       {children}

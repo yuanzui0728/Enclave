@@ -37,8 +37,8 @@ export function DigitalHumanStage({
       className={cn(
         "relative overflow-hidden border text-white",
         mobile
-          ? "rounded-[24px] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
-          : "flex min-h-0 flex-1 rounded-[24px] border-[rgba(60, 40, 110, 0.06)] bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.18),transparent_30%),linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
+          ? "rounded-[var(--radius-xl)] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
+          : "flex min-h-0 flex-1 rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.18),transparent_30%),linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
       )}
     >
       <div
@@ -57,14 +57,14 @@ export function DigitalHumanStage({
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#34d399]/20 bg-[#34d399]/10 px-3 py-1 text-[11px] font-medium tracking-[0.12em] text-[#bbf7d0]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#34d399]/20 bg-[#34d399]/10 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--state-success-text)]">
               <Video size={13} />
               {t(msg`视频通话`)}
             </div>
             <div
               className={cn(
                 "font-semibold tracking-[0.01em]",
-                mobile ? "mt-3 text-[28px]" : "mt-3 text-[28px]",
+                mobile ? "mt-3 text-[length:var(--text-display)]" : "mt-3 text-[length:var(--text-display)]",
               )}
             >
               {name}
@@ -72,14 +72,14 @@ export function DigitalHumanStage({
           </div>
           <div
             className={cn(
-              "rounded-[20px] border border-white/10 bg-white/8 px-3 py-2 text-right",
+              "rounded-[var(--radius-lg)] border border-white/10 bg-white/8 px-3 py-2 text-right",
               mobile ? "max-w-[136px]" : "max-w-[156px]",
             )}
           >
-            <div className="text-[11px] uppercase tracking-[0.18em] text-white/38">
+            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/38">
               {t(msg`状态`)}
             </div>
-            <div className="mt-1 text-sm font-medium text-[#bbf7d0]">
+            <div className="mt-1 text-sm font-medium text-[color:var(--state-success-text)]">
               {statusLabel}
             </div>
           </div>
@@ -132,9 +132,9 @@ export function DigitalHumanStage({
                     className={cn(
                       "w-1.5 rounded-full transition-all",
                       talking
-                        ? "h-5 animate-pulse bg-[#34d399]"
+                        ? "h-5 animate-pulse bg-[color:var(--state-success-bg)]"
                         : thinking
-                          ? "h-4 animate-pulse bg-[#60a5fa]"
+                          ? "h-4 animate-pulse bg-[color:var(--state-info-bg)]"
                           : "h-2 bg-white/28",
                     )}
                     style={
@@ -153,7 +153,7 @@ export function DigitalHumanStage({
                     : t(msg`在线`)}
               </span>
               {providerLabel ? (
-                <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5 text-[11px] text-white/56">
+                <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-white/56">
                   {providerLabel}
                 </span>
               ) : null}
@@ -161,11 +161,11 @@ export function DigitalHumanStage({
           </div>
         </div>
 
-        <div className="rounded-[24px] border border-white/8 bg-white/6 px-4 py-3">
-          <div className="text-[11px] uppercase tracking-[0.18em] text-white/38">
+        <div className="rounded-[var(--radius-xl)] border border-white/8 bg-white/6 px-4 py-3">
+          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/38">
             {t(msg`通话提示`)}
           </div>
-          <div className="mt-1 text-[13px] leading-6 text-white/72">
+          <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-white/72">
             {statusHint}
           </div>
           {footerAction ? <div className="mt-3">{footerAction}</div> : null}

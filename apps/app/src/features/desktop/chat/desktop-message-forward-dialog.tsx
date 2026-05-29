@@ -233,7 +233,7 @@ export function DesktopMessageForwardDialog({
       className={cn(
         "fixed inset-0 z-50",
         isMobile
-          ? "bg-[#ededed]"
+          ? "bg-[color:var(--surface-soft)]"
           : "flex items-center justify-center bg-[rgba(17,24,39,0.28)] p-3 backdrop-blur-[3px] sm:p-4 lg:p-6",
       )}
     >
@@ -270,7 +270,7 @@ export function DesktopMessageForwardDialog({
         className={cn(
           "relative flex min-w-0 flex-col overflow-hidden",
           isMobile
-            ? "h-full bg-[#ededed]"
+            ? "h-full bg-[color:var(--surface-soft)]"
             : "max-h-[85vh] w-full max-w-[1080px] rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)] lg:max-h-[80vh] lg:flex-row",
         )}
       >
@@ -288,8 +288,8 @@ export function DesktopMessageForwardDialog({
           className={cn(
             "flex shrink-0 flex-col",
             isMobile
-              ? "border-b border-black/5 bg-[#f6f6f6]"
-              : "max-h-[38vh] w-full border-b border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.88)] lg:max-h-none lg:w-[360px] lg:border-b-0 lg:border-r",
+              ? "border-b border-black/5 bg-[color:var(--surface-card)]"
+              : "max-h-[38vh] w-full border-b border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] lg:max-h-none lg:w-[360px] lg:border-b-0 lg:border-r",
           )}
         >
           {!isMobile ? (
@@ -302,7 +302,7 @@ export function DesktopMessageForwardDialog({
               </div>
               <div
                 id={descId}
-                className="mt-1 text-[12px] leading-6 text-[color:var(--text-muted)]"
+                className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]"
               >
                 {messages.length === 1
                   ? t(msg`把这条消息转发到最近会话。`)
@@ -311,7 +311,7 @@ export function DesktopMessageForwardDialog({
             </div>
           ) : (
             <div className="px-3 pb-3 pt-2">
-              <div className="px-1 text-[12px] text-[#8c8c8c]">{t(msg`已选消息`)}</div>
+              <div className="px-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">{t(msg`已选消息`)}</div>
             </div>
           )}
 
@@ -320,7 +320,7 @@ export function DesktopMessageForwardDialog({
               "min-h-0 overflow-auto",
               isMobile
                 ? "flex gap-2.5 px-3 pb-3"
-                : "flex-1 space-y-3 bg-[rgba(242,246,245,0.76)] px-3 py-3 lg:px-4 lg:py-4",
+                : "flex-1 space-y-3 bg-[color:var(--surface-shell)] px-3 py-3 lg:px-4 lg:py-4",
             )}
           >
             {messages.map((message) => (
@@ -337,17 +337,17 @@ export function DesktopMessageForwardDialog({
           className={cn(
             "flex min-w-0 flex-1 flex-col",
             isMobile
-              ? "bg-[#ededed]"
+              ? "bg-[color:var(--surface-soft)]"
               : "bg-[rgba(255,255,255,0.62)]",
           )}
         >
           {!isMobile ? (
             <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl lg:px-6 lg:py-4">
               <div className="min-w-0">
-                <div className="text-[11px] tracking-[0.12em] text-[color:var(--text-dim)]">
+                <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                   {t(msg`最近会话`)}
                 </div>
-                <div className="mt-2 text-[15px] font-medium text-[color:var(--text-primary)]">
+                <div className="mt-2 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`选择要接收转发消息的聊天`)}
                 </div>
               </div>
@@ -363,7 +363,7 @@ export function DesktopMessageForwardDialog({
             </div>
           ) : (
             <div className="px-3 pb-2 pt-3">
-              <div className="px-1 text-[12px] text-[#8c8c8c]">{t(msg`最近会话`)}</div>
+              <div className="px-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">{t(msg`最近会话`)}</div>
             </div>
           )}
 
@@ -434,7 +434,7 @@ export function DesktopMessageForwardDialog({
                 className={cn(
                   "pl-10",
                   isMobile
-                    ? "h-10 rounded-[12px] border-none bg-white shadow-none"
+                    ? "h-10 rounded-[var(--radius-sm)] border-none bg-white shadow-none"
                     : "h-10 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none",
                 )}
               />
@@ -466,8 +466,8 @@ export function DesktopMessageForwardDialog({
                 className={cn(
                   "text-sm text-[color:var(--text-secondary)]",
                   isMobile
-                    ? "rounded-[16px] border border-black/5 bg-white px-4 py-5"
-                    : "rounded-[12px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-4 py-5",
+                    ? "rounded-[var(--radius-md)] border border-black/5 bg-white px-4 py-5"
+                    : "rounded-[var(--radius-sm)] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-4 py-5",
                 )}
               >
                 {t(msg`没有匹配的最近会话。`)}
@@ -548,7 +548,7 @@ export function DesktopMessageForwardDialog({
 
           <div
             className={cn(
-              "border-t text-[12px] text-[color:var(--text-muted)]",
+              "border-t text-[length:var(--text-caption)] text-[color:var(--text-muted)]",
               isMobile
                 ? "border-black/5 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+0.85rem)] pt-3"
                 : "flex flex-col items-stretch gap-3 border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between lg:gap-4 lg:px-6",
@@ -607,10 +607,10 @@ function ForwardModeButton({
       {/* 走查电脑端群聊 R82：原版 `active ? text-primary : text-primary` 两条
           分支同色，是历史 cn 三元留下的 dead conditional —— cn 仍走一次条件
           展开 + 字符串合并。直接取常量 text-primary，少一次 cn 调用 / 每帧。 */}
-      <span className="text-[13px] font-medium text-[color:var(--text-primary)]">
+      <span className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
         {label}
       </span>
-      <span className="mt-1 text-[11px] leading-5 text-[color:var(--text-muted)]">
+      <span className="mt-1 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
         {description}
       </span>
     </button>
@@ -632,26 +632,26 @@ function MobileForwardHeader({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <header className="border-b border-black/5 bg-[rgba(247,247,247,0.96)] px-3 pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] backdrop-blur-xl">
+    <header className="border-b border-black/5 bg-[color:var(--surface-soft)] px-3 pb-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)] backdrop-blur-xl">
       <div className="relative flex min-h-11 items-center justify-between gap-3">
         <button
           type="button"
           onClick={onClose}
           disabled={pending}
-          className="flex h-10 min-w-12 items-center justify-start rounded-[10px] px-1 text-[16px] text-[#111827] disabled:opacity-50"
+          className="flex h-10 min-w-12 items-center justify-start rounded-[10px] px-1 text-[length:var(--text-title)] text-[color:var(--text-primary)] disabled:opacity-50"
         >
           {t(msg`取消`)}
         </button>
         <div className="pointer-events-none absolute inset-x-12 text-center">
           <div
             id={titleId}
-            className="truncate text-[17px] font-medium text-[#111827]"
+            className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]"
           >
             {t(msg`转发给`)}
           </div>
           <div
             id={descId}
-            className="mt-0.5 truncate text-[11px] text-[#8c8c8c]"
+            className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
           >
             {t(msg`已选 ${messageCount} 条消息`)}
           </div>
@@ -674,7 +674,7 @@ function ForwardPreviewCard({
       className={cn(
         "border border-[color:var(--border-faint)] bg-white",
         mobile
-          ? "w-[188px] shrink-0 rounded-[16px] px-3 py-3 shadow-none"
+          ? "w-[188px] shrink-0 rounded-[var(--radius-md)] px-3 py-3 shadow-none"
           : "rounded-[14px] px-4 py-3 shadow-[var(--shadow-soft)]",
       )}
     >
@@ -684,7 +684,7 @@ function ForwardPreviewCard({
         </div>
         <span
         className={cn(
-          "shrink-0 rounded-full px-2.5 py-1 text-[11px]",
+          "shrink-0 rounded-full px-2.5 py-1 text-[length:var(--text-eyebrow)]",
           mobile
             ? "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
             : "rounded-[8px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)]",

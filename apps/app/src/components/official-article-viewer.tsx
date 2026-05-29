@@ -204,7 +204,7 @@ export function OfficialArticleViewer({
           ? "w-full bg-[color:var(--surface-card)] px-4 py-4"
           : desktopSurface === "reader"
             ? "mx-auto w-full max-w-[720px] bg-[color:var(--surface-card)] px-6 py-8 sm:px-8"
-            : "mx-auto w-full max-w-[760px] rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
+            : "mx-auto w-full max-w-[760px] rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-6 shadow-[var(--shadow-section)] sm:px-8"
       }
     >
       <div
@@ -221,9 +221,9 @@ export function OfficialArticleViewer({
             onClick={() => onOpenAccount?.(article.account.id)}
             className={
               mobile
-                ? "text-left text-[13px] font-medium text-[color:var(--text-primary)] transition hover:text-[color:var(--text-primary)]"
+                ? "text-left text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)] transition hover:text-[color:var(--text-primary)]"
                 : isDesktopReader
-                  ? "text-left text-[14px] font-medium text-[color:var(--text-primary)] transition hover:text-[color:var(--text-primary)]"
+                  ? "text-left text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)] transition hover:text-[color:var(--text-primary)]"
                   : "text-left text-xs font-medium tracking-[0.12em] text-[color:var(--text-muted)] transition hover:text-[color:var(--text-primary)]"
             }
           >
@@ -233,9 +233,9 @@ export function OfficialArticleViewer({
             <div
               className={cn(
                 mobile
-                  ? "mt-1 text-[11px] text-[color:var(--text-muted)]"
+                  ? "mt-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
                   : "mt-1.5 text-xs text-[color:var(--text-muted)]",
-                isDesktopReader ? "text-[12px]" : undefined,
+                isDesktopReader ? "text-[length:var(--text-caption)]" : undefined,
               )}
             >
               {accountMetaLabel}
@@ -257,7 +257,7 @@ export function OfficialArticleViewer({
               variant="secondary"
               size="sm"
               onClick={() => onToggleFavorite(article)}
-              className={mobile ? "h-7 rounded-[12px] px-2.5 text-[12px]" : "rounded-xl"}
+              className={mobile ? "h-7 rounded-[var(--radius-sm)] px-2.5 text-[length:var(--text-caption)]" : "rounded-xl"}
             >
               <Star size={14} className={favorite ? "fill-current" : ""} />
               {favorite ? t(msg`已收藏`) : t(msg`收藏`)}
@@ -269,7 +269,7 @@ export function OfficialArticleViewer({
               variant="secondary"
               size="sm"
               onClick={() => void handleShareArticle()}
-              className={mobile ? "h-7 rounded-[12px] px-2.5 text-[12px]" : "rounded-xl"}
+              className={mobile ? "h-7 rounded-[var(--radius-sm)] px-2.5 text-[length:var(--text-caption)]" : "rounded-xl"}
             >
               {nativeMobileShareSupported ? (
                 <Share2 size={14} />
@@ -287,7 +287,7 @@ export function OfficialArticleViewer({
             ? "mt-3 text-[25px] font-semibold leading-[1.38] text-[color:var(--text-primary)]"
             : isDesktopReader
               ? "mt-4 text-[34px] font-semibold leading-[1.42] text-[color:var(--text-primary)]"
-              : "mt-3 text-[28px] font-semibold leading-[1.35] text-[color:var(--text-primary)]"
+              : "mt-3 text-[length:var(--text-display)] font-semibold leading-[1.35] text-[color:var(--text-primary)]"
         }
       >
         {article.title}
@@ -295,9 +295,9 @@ export function OfficialArticleViewer({
       <div
         className={cn(
           mobile
-            ? "mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-[color:var(--text-muted)]"
+            ? "mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
             : "mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[color:var(--text-muted)]",
-          isDesktopReader ? "mt-3 gap-x-2.5 text-[13px]" : undefined,
+          isDesktopReader ? "mt-3 gap-x-2.5 text-[length:var(--text-caption)]" : undefined,
         )}
       >
         <span className="font-medium text-[color:var(--brand-primary)]">{article.authorName}</span>
@@ -307,7 +307,7 @@ export function OfficialArticleViewer({
 
       {isDesktopReader &&
       ((onToggleFavorite != null) || showShareAction) ? (
-        <div className="mt-4 flex flex-wrap items-center gap-5 text-[13px] text-[color:var(--text-secondary)]">
+        <div className="mt-4 flex flex-wrap items-center gap-5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           {onToggleFavorite ? (
             <button
               type="button"
@@ -342,10 +342,10 @@ export function OfficialArticleViewer({
         <InlineNotice
           className={cn(
             mobile
-              ? "mt-2.5 flex items-center justify-between gap-2.5 border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[12px] leading-5"
+              ? "mt-2.5 flex items-center justify-between gap-2.5 border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[length:var(--text-caption)] leading-5"
               : "mt-4 flex items-center justify-between gap-3 border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
             isDesktopReader
-              ? "mt-4 rounded-[16px] bg-[color:var(--surface-card)] text-[13px] leading-6"
+              ? "mt-4 rounded-[var(--radius-md)] bg-[color:var(--surface-card)] text-[length:var(--text-caption)] leading-6"
               : undefined,
           )}
           tone={shareNotice.tone}
@@ -363,10 +363,10 @@ export function OfficialArticleViewer({
         <div
           className={
             mobile
-              ? "mt-5 overflow-hidden rounded-[12px] bg-[color:var(--surface-console)]"
+              ? "mt-5 overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--surface-console)]"
               : isDesktopReader
-                ? "mt-7 overflow-hidden rounded-[12px] bg-[color:var(--surface-console)]"
-                : "mt-6 overflow-hidden rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
+                ? "mt-7 overflow-hidden rounded-[var(--radius-sm)] bg-[color:var(--surface-console)]"
+                : "mt-6 overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
           }
         >
           <img
@@ -386,10 +386,10 @@ export function OfficialArticleViewer({
         <div
           className={
             mobile
-              ? "mt-4 text-[14px] leading-7 text-[color:var(--text-secondary)]"
+              ? "mt-4 text-[length:var(--text-body)] leading-7 text-[color:var(--text-secondary)]"
               : isDesktopReader
                 ? "mt-6 text-[18px] leading-9 text-[color:var(--text-secondary)]"
-                : "mt-6 text-[15px] leading-8 text-[color:var(--text-secondary)]"
+                : "mt-6 text-[length:var(--text-base)] leading-8 text-[color:var(--text-secondary)]"
           }
         >
           {article.summary}
@@ -398,10 +398,10 @@ export function OfficialArticleViewer({
       <div
         className={
           mobile
-            ? "official-article-content mt-5 space-y-2.5 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(60, 40, 110, 0.08)] [&_blockquote]:bg-[rgba(60, 40, 110, 0.035)] [&_blockquote]:px-3 [&_blockquote]:py-2 [&_h3]:mt-7 [&_h3]:text-[18px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
+            ? "official-article-content mt-5 space-y-2.5 text-[length:var(--text-base)] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[var(--radius-md)] [&_blockquote]:border-l-4 [&_blockquote]:border-[color:var(--border-subtle)] [&_blockquote]:bg-[color:var(--border-faint)] [&_blockquote]:px-3 [&_blockquote]:py-2 [&_h3]:mt-7 [&_h3]:text-[18px] [&_h3]:font-semibold [&_img]:rounded-[var(--radius-sm)] [&_p]:my-0"
             : isDesktopReader
-              ? "official-article-content mt-8 space-y-4 text-[17px] leading-[2] text-[color:var(--text-primary)] [&_blockquote]:rounded-[16px] [&_blockquote]:border-l-4 [&_blockquote]:border-[rgba(60, 40, 110, 0.08)] [&_blockquote]:bg-[rgba(60, 40, 110, 0.035)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-10 [&_h3]:text-[24px] [&_h3]:font-semibold [&_img]:rounded-[12px] [&_p]:my-0"
-              : "official-article-content mt-7 space-y-4 text-[15px] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[20px] [&_blockquote]:border-l-4 [&_blockquote]:border-[color:var(--brand-primary)]/20 [&_blockquote]:bg-[color:var(--brand-primary)]/7 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[20px] [&_p]:my-0"
+              ? "official-article-content mt-8 space-y-4 text-[length:var(--text-title)] leading-[2] text-[color:var(--text-primary)] [&_blockquote]:rounded-[var(--radius-md)] [&_blockquote]:border-l-4 [&_blockquote]:border-[color:var(--border-subtle)] [&_blockquote]:bg-[color:var(--border-faint)] [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-10 [&_h3]:text-[24px] [&_h3]:font-semibold [&_img]:rounded-[var(--radius-sm)] [&_p]:my-0"
+              : "official-article-content mt-7 space-y-4 text-[length:var(--text-base)] leading-8 text-[color:var(--text-primary)] [&_blockquote]:rounded-[var(--radius-lg)] [&_blockquote]:border-l-4 [&_blockquote]:border-[color:var(--brand-primary)]/20 [&_blockquote]:bg-[color:var(--brand-primary)]/7 [&_blockquote]:px-4 [&_blockquote]:py-3 [&_h3]:mt-8 [&_h3]:text-xl [&_h3]:font-semibold [&_img]:rounded-[var(--radius-lg)] [&_p]:my-0"
         }
         onClick={(event) => void handleContentLinkClick(event)}
         dangerouslySetInnerHTML={{ __html: article.contentHtml }}
@@ -414,15 +414,15 @@ export function OfficialArticleViewer({
               ? "mt-6 border-t border-[color:var(--border-faint)] pt-3.5"
               : isDesktopReader
                 ? "mt-12 border-t border-[color:var(--border-faint)] pt-5"
-                : "mt-10 rounded-[24px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5"
+                : "mt-10 rounded-[var(--radius-xl)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] p-5"
           }
         >
           <div
             className={cn(
               mobile
-                ? "text-[14px] font-medium text-[color:var(--text-primary)]"
+                ? "text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]"
                 : "text-sm font-medium text-[color:var(--text-primary)]",
-              isDesktopReader ? "text-[15px]" : undefined,
+              isDesktopReader ? "text-[length:var(--text-base)]" : undefined,
             )}
           >
             {t(msg`更多内容`)}
@@ -449,19 +449,19 @@ export function OfficialArticleViewer({
                 }
                 className={
                   mobile
-                    ? "flex w-full items-start justify-between gap-2.5 py-3 text-left transition active:bg-[rgba(60, 40, 110, 0.03)]"
+                    ? "flex w-full items-start justify-between gap-2.5 py-3 text-left transition active:bg-[color:var(--border-faint)]"
                     : isDesktopReader
-                      ? "flex w-full items-start justify-between gap-4 py-4 text-left transition hover:bg-[rgba(60, 40, 110, 0.02)]"
-                      : "flex w-full items-start justify-between gap-3 rounded-[20px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
+                      ? "flex w-full items-start justify-between gap-4 py-4 text-left transition hover:bg-[color:var(--border-faint)]"
+                      : "flex w-full items-start justify-between gap-3 rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)]"
                 }
               >
                 <div className={cn("min-w-0 flex-1", isDesktopReader ? "pr-4" : undefined)}>
                   <div
                     className={
                       mobile
-                        ? "text-[13px] font-medium leading-5 text-[color:var(--text-primary)]"
+                        ? "text-[length:var(--text-caption)] font-medium leading-5 text-[color:var(--text-primary)]"
                         : isDesktopReader
-                          ? "text-[15px] font-medium leading-6 text-[color:var(--text-primary)]"
+                          ? "text-[length:var(--text-base)] font-medium leading-6 text-[color:var(--text-primary)]"
                           : "text-sm font-medium leading-6 text-[color:var(--text-primary)]"
                     }
                   >
@@ -472,7 +472,7 @@ export function OfficialArticleViewer({
                       mobile
                         ? "mt-1 line-clamp-2 text-[10px] leading-[1.125rem] text-[color:var(--text-secondary)]"
                         : isDesktopReader
-                          ? "mt-1.5 line-clamp-2 text-[12px] leading-5 text-[color:var(--text-secondary)]"
+                          ? "mt-1.5 line-clamp-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]"
                           : "mt-1 line-clamp-2 text-xs leading-5 text-[color:var(--text-secondary)]"
                     }
                   >
@@ -483,8 +483,8 @@ export function OfficialArticleViewer({
                       mobile
                         ? "mt-1 text-[10px] text-[color:var(--text-muted)]"
                         : isDesktopReader
-                          ? "mt-1.5 text-[11px] text-[color:var(--text-muted)]"
-                          : "mt-2 text-[11px] text-[color:var(--text-muted)]"
+                          ? "mt-1.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
+                          : "mt-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
                     }
                   >
                     {formatArticleDate(relatedArticle.publishedAt, "short", i18n.locale, t)}
@@ -499,9 +499,9 @@ export function OfficialArticleViewer({
       <footer
         className={
           mobile
-            ? "mt-8 border-t border-[color:var(--border-faint)] pt-3 text-[11px] text-[color:var(--text-muted)]"
+            ? "mt-8 border-t border-[color:var(--border-faint)] pt-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
             : isDesktopReader
-              ? "mt-10 border-t border-[color:var(--border-faint)] pt-4 text-[12px] text-[color:var(--text-muted)]"
+              ? "mt-10 border-t border-[color:var(--border-faint)] pt-4 text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
               : "mt-8 text-xs text-[color:var(--text-muted)]"
         }
       >

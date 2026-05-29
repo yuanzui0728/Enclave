@@ -361,9 +361,9 @@ export function ProfileCharacterImportPage() {
 
       <div className="space-y-4 px-4 pb-10 pt-3">
         {/* 步骤引导 */}
-        <ol className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] p-4 text-[13px] leading-relaxed text-[color:var(--text-secondary)]">
+        <ol className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] p-4 text-[length:var(--text-caption)] leading-relaxed text-[color:var(--text-secondary)]">
           <li className="flex gap-2">
-            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[11px] font-semibold text-[color:var(--brand-primary)]">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[length:var(--text-eyebrow)] font-semibold text-[color:var(--brand-primary)]">
               1
             </span>
             <span>
@@ -373,7 +373,7 @@ export function ProfileCharacterImportPage() {
             </span>
           </li>
           <li className="mt-2 flex gap-2">
-            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[11px] font-semibold text-[color:var(--brand-primary)]">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[length:var(--text-eyebrow)] font-semibold text-[color:var(--brand-primary)]">
               2
             </span>
             <span>
@@ -381,7 +381,7 @@ export function ProfileCharacterImportPage() {
             </span>
           </li>
           <li className="mt-2 flex gap-2">
-            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[11px] font-semibold text-[color:var(--brand-primary)]">
+            <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-soft)] text-[length:var(--text-eyebrow)] font-semibold text-[color:var(--brand-primary)]">
               3
             </span>
             <span>
@@ -427,12 +427,12 @@ export function ProfileCharacterImportPage() {
               <FileUp size={24} />
             </div>
             <div className="space-y-1">
-              <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+              <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                 {dragging
                   ? t(msg`松手即可读取`)
                   : t(msg`拖入文件，或点下面按钮选择`)}
               </div>
-              <div className="text-[11px] text-[color:var(--text-muted)]">
+              <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
                 {t(msg`仅支持 .character.json / application/json`)}
               </div>
             </div>
@@ -478,7 +478,7 @@ export function ProfileCharacterImportPage() {
           // / favorites 等其它兄弟页 a11y 一致。
           <div
             role="alert"
-            className="flex items-start gap-3 rounded-2xl bg-[rgba(220,38,38,0.08)] px-4 py-3 text-[13px] text-[#b42318]"
+            className="flex items-start gap-3 rounded-2xl bg-[color:var(--state-danger-bg)] px-4 py-3 text-[length:var(--text-caption)] text-[color:var(--state-danger-text)]"
           >
             <X size={16} className="mt-0.5 shrink-0" />
             <div>{result.message}</div>
@@ -490,7 +490,7 @@ export function ProfileCharacterImportPage() {
           // 朗读不打断主操作流。
           <div
             role="status"
-            className="flex items-start gap-3 rounded-2xl bg-[color:var(--brand-primary)]/10 px-4 py-3 text-[13px] text-[color:var(--brand-primary)]"
+            className="flex items-start gap-3 rounded-2xl bg-[color:var(--brand-primary)]/10 px-4 py-3 text-[length:var(--text-caption)] text-[color:var(--brand-primary)]"
           >
             <AlertTriangle size={16} className="mt-0.5 shrink-0" />
             <div>{result.message}</div>
@@ -538,7 +538,7 @@ function FilePreviewCard({
   const schemaMismatch = schema !== null && !hasExpectedSchema;
   return (
     <div className="space-y-3 rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] p-4">
-      <div className="flex items-center gap-2 text-[12px] text-[color:var(--text-muted)]">
+      <div className="flex items-center gap-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
         <FileJson size={14} />
         <span className="truncate">{preview.fileName}</span>
         <span className="opacity-50">·</span>
@@ -548,14 +548,14 @@ function FilePreviewCard({
       <div className="flex items-start gap-3">
         <PreviewAvatar avatar={avatar} name={name} />
         <div className="min-w-0 flex-1 space-y-1">
-          <div className="truncate text-[16px] font-semibold text-[color:var(--text-primary)]">
+          <div className="truncate text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
             {name}
           </div>
-          <div className="truncate text-[11px] text-[color:var(--text-muted)]">
+          <div className="truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {relationship || relationshipType}
           </div>
           {bio && (
-            <p className="line-clamp-3 text-[12px] leading-relaxed text-[color:var(--text-secondary)]">
+            <p className="line-clamp-3 text-[length:var(--text-caption)] leading-relaxed text-[color:var(--text-secondary)]">
               {bio}
             </p>
           )}
@@ -583,9 +583,9 @@ function FilePreviewCard({
       {!hasExpectedSchema && (
         <div
           className={cn(
-            "rounded-lg px-3 py-2 text-[11px] leading-relaxed",
+            "rounded-lg px-3 py-2 text-[length:var(--text-eyebrow)] leading-relaxed",
             schemaMismatch
-              ? "bg-[rgba(220,38,38,0.08)] text-[#b42318]"
+              ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
               : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
           )}
         >
@@ -646,13 +646,13 @@ function SuccessCard({
         "space-y-3 rounded-2xl border p-4",
         isBlocked
           ? "border-amber-400/30 bg-[color:var(--brand-primary)]/8"
-          : "border-emerald-400/30 bg-[rgba(16,185,129,0.08)]",
+          : "border-emerald-400/30 bg-[color:var(--state-success-bg)]",
       )}
     >
       <div
         className={cn(
-          "flex items-start gap-2 text-[13px] font-medium",
-          isBlocked ? "text-[color:var(--brand-primary)]" : "text-[#047857]",
+          "flex items-start gap-2 text-[length:var(--text-caption)] font-medium",
+          isBlocked ? "text-[color:var(--brand-primary)]" : "text-[color:var(--state-success-text)]",
         )}
       >
         <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
@@ -664,7 +664,7 @@ function SuccessCard({
       </div>
       <div
         className={cn(
-          "text-[11px]",
+          "text-[length:var(--text-eyebrow)]",
           isBlocked ? "text-[color:var(--brand-primary)]/80" : "text-[#047857]/80",
         )}
       >

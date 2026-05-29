@@ -266,7 +266,7 @@ function MobileTagsPage() {
         }
       >
         <div className="pt-1.5">
-          <label className="flex h-9 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[12px] text-[color:var(--text-dim)]">
+          <label className="flex h-9 items-center gap-2 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--bg-canvas-elevated)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-dim)]">
             <Search aria-hidden="true" size={14} className="shrink-0" />
             <input
               type="search"
@@ -281,9 +281,9 @@ function MobileTagsPage() {
               autoCapitalize="off"
               spellCheck={false}
               enterKeyHint="search"
-              // text-[16px]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
+              // text-[length:var(--text-title)]: iOS Safari/WKWebView focus 时 <16px 会强制 viewport
               // zoom-in。跟 mobile-add-friend-page 已修过的搜索框对齐。
-              className="min-w-0 flex-1 bg-transparent text-[16px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+              className="min-w-0 flex-1 bg-transparent text-[length:var(--text-title)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
             />
             {searchText ? (
               // 走查 R1：跟 world-characters-page / starred-friends-page R1 同口
@@ -323,7 +323,7 @@ function MobileTagsPage() {
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={handleRetryTags}
                   >
                     {t(msg`重试读取`)}
@@ -331,7 +331,7 @@ function MobileTagsPage() {
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {statusBackLabel}
@@ -369,7 +369,7 @@ function MobileTagsPage() {
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={() => setSearchText("")}
                   >
                     {t(msg`清空搜索`)}
@@ -378,7 +378,7 @@ function MobileTagsPage() {
                   <Button
                     type="button"
                     size="sm"
-                    className="h-8 rounded-full px-3 text-[11px]"
+                    className="h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]"
                     onClick={handleStatusBack}
                   >
                     {statusBackLabel}
@@ -397,7 +397,7 @@ function MobileTagsPage() {
                 className="overflow-hidden border-y border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]"
               >
                 <div className="flex items-center justify-between px-4 py-2">
-                  <div className="flex items-center gap-1.5 text-[13px] font-medium text-[color:var(--text-primary)]">
+                  <div className="flex items-center gap-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                     <Tag aria-hidden="true" size={14} className="text-[color:var(--brand-primary)]" />
                     {/* 通讯录 mobile 走查 R1：tag 名也是用户输入端（contacts-bulk-
                         action-bar 打标签 dialog / 资料页 tags 编辑），含 U+202E
@@ -469,11 +469,11 @@ const TagFriendListRow = memo(function TagFriendListRow({
         size="wechat"
       />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-body)] text-[color:var(--text-primary)]">
           {displayName}
         </div>
         {displayName !== item.character.name ? (
-          <div className="mt-0.5 truncate text-[11px] text-[color:var(--text-muted)]">
+          <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
             {/* 走查 R1：副标题在 remark 不等于真名时显示原 character.name，
                 这里直接读没走 displayName，跟 starred-friends-page 同口径补 strip。 */}
             {stripBidiControl(item.character.name)}
@@ -500,7 +500,7 @@ function MobileTagStatusCard({
   return (
     <section
       className={cn(
-        "rounded-[16px] border px-3.5 py-4 text-center shadow-none",
+        "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
           ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
@@ -510,7 +510,7 @@ function MobileTagStatusCard({
         className={cn(
           "mx-auto inline-flex rounded-full px-2 py-0.5 text-[8px] font-medium tracking-[0.04em]",
           tone === "danger"
-            ? "bg-[rgba(220,38,38,0.08)] text-[color:var(--state-danger-text)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
             : "bg-[color:var(--brand-primary)]/10 text-[color:var(--brand-primary)]",
         )}
       >
@@ -520,13 +520,13 @@ function MobileTagStatusCard({
         <div className="mt-2.5 flex items-center justify-center gap-1.5">
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/15" />
           <span className="h-2 w-2 animate-pulse rounded-full bg-black/25 [animation-delay:120ms]" />
-          <span className="h-2 w-2 animate-pulse rounded-full bg-[#8ecf9d] [animation-delay:240ms]" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
-      <div className="mt-2.5 text-[14px] font-medium text-[color:var(--text-primary)]">
+      <div className="mt-2.5 text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
-      <p className="mx-auto mt-1.5 max-w-[17rem] text-[11px] leading-[1.35rem] text-[color:var(--text-secondary)]">
+      <p className="mx-auto mt-1.5 max-w-[17rem] text-[length:var(--text-eyebrow)] leading-[1.35rem] text-[color:var(--text-secondary)]">
         {description}
       </p>
       {action ? <div className="mt-3 flex justify-center">{action}</div> : null}

@@ -460,14 +460,14 @@ export function DesktopAddFriendWorkspace() {
             : ""}
         </Button>
       }
-      className="bg-[#ededed]"
-      sidebarClassName="w-[236px] bg-[#e9e9e9]"
-      contentClassName="bg-[#ededed]"
-      asideClassName="w-[286px] bg-[#f3f3f3]"
+      className="bg-[color:var(--surface-soft)]"
+      sidebarClassName="w-[236px] bg-[color:var(--surface-soft)]"
+      contentClassName="bg-[color:var(--surface-soft)]"
+      asideClassName="w-[286px] bg-[color:var(--surface-card)]"
       sidebar={
-        <div className="flex h-full min-h-0 flex-col bg-[#e9e9e9]">
-          <div className="border-b border-[rgba(15,23,42,0.06)] px-4 py-4">
-            <div className="text-[12px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+        <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-soft)]">
+          <div className="border-b border-[color:var(--border-faint)] px-4 py-4">
+            <div className="text-[length:var(--text-caption)] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
               {t(msg`好友功能`)}
             </div>
           </div>
@@ -498,8 +498,8 @@ export function DesktopAddFriendWorkspace() {
               }}
             />
 
-            <div className="mt-4 border-t border-[rgba(15,23,42,0.06)] px-2 pt-4">
-              <div className="px-3 text-[11px] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
+            <div className="mt-4 border-t border-[color:var(--border-faint)] px-2 pt-4">
+              <div className="px-3 text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-[color:var(--text-muted)]">
                 {t(msg`搜索建议`)}
               </div>
               <div className="mt-3 space-y-1.5">
@@ -521,16 +521,16 @@ export function DesktopAddFriendWorkspace() {
         </div>
       }
     >
-      <div className="flex h-full min-h-0 flex-col bg-[#ededed]">
+      <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-soft)]">
         <form
-          className="border-b border-[rgba(15,23,42,0.06)] bg-[#f7f7f7] px-6 py-5"
+          className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-5"
           onSubmit={(event) => {
             event.preventDefault();
             submitKeywordSearch(searchText);
           }}
         >
           <div className="flex items-center gap-3">
-            <label className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-[8px] border border-[rgba(15,23,42,0.10)] bg-white px-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+            <label className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-[8px] border border-[color:var(--border-strong)] bg-white px-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
               <Search
                 size={18}
                 className="shrink-0 text-[color:var(--text-dim)]"
@@ -540,7 +540,7 @@ export function DesktopAddFriendWorkspace() {
                 value={searchText}
                 onChange={(event) => setSearchText(event.target.value)}
                 placeholder={t(msg`输入隐界号、角色名或资料关键词`)}
-                className="min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-[14px] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
+                className="min-w-0 flex-1 border-0 bg-transparent px-0 py-0 text-[length:var(--text-body)] text-[color:var(--text-primary)] outline-none placeholder:text-[color:var(--text-dim)]"
               />
             </label>
             <Button
@@ -554,13 +554,13 @@ export function DesktopAddFriendWorkspace() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="h-10 rounded-[8px] border border-[rgba(15,23,42,0.10)] bg-white px-4 text-[13px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+                className="h-10 rounded-[8px] border border-[color:var(--border-strong)] bg-white px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
               >
                 {t(msg`清空`)}
               </button>
             ) : null}
           </div>
-          <div className="mt-2 text-[12px] text-[color:var(--text-muted)]">
+          <div className="mt-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
             {t(msg`可通过隐界号、角色名、关系描述、签名或角色简介搜索。`)}
           </div>
         </form>
@@ -583,7 +583,7 @@ export function DesktopAddFriendWorkspace() {
         ) : null}
 
         <div className="min-h-0 flex-1 px-6 py-6">
-          <div className="flex h-full min-h-[420px] overflow-hidden rounded-[10px] border border-[rgba(15,23,42,0.08)] bg-white shadow-none">
+          <div className="flex h-full min-h-[420px] overflow-hidden rounded-[10px] border border-[color:var(--border-subtle)] bg-white shadow-none">
             {loading ? (
               <div className="flex h-full w-full items-center justify-center px-6">
                 <LoadingBlock label={t(msg`正在准备好友搜索目录...`)} />
@@ -607,17 +607,17 @@ export function DesktopAddFriendWorkspace() {
               />
             ) : (
               <div className="grid h-full min-h-0 w-full xl:grid-cols-[300px_minmax(0,1fr)]">
-                <div className="min-h-0 border-b border-[rgba(15,23,42,0.06)] bg-[#fcfcfc] xl:border-b-0 xl:border-r">
-                  <div className="border-b border-[rgba(15,23,42,0.06)] bg-[#f8f8f8] px-5 py-4">
+                <div className="min-h-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] xl:border-b-0 xl:border-r">
+                  <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-4">
                     <div className="flex items-center justify-between gap-3">
-                      <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                      <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                         {t(msg`搜索结果`)}
                       </div>
-                      <div className="text-[12px] text-[color:var(--text-muted)]">
+                      <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                         {t(msg`${searchResults.length} 个`)}
                       </div>
                     </div>
-                    <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+                    <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                       {t(msg`按匹配度排序，优先展示最接近当前搜索的角色。`)}
                     </div>
                   </div>
@@ -641,11 +641,11 @@ export function DesktopAddFriendWorkspace() {
                 </div>
 
                 <div className="min-h-0 overflow-auto">
-                  <div className="border-b border-[rgba(15,23,42,0.06)] bg-[#fbfbfb] px-6 py-4">
-                    <div className="text-[14px] font-medium text-[color:var(--text-primary)]">
+                  <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-4">
+                    <div className="text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
                       {t(msg`详细资料`)}
                     </div>
-                    <div className="mt-1 text-[12px] text-[color:var(--text-muted)]">
+                    <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                       {t(msg`查看资料后再决定是否发送好友申请。`)}
                     </div>
                   </div>
@@ -746,7 +746,7 @@ function DesktopAddFriendWelcomeState({
         <div className="mt-5 text-[24px] font-medium tracking-[-0.02em] text-[color:var(--text-primary)]">
           {t(msg`搜索隐界号或角色名`)}
         </div>
-        <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
           {t(msg`输入更完整的隐界号能更快命中目标角色，也可以通过角色名和资料关键词查找。`)}
         </div>
         <div className="mt-8 flex justify-center">
@@ -754,7 +754,7 @@ function DesktopAddFriendWelcomeState({
             type="button"
             variant="secondary"
             onClick={onFocusSearch}
-            className="rounded-[8px] border-[rgba(15,23,42,0.10)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[color:var(--border-strong)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`开始搜索`)}
           </Button>
@@ -779,15 +779,15 @@ function DesktopAddFriendNoResultsState({
   return (
     <div className="flex h-full w-full items-center justify-center px-6 py-6">
       <div className="w-full max-w-[560px] text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[rgba(15,23,42,0.05)] text-[color:var(--text-secondary)]">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--border-faint)] text-[color:var(--text-secondary)]">
           <Search size={28} />
         </div>
-        <div className="mt-5 text-[22px] font-medium text-[color:var(--text-primary)]">
+        <div className="mt-5 text-[length:var(--text-section)] font-medium text-[color:var(--text-primary)]">
           {missingDirectTarget
             ? t(msg`没有找到该角色`)
             : t(msg`没有找到“${keyword}”`)}
         </div>
-        <div className="mt-2 text-[13px] leading-6 text-[color:var(--text-muted)]">
+        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-muted)]">
           {missingDirectTarget
             ? t(msg`这个角色可能已被移除，或者当前世界里还没有同步到该资料。你可以重新搜索其他角色。`)
             : t(msg`请检查隐界号是否完整，或者尝试使用角色名、签名和资料关键词重新搜索。`)}
@@ -797,7 +797,7 @@ function DesktopAddFriendNoResultsState({
             type="button"
             variant="secondary"
             onClick={onRetry}
-            className="rounded-[8px] border-[rgba(15,23,42,0.10)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[color:var(--border-strong)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`重新输入`)}
           </Button>
@@ -830,7 +830,7 @@ function DesktopAddFriendSidebarEntry({
         "flex w-full items-center gap-3 rounded-[8px] px-3 py-3 text-left transition",
         active
           ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--text-primary)]"
-          : "text-[color:var(--text-primary)] hover:bg-[rgba(15,23,42,0.04)]",
+          : "text-[color:var(--text-primary)] hover:bg-[color:var(--border-faint)]",
       )}
     >
       <div
@@ -844,13 +844,13 @@ function DesktopAddFriendSidebarEntry({
         <Icon size={16} />
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[14px] font-medium">{label}</div>
-        <div className="mt-0.5 truncate text-[12px] text-[color:var(--text-muted)]">
+        <div className="text-[length:var(--text-body)] font-medium">{label}</div>
+        <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {description}
         </div>
       </div>
       {badge ? (
-        <span className="rounded-full bg-[#fa5151] px-1.5 py-0.5 text-[10px] text-white">
+        <span className="rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-[10px] text-white">
           {badge}
         </span>
       ) : null}
@@ -869,7 +869,7 @@ function DesktopAddFriendGuideRow({
   value: string;
 }) {
   return (
-    <div className="flex items-center justify-between rounded-[8px] px-3 py-2.5 text-[12px] text-[color:var(--text-secondary)]">
+    <div className="flex items-center justify-between rounded-[8px] px-3 py-2.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
       <span>{label}</span>
       <span className="text-[color:var(--text-muted)]">{value}</span>
     </div>
@@ -901,7 +901,7 @@ function DesktopAddFriendResultRow({
         "flex w-full items-center gap-3 rounded-[8px] border px-3 py-3 text-left transition",
         selected
           ? "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
-          : "border-transparent bg-transparent hover:border-[rgba(15,23,42,0.06)] hover:bg-white",
+          : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white",
       )}
     >
       <AvatarChip
@@ -910,17 +910,17 @@ function DesktopAddFriendResultRow({
         size="wechat"
       />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-[14px] font-medium text-[color:var(--text-primary)]">
+        <div className="truncate text-[length:var(--text-body)] font-medium text-[color:var(--text-primary)]">
           {displayName}
         </div>
-        <div className="mt-1 truncate text-[12px] text-[color:var(--text-muted)]">
+        <div className="mt-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
           {item.identifier}
         </div>
-        <div className="mt-1 truncate text-[11px] text-[color:var(--text-dim)]">
+        <div className="mt-1 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
           {detailText}
         </div>
       </div>
-      <div className="shrink-0 text-[11px] text-[color:var(--text-muted)]">
+      <div className="shrink-0 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
         {t(formatRelationshipStatus(item.status))}
       </div>
     </button>

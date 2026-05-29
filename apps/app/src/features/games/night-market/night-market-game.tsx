@@ -68,7 +68,7 @@ export function NightMarketGame({
   }, [isRunning]);
   const containerCls =
     variant === "embedded"
-      ? "rounded-[16px] bg-white"
+      ? "rounded-[var(--radius-md)] bg-white"
       : "min-h-screen bg-[color:var(--bg-app)]";
 
   const totalPending = state.stalls.reduce(
@@ -81,21 +81,21 @@ export function NightMarketGame({
     <section className={cn("flex flex-col gap-3 p-3", containerCls)}>
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[15px] font-semibold text-[color:var(--text-primary)]">
+          <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`夜市合伙人`)}
           </span>
           {state.isWeekendBoost ? (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+            <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-amber-800">
               {t(msg`周末双倍`)}
             </span>
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[12px] font-medium text-amber-800">
+          <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-amber-800">
             <Coins size={13} />
             {state.coupon}
           </span>
-          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[12px] font-medium text-rose-700">
+          <span className="flex items-center gap-1 rounded-full bg-rose-50 px-2 py-1 text-[length:var(--text-caption)] font-medium text-rose-700">
             <Ticket size={13} />
             ×{state.permitTickets}
           </span>
@@ -113,7 +113,7 @@ export function NightMarketGame({
       </header>
 
       {/* 时段 / 倒计时 */}
-      <div className="flex items-center justify-between rounded-[12px] bg-gradient-to-r from-amber-50 to-rose-50 px-3 py-2 text-[12px] text-amber-900">
+      <div className="flex items-center justify-between rounded-[var(--radius-sm)] bg-gradient-to-r from-amber-50 to-rose-50 px-3 py-2 text-[length:var(--text-caption)] text-amber-900">
         <span className="flex items-center gap-1">
           <Clock size={13} />
           {t(msg`营业时段`)} {formatHour(state.hour)}
@@ -148,7 +148,7 @@ export function NightMarketGame({
           <button
             type="button"
             onClick={actions.start}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-[13px] font-medium text-white hover:bg-amber-600"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-[length:var(--text-caption)] font-medium text-white hover:bg-amber-600"
           >
             <Play size={14} />
             {isEnded ? t(msg`再开一轮`) : t(msg`开张营业（8 分钟）`)}
@@ -160,7 +160,7 @@ export function NightMarketGame({
               onClick={actions.collectAll}
               disabled={totalPending === 0}
               className={cn(
-                "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium transition-colors",
+                "flex flex-1 items-center justify-center gap-1.5 rounded-full px-4 py-2 text-[length:var(--text-caption)] font-medium transition-colors",
                 totalPending > 0
                   ? "bg-amber-500 text-white hover:bg-amber-600"
                   : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",
@@ -172,7 +172,7 @@ export function NightMarketGame({
             <button
               type="button"
               onClick={actions.endEarly}
-              className="rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]"
+              className="rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
             >
               {t(msg`提前收摊`)}
             </button>
@@ -181,7 +181,7 @@ export function NightMarketGame({
         <button
           type="button"
           onClick={actions.visitFriend}
-          className="flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-[12px] text-[color:var(--text-secondary)]"
+          className="flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] px-3 py-2 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
         >
           <UserPlus size={13} />
           {t(msg`互访好友`)}
@@ -190,7 +190,7 @@ export function NightMarketGame({
           <button
             type="button"
             onClick={actions.usePermit}
-            className="flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] font-medium text-rose-700"
+            className="flex items-center gap-1 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-[length:var(--text-caption)] font-medium text-rose-700"
           >
             <Ticket size={13} />
             {t(msg`用许可升级`)}
@@ -199,12 +199,12 @@ export function NightMarketGame({
       </div>
 
       {/* 周任务 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white p-3">
-        <div className="mb-2 flex items-center justify-between text-[13px]">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-3">
+        <div className="mb-2 flex items-center justify-between text-[length:var(--text-caption)]">
           <span className="font-medium text-[color:var(--text-primary)]">
             {t(msg`本周任务`)}
           </span>
-          <span className="text-[11px] text-[color:var(--text-secondary)]">
+          <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
             {t(msg`完成 ${completedOrders} / ${state.weeklyOrders.length}`)}
           </span>
         </div>
@@ -216,7 +216,7 @@ export function NightMarketGame({
             );
             return (
               <li key={order.id}>
-                <div className="flex items-center justify-between text-[12px]">
+                <div className="flex items-center justify-between text-[length:var(--text-caption)]">
                   <span
                     className={cn(
                       "truncate",
@@ -227,7 +227,7 @@ export function NightMarketGame({
                   >
                     {order.label}
                   </span>
-                  <span className="ml-2 shrink-0 text-[11px] text-[color:var(--text-secondary)]">
+                  <span className="ml-2 shrink-0 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
                     {order.doneCount}/{order.targetCount}
                   </span>
                 </div>
@@ -249,13 +249,13 @@ export function NightMarketGame({
       ) : null}
 
       {/* 日志 */}
-      <div className="rounded-[12px] border border-[color:var(--border-faint)] bg-white">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[12px] text-[color:var(--text-secondary)]">
+      <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]">
           <span>{t(msg`营业日志`)}</span>
           <button
             type="button"
             onClick={actions.reset}
-            className="flex items-center gap-1 text-[11px] text-[color:var(--text-secondary)]"
+            className="flex items-center gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
             aria-label={t(msg`重置进度`)}
           >
             <RotateCcw size={11} />
@@ -264,7 +264,7 @@ export function NightMarketGame({
         </div>
         <ul className="max-h-44 overflow-y-auto px-3 py-2">
           {state.log.length === 0 ? (
-            <li className="py-1 text-[12px] text-[color:var(--text-tertiary)]">
+            <li className="py-1 text-[length:var(--text-caption)] text-[color:var(--text-tertiary)]">
               {t(msg`等待开张…`)}
             </li>
           ) : (
@@ -272,7 +272,7 @@ export function NightMarketGame({
               <li
                 key={entry.id}
                 className={cn(
-                  "py-1 text-[12px] leading-[1.5rem]",
+                  "py-1 text-[length:var(--text-caption)] leading-[1.5rem]",
                   entry.tone === "success" && "text-emerald-700",
                   entry.tone === "warn" && "text-amber-700",
                   entry.tone === "info" && "text-[color:var(--text-secondary)]",
@@ -312,7 +312,7 @@ function StallCard({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-[12px] border bg-white p-2.5 transition-colors",
+        "flex flex-col rounded-[var(--radius-sm)] border bg-white p-2.5 transition-colors",
         hasPending
           ? "border-amber-300 ring-2 ring-amber-100"
           : "border-[color:var(--border-faint)]",
@@ -320,18 +320,18 @@ function StallCard({
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-[28px]">{spec.emoji}</span>
+          <span className="text-[length:var(--text-display)]">{spec.emoji}</span>
           <div>
-            <div className="text-[13px] font-medium text-[color:var(--text-primary)]">
+            <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
               {spec.name}
             </div>
-            <div className="text-[11px] text-[color:var(--text-secondary)]">
+            <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
               {STALL_KIND_LABEL[stall.kind]} · Lv.{stall.level}
             </div>
           </div>
         </div>
       </div>
-      <div className="mt-1.5 grid grid-cols-2 gap-1 text-[11px] text-[color:var(--text-secondary)]">
+      <div className="mt-1.5 grid grid-cols-2 gap-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
         <span className="flex items-center gap-1">
           <Users size={11} />
           {t(msg`吸客 ≤${attractCap}`)}
@@ -346,7 +346,7 @@ function StallCard({
         onClick={onCollect}
         disabled={!running || !hasPending}
         className={cn(
-          "mt-2 rounded-full px-2 py-1.5 text-[12px] font-medium transition-colors",
+          "mt-2 rounded-full px-2 py-1.5 text-[length:var(--text-caption)] font-medium transition-colors",
           hasPending
             ? "bg-amber-500 text-white hover:bg-amber-600"
             : "bg-[color:var(--bg-app)] text-[color:var(--text-secondary)]",
@@ -361,7 +361,7 @@ function StallCard({
         onClick={onUpgrade}
         disabled={!upgradeable || !canUpgrade}
         className={cn(
-          "mt-1.5 flex items-center justify-center gap-1 rounded-full border px-2 py-1 text-[11px]",
+          "mt-1.5 flex items-center justify-center gap-1 rounded-full border px-2 py-1 text-[length:var(--text-eyebrow)]",
           canUpgrade
             ? "border-rose-200 bg-rose-50 text-rose-700"
             : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)]",
@@ -386,11 +386,11 @@ function SummaryCard({
   onIdle: () => void;
 }) {
   return (
-    <div className="rounded-[12px] border border-amber-200 bg-amber-50 p-3 text-center">
-      <p className="text-[13px] font-medium text-amber-900">
+    <div className="rounded-[var(--radius-sm)] border border-amber-200 bg-amber-50 p-3 text-center">
+      <p className="text-[length:var(--text-caption)] font-medium text-amber-900">
         {t(msg`今夜营业结算`)}
       </p>
-      <p className="mt-1 text-[12px] text-amber-900/80">
+      <p className="mt-1 text-[length:var(--text-caption)] text-amber-900/80">
         {t(
           msg`${state.totalCustomersThisRound} 位顾客 · +${state.totalIncomeThisRound} 夜市券 · 当前许可 ${state.permitTickets} 张`,
         )}
@@ -399,14 +399,14 @@ function SummaryCard({
         <button
           type="button"
           onClick={onRestart}
-          className="rounded-full bg-amber-500 px-4 py-1.5 text-[13px] font-medium text-white hover:bg-amber-600"
+          className="rounded-full bg-amber-500 px-4 py-1.5 text-[length:var(--text-caption)] font-medium text-white hover:bg-amber-600"
         >
           {t(msg`再开一轮`)}
         </button>
         <button
           type="button"
           onClick={onIdle}
-          className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[13px] text-[color:var(--text-secondary)]"
+          className="rounded-full border border-[color:var(--border-faint)] px-4 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)]"
         >
           {t(msg`先打烊`)}
         </button>

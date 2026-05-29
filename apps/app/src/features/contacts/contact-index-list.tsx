@@ -221,8 +221,8 @@ export function ContactIndexList({
             className={cn(
               "flex items-center justify-center bg-[rgba(22,22,22,0.72)] font-medium text-white shadow-[0_18px_40px_rgba(60, 40, 110, 0.22)] backdrop-blur",
               compact
-                ? "h-20 w-20 rounded-[24px] text-[28px]"
-                : "h-24 w-24 rounded-[24px] text-[34px]",
+                ? "h-20 w-20 rounded-[var(--radius-xl)] text-[length:var(--text-display)]"
+                : "h-24 w-24 rounded-[var(--radius-xl)] text-[34px]",
             )}
           >
             {indicatorLabel}
