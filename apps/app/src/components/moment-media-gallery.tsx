@@ -286,10 +286,19 @@ function MomentMediaGalleryInner({
           >
             <img
               src={resolveAppMediaUrl(single.thumbnailUrl || single.url)}
-              alt={single.fileName || t(msg`朋友圈图片`)}
+              // 走查 2026-05-29：alt 原本回退到 single.fileName（形如
+              // 1780xxxx-xxxx-minimax-image-moment.jpg 的 UUID 文件名）——图片一旦
+              // 加载失败（token 过期 / 404 / 网络抖动），浏览器会把这串文件名当
+              // 破图占位文字直接显示在卡片里，非常难看；屏幕阅读器也只能读这串
+              // 乱码。改成通用文案，并加 onError 把破图节点隐藏，露出容器本身的
+              // --surface-secondary 灰底（容器有固定尺寸，不会塌陷）。
+              alt={t(msg`朋友圈图片`)}
               className="h-full w-full object-cover"
               loading="lazy"
               decoding="async"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
             />
             {single.livePhoto?.enabled ? (
               <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-[2px] bg-black/58 px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--text-on-brand)]">
@@ -492,10 +501,16 @@ function MomentMediaGalleryInner({
           >
             <img
               src={resolveAppMediaUrl(asset.thumbnailUrl || asset.url)}
-              alt={asset.fileName || t(msg`朋友圈图片`)}
+              // 走查 2026-05-29：同 mobile 路径——别拿 UUID 文件名当 alt，破图时
+              // onError 隐藏节点露出格子的 --surface-console 灰底（aspectRatio 固
+              // 定尺寸不塌）。
+              alt={t(msg`朋友圈图片`)}
               className="h-full w-full object-cover transition duration-200 hover:scale-[1.015]"
               loading="lazy"
               decoding="async"
+              onError={(event) => {
+                event.currentTarget.style.display = "none";
+              }}
             />
             {asset.livePhoto?.enabled ? (
               <div className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/58 px-2.5 py-1 text-[10px] font-medium text-[color:var(--text-on-brand)]">
@@ -825,10 +840,15 @@ function WeChatGridCell({
     >
       <img
         src={resolveAppMediaUrl(asset.thumbnailUrl || asset.url)}
-        alt={asset.fileName || t(msg`朋友圈图片`)}
+        // 走查 2026-05-29：同单图——别拿 UUID 文件名当 alt（破图时会原样显示），
+        // 加 onError 隐藏破图节点露出格子自身的灰底（格子有固定 size，不塌）。
+        alt={t(msg`朋友圈图片`)}
         className="h-full w-full object-cover"
         loading="lazy"
         decoding="async"
+        onError={(event) => {
+          event.currentTarget.style.display = "none";
+        }}
       />
       {asset.livePhoto?.enabled ? (
         <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-[2px] bg-black/58 px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--text-on-brand)]">

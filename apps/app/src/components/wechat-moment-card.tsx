@@ -61,9 +61,17 @@ type WeChatMomentCardProps = {
   hideListenButton?: boolean;
 };
 
+// 走查 2026-05-29（朋友圈样式）：正文 / 评论 / 时间戳颜色原本写死成微信浅色版
+// 的近黑 #1A1A1A、灰 #9A9A9A。但朋友圈页背景走 var(--bg-canvas-elevated) 这类
+// 语义 token——切到「夜间」外观（.yj-mobile-shell[data-appearance=night]，bg
+// 变 #171326、surface-secondary 变 #1a1530）后，深底上的近黑正文几乎不可见，
+// 整张卡片看着像「样式坏了」。桌面端 desktop-moment-row 早就走 token 自适应，
+// mobile 这张漏了。改走 --text-primary / --text-muted：日间 --text-primary≈
+// #1c1430 与原 #1A1A1A 几乎一致（浅色视觉零变化），夜间自动翻成浅色可读。
+// 链接蓝沿用微信经典 #576B95（深浅两版背景上都够可读，保留辨识度）。
 const WECHAT_LINK_COLOR = "#576B95";
-const WECHAT_TIMESTAMP_COLOR = "#9A9A9A";
-const WECHAT_TEXT_COLOR = "#1A1A1A";
+const WECHAT_TIMESTAMP_COLOR = "var(--text-muted)";
+const WECHAT_TEXT_COLOR = "var(--text-primary)";
 
 // memo + 自定义 comparator：朋友圈列表里 like / comment optimistic update 时
 // setQueryData 用 data.map(m => m.id===target ? new : m) 保留其他 moment 对象
@@ -620,7 +628,10 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
               ) : null}
 
               {hasLikes && hasComments ? (
-                <div className="h-px bg-[color:var(--surface-secondary)]" />
+                // 走查 2026-05-29：分隔线原本也用 --surface-secondary，跟外层灰盒
+                // 底色（同 token）完全同色 → 这条 1px 分隔线根本看不见，点赞区和
+                // 评论区糊成一团。改 --border-faint，深浅主题下都能跟底色拉开。
+                <div className="h-px bg-[color:var(--border-faint)]" />
               ) : null}
 
               {hasComments ? (
