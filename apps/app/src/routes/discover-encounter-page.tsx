@@ -107,8 +107,10 @@ function MobileDiscoverEncounterPage() {
 
   // 摇完 preview 后用户切走再回来（或刷新），preview 只存在组件 state 里会丢——
   // 后端 active session 仍是 preview_ready，挂载时拉一次恢复，避免「同意闸」把已经
-  // 摇到的相遇白白扔掉。只在用户尚未对本页做任何操作前 seed 一次（seededRef）。
-  const seededFromActiveRef = useRef(false);
+  // 摇到的相遇白白扔掉。记录「已为哪个 baseUrl seed 过」：切 world（baseUrl 变）时
+  // 自然 !== 当前 baseUrl → 为新 world 重新 seed 一次；用户主动摇/keep/skip 后置成
+  // 当前 baseUrl，挡住迟到的 active-session 查询把本地最新状态盖回去。
+  const seededBaseUrlRef = useRef<string | undefined>(undefined);
   const activeShakeQuery = useQuery({
     queryKey: ["app-shake-active", baseUrl],
     queryFn: () => getActiveShakeSession(baseUrl),
@@ -117,7 +119,11 @@ function MobileDiscoverEncounterPage() {
   });
 
   const shakeMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (vars?: { mode?: "new" | "reroll" }) => {
+      // 「换一个」走 reroll：后端在同一帧里把当前 preview_ready 会话 dismiss 掉再
+      // 生成新的（原子，且绕过 cooldown），保证一定换到不同的人。普通首摇走 new；
+      // new 模式下若已有 active preview_ready，后端会原样返回它（不重复生成）。
+      const mode = vars?.mode === "reroll" ? "reroll" : "new";
       // 后端 planning + 角色生成两次推理 + fallback provider，正常 ~60s。后端已给
       // 单次 attempt 加了 45s 上界，但隧道 / 网络层若整体卡住，fetch 本身没有
       // timeout 会无限挂起，按钮一直停在「正在寻找...」。给整个请求一个 150s 的
@@ -132,7 +138,7 @@ function MobileDiscoverEncounterPage() {
       const timeoutId = setTimeout(() => controller.abort(), 150_000);
       let previewResult: Awaited<ReturnType<typeof shake>>;
       try {
-        previewResult = await shake(undefined, baseUrl, controller.signal);
+        previewResult = await shake({ mode }, baseUrl, controller.signal);
       } catch (error) {
         if (controller.signal.aborted) {
           throw new Error(
@@ -153,8 +159,13 @@ function MobileDiscoverEncounterPage() {
       // 怀疑是不是还没真的开始摇。统一在 mutate 起手时清掉旧 notice。
       setMessage(""); // i18n-ignore-line: clearing state
       setTone("info");
-      // 一旦用户主动摇，就别再让 active-session 查询把旧 preview seed 回来盖掉。
-      seededFromActiveRef.current = true;
+      // 走查 Round 4：上一次「加为好友」失败留下的 keepMutation 错误条，若不清，换一个
+      // (reroll) 摇出新人后会挂在新卡片下面（错误条只看 keepMutation.isError）。新一轮
+      // 摇起手时一并归零，旧错误不串到新相遇上。
+      keepMutation.reset();
+      // 一旦用户主动摇，就把当前 world 标记为已 seed，别再让迟到的 active-session
+      // 查询把本地最新状态 seed 回去盖掉。
+      seededBaseUrlRef.current = baseUrl;
     },
     onSuccess: (result) => {
       if (!result) {
@@ -207,24 +218,15 @@ function MobileDiscoverEncounterPage() {
     },
   });
 
-  // 发起一次摇一摇。若当前已有待确认 preview，「再摇」语义 =「换一个」：先 best-effort
-  // dismiss 掉当前的（reason=user_rerolled，不等结果、不入通讯录），再摇新的。
+  // 发起一次摇一摇。若当前已有待确认 preview，「再摇」语义 =「换一个」：走 reroll
+  // 模式，由后端原子地丢弃当前会话再生成新的（不在客户端各发一枪、避免 race 把同
+  // 一个人原样返回）。生成成功前保留旧卡片（其按钮在 shake 进行中禁用），失败（如撞
+  // 每日上限）时旧卡片仍在，不至于把一个有效的待确认相遇白白丢掉。
   const triggerShake = () => {
     if (shakeMutation.isPending || keepMutation.isPending) {
       return;
     }
-    if (preview) {
-      const previous = preview;
-      setPreview(null);
-      void dismissShakeSession(
-        previous.id,
-        { reason: "user_rerolled" },
-        baseUrl,
-      ).catch(() => {
-        // best-effort：换一个时旧 preview 丢弃失败不影响摇新的，它会自然过期。
-      });
-    }
-    shakeMutation.mutate();
+    shakeMutation.mutate({ mode: preview ? "reroll" : "new" });
   };
 
   const { permissionState, requestPermission } = useShakeDetector({
@@ -278,38 +280,52 @@ function MobileDiscoverEncounterPage() {
     return t(msg`摇一摇`);
   })();
 
-  // 挂载（或 active session 查询返回）时恢复未决 preview——只 seed 一次，且仅在用户
-  // 尚未对本页做任何摇/确认操作前。
-  useEffect(() => {
-    if (seededFromActiveRef.current) {
-      return;
-    }
-    if (activeShakeQuery.isSuccess) {
-      const active = activeShakeQuery.data;
-      seededFromActiveRef.current = true;
-      if (active && active.status === "preview_ready") {
-        setPreview(active);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeShakeQuery.isSuccess, activeShakeQuery.data]);
-
+  // 切 world（baseUrl 变）时把上一个 world 的瞬时 UI 立即清掉：旧卡片 / 旧成功提示 /
+  // 旧错误条都不该带到新 world。声明在下面的 seed effect 之前——同一次 baseUrl 变化的
+  // effect flush 里 reset 先把 preview 置 null，seed 后跑（声明序靠后）若命中新 world
+  // 的缓存会再把 preview 设回去，最终以 seed 的结果为准，不会把旧卡片留在屏上。
+  // 不动 seededBaseUrlRef：它仍指向旧 baseUrl，与新 baseUrl 不等，seed effect 据此为
+  // 新 world 重新 seed。
   useEffect(() => {
     setMessage(""); // i18n-ignore-line: clearing state
     setTone("info");
-    // 切换 world 时清掉上一个 world 的待确认 preview，并允许新 world 的 active session
-    // 重新 seed 一次。
     setPreview(null);
-    seededFromActiveRef.current = false;
-    // 走查 Round 5：之前只清 setMessage，但 shakeMutation.isError / error 仍挂着
-    // world A 的失败状态——切到 world B 后红色错误条还在显示 SHAKE_DAILY_LIMIT
-    // 这种带 worldId 含义的提示。reset() 把 mutation 也归零，确保新 world 上看到
-    // 的是干净状态。
+    // 走查 Round 5：mutation 的 isError/error 也要归零，否则切到新 world 红色错误条
+    // 还挂着旧 world 的 SHAKE_DAILY_LIMIT 等带 worldId 含义的提示。
     shakeMutation.reset();
     keepMutation.reset();
     dismissMutation.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseUrl]);
+
+  // 为当前 world 恢复未决 preview：仅当本 baseUrl 尚未 seed 过、且 active-session 查询
+  // 已返回时跑一次。命中 preview_ready → 显示卡片；否则置 null（顺带清掉 reset 之外的
+  // 残留）。切 world 后 seededBaseUrlRef !== baseUrl，自动为新 world 再 seed 一次。
+  useEffect(() => {
+    if (seededBaseUrlRef.current === baseUrl) {
+      return;
+    }
+    if (!activeShakeQuery.isSuccess) {
+      return;
+    }
+    seededBaseUrlRef.current = baseUrl;
+    const active = activeShakeQuery.data;
+    setPreview(active && active.status === "preview_ready" ? active : null);
+  }, [baseUrl, activeShakeQuery.isSuccess, activeShakeQuery.data]);
+
+  // 让 active-shake 查询缓存与本地 preview 保持同步：keep/dismiss/换一个 后把缓存
+  // 写成最新（已解决→null / 换到新人→新 preview）。否则 staleTime:Infinity 的缓存
+  // 会在用户切走再回来（组件重挂、state 归零）时，把一个已经被 keep/dismiss 的旧
+  // preview_ready 重新 seed 成卡片——让人看到「已经加过的人」又冒出来要你再决定一次。
+  // 仅当本 baseUrl 已完成 seed 后才同步：避免挂载首帧 / world-switch 过渡帧用旧 preview
+  // 写错 world 的缓存键。
+  useEffect(() => {
+    if (seededBaseUrlRef.current !== baseUrl) {
+      return;
+    }
+    queryClient.setQueryData(["app-shake-active", baseUrl], preview);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, baseUrl]);
 
   function navigateToRouteStateReturn() {
     if (
@@ -424,9 +440,9 @@ function MobileDiscoverEncounterPage() {
           {preview.character.expertDomains &&
           preview.character.expertDomains.length > 0 ? (
             <div className="mt-2.5 flex flex-wrap gap-1.5">
-              {preview.character.expertDomains.slice(0, 4).map((domain) => (
+              {preview.character.expertDomains.slice(0, 4).map((domain, index) => (
                 <span
-                  key={domain}
+                  key={`${domain}-${index}`}
                   className="inline-flex items-center rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
                 >
                   {domain}
@@ -450,7 +466,7 @@ function MobileDiscoverEncounterPage() {
           <div className="mt-3 flex items-center justify-end gap-2">
             <Button
               type="button"
-              disabled={keepMutation.isPending}
+              disabled={keepMutation.isPending || shakeMutation.isPending}
               onClick={() => dismissMutation.mutate(preview)}
               variant="secondary"
               size="sm"
@@ -460,7 +476,7 @@ function MobileDiscoverEncounterPage() {
             </Button>
             <Button
               type="button"
-              disabled={keepMutation.isPending}
+              disabled={keepMutation.isPending || shakeMutation.isPending}
               aria-busy={keepMutation.isPending || undefined}
               onClick={() => keepMutation.mutate(preview)}
               variant="primary"
@@ -514,7 +530,7 @@ function MobileDiscoverEncounterPage() {
               {isShakeErrorRetryable(shakeMutation.error) ? (
                 <button
                   type="button"
-                  onClick={() => shakeMutation.mutate()}
+                  onClick={() => shakeMutation.mutate({ mode: "new" })}
                   className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--text-secondary)]"
                 >
                   {t(msg`重试摇一摇`)}
