@@ -1,4 +1,12 @@
-import { memo, useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
+import {
+  memo,
+  useEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type ReactNode,
+  type SyntheticEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { msg } from "@lingui/macro";
 import {
@@ -17,6 +25,19 @@ import { resolveAppMediaUrl } from "../lib/media-url";
 import { registerAndroidBackInterceptor } from "../runtime/android-back-button";
 
 const t = translateRuntimeMessage;
+
+// 走查 2026-05-29：朋友圈/广场缩略图破图兜底。原本只在 onError 里写死
+// display:none——但这些图走 /cloud/world-api 反代、URL 带 ?token=（见
+// media-url.ts），token 刷新时同一个 <img> 节点的 src 会变；若只隐藏不复位，
+// 刷新后新 src 其实能加载成功也会永远不可见。配对 onLoad 复位 display：每次
+// 成功加载（含换 src 后）都显示回来，仅加载失败才隐藏，露出容器自带的固定
+// 尺寸灰底（不塌陷）。三处缩略图渲染路径共用这对 handler。
+function hideBrokenImage(event: SyntheticEvent<HTMLImageElement>) {
+  event.currentTarget.style.display = "none";
+}
+function showLoadedImage(event: SyntheticEvent<HTMLImageElement>) {
+  event.currentTarget.style.display = "";
+}
 
 type MomentMediaGalleryProps = {
   contentType: MomentContentType;
@@ -183,7 +204,10 @@ function MomentMediaGalleryInner({
             {video.posterUrl ? (
               <img
                 src={resolveAppMediaUrl(video.posterUrl)}
-                alt={video.fileName || t(msg`朋友圈视频`)}
+                // 走查 2026-05-29：同图片——别拿 UUID fileName 当 alt（封面加载失败
+                // 会把这串文件名当占位文字露在黑底封面上）。封面 <img> 撑着按钮+
+                // 播放键叠层的盒子尺寸，破图不能整节点隐藏（会塌），故只清 alt。
+                alt={t(msg`朋友圈视频`)}
                 loading="lazy"
                 decoding="async"
                 className="w-full bg-black object-cover"
@@ -287,18 +311,15 @@ function MomentMediaGalleryInner({
             <img
               src={resolveAppMediaUrl(single.thumbnailUrl || single.url)}
               // 走查 2026-05-29：alt 原本回退到 single.fileName（形如
-              // 1780xxxx-xxxx-minimax-image-moment.jpg 的 UUID 文件名）——图片一旦
-              // 加载失败（token 过期 / 404 / 网络抖动），浏览器会把这串文件名当
-              // 破图占位文字直接显示在卡片里，非常难看；屏幕阅读器也只能读这串
-              // 乱码。改成通用文案，并加 onError 把破图节点隐藏，露出容器本身的
-              // --surface-secondary 灰底（容器有固定尺寸，不会塌陷）。
+              // 1780xxxx-xxxx-minimax-image-moment.jpg 的 UUID 文件名）——图片加载
+              // 失败时浏览器会把这串文件名当破图占位文字显示在卡片里，很难看；SR
+              // 也只能读乱码。改通用文案 + hideBrokenImage/showLoadedImage 兜底。
               alt={t(msg`朋友圈图片`)}
               className="h-full w-full object-cover"
               loading="lazy"
               decoding="async"
-              onError={(event) => {
-                event.currentTarget.style.display = "none";
-              }}
+              onError={hideBrokenImage}
+              onLoad={showLoadedImage}
             />
             {single.livePhoto?.enabled ? (
               <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-[2px] bg-black/58 px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--text-on-brand)]">
@@ -501,16 +522,15 @@ function MomentMediaGalleryInner({
           >
             <img
               src={resolveAppMediaUrl(asset.thumbnailUrl || asset.url)}
-              // 走查 2026-05-29：同 mobile 路径——别拿 UUID 文件名当 alt，破图时
-              // onError 隐藏节点露出格子的 --surface-console 灰底（aspectRatio 固
-              // 定尺寸不塌）。
+              // 走查 2026-05-29：同 mobile 路径——别拿 UUID 文件名当 alt；破图
+              // hideBrokenImage 隐藏节点露出格子的 --surface-console 灰底
+              // （aspectRatio 固定尺寸不塌），onLoad 复位以兜 token 刷新换 src。
               alt={t(msg`朋友圈图片`)}
               className="h-full w-full object-cover transition duration-200 hover:scale-[1.015]"
               loading="lazy"
               decoding="async"
-              onError={(event) => {
-                event.currentTarget.style.display = "none";
-              }}
+              onError={hideBrokenImage}
+              onLoad={showLoadedImage}
             />
             {asset.livePhoto?.enabled ? (
               <div className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/58 px-2.5 py-1 text-[10px] font-medium text-[color:var(--text-on-brand)]">
@@ -594,7 +614,7 @@ function MomentImageViewerOverlay({
       // 新会话走查 R1 (a11y)：之前裸 div 全屏 overlay，没 role/aria-modal/aria-label。
       // 屏幕阅读器用户从 WeChatGridCell 点开大图后只听到"button image"，进入 viewer
       // 后什么上下文都没有，找不到关闭/翻页入口。挂 dialog 语义 + aria-label="图片
-      // 预览"（活动图 fileName 在顶部可见，alt 也带），让 VoiceOver/TalkBack 进 viewer
+      // 预览"（顶部有「朋友圈图片」标题 + alt 同名），让 VoiceOver/TalkBack 进 viewer
       // 时第一句报"图片预览"。aria-modal=true 让 SR 不再扫底层 moment 卡片（避免
       // 混乱）。和 wechat-comment-bar 走查 R4 / share-card-modal 走查 R3 同模板。
       role="dialog"
@@ -628,8 +648,12 @@ function MomentImageViewerOverlay({
           <X size={18} />
         </button>
         <div className="min-w-0 flex-1 text-center">
+          {/* 走查 2026-05-29：标题原本显示 image.fileName，但 moment 图片的 fileName
+              是服务端生成的 UUID（形如 1780…-minimax-image-moment.jpg），点开大图
+              顶部赫然顶着一串乱码当标题。微信大图查看器本身也只显示「N/总数」。
+              改成通用文案，既给 SR 一个可读名，又不再把 UUID 暴露给用户。 */}
           <div className="truncate text-sm font-medium">
-            {image.fileName || t(msg`朋友圈图片`)}
+            {t(msg`朋友圈图片`)}
           </div>
           <div className="mt-1 text-xs text-[color:var(--text-on-brand)]/70">
             {activeIndex + 1} / {total}
@@ -645,7 +669,7 @@ function MomentImageViewerOverlay({
       >
         <img
           src={resolveAppMediaUrl(image.url)}
-          alt={image.fileName || t(msg`朋友圈图片`)}
+          alt={t(msg`朋友圈图片`)}
           className="max-h-full max-w-full object-contain"
         />
       </div>
@@ -763,8 +787,10 @@ function MomentVideoViewerOverlay({
           handleManualPlay，体验不破。 */}
       <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-20 flex items-center justify-between gap-3 px-4 text-[color:var(--text-on-brand)]">
         <div className="min-w-0">
+          {/* 走查 2026-05-29：同图片大图——别把 UUID fileName 当标题顶在视频
+              预览顶部，改通用文案。 */}
           <div className="truncate text-sm font-medium">
-            {video.fileName || t(msg`朋友圈视频`)}
+            {t(msg`朋友圈视频`)}
           </div>
           {video.durationMs ? (
             <div className="mt-1 text-xs text-[color:var(--text-on-brand)]/70">
@@ -840,15 +866,14 @@ function WeChatGridCell({
     >
       <img
         src={resolveAppMediaUrl(asset.thumbnailUrl || asset.url)}
-        // 走查 2026-05-29：同单图——别拿 UUID 文件名当 alt（破图时会原样显示），
-        // 加 onError 隐藏破图节点露出格子自身的灰底（格子有固定 size，不塌）。
+        // 走查 2026-05-29：同单图——别拿 UUID 文件名当 alt；hideBrokenImage 隐藏
+        // 破图露格子灰底（固定 size 不塌），onLoad 复位兜 token 刷新换 src。
         alt={t(msg`朋友圈图片`)}
         className="h-full w-full object-cover"
         loading="lazy"
         decoding="async"
-        onError={(event) => {
-          event.currentTarget.style.display = "none";
-        }}
+        onError={hideBrokenImage}
+        onLoad={showLoadedImage}
       />
       {asset.livePhoto?.enabled ? (
         <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-[2px] bg-black/58 px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--text-on-brand)]">

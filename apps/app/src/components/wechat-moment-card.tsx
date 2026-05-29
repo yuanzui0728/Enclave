@@ -68,8 +68,11 @@ type WeChatMomentCardProps = {
 // 整张卡片看着像「样式坏了」。桌面端 desktop-moment-row 早就走 token 自适应，
 // mobile 这张漏了。改走 --text-primary / --text-muted：日间 --text-primary≈
 // #1c1430 与原 #1A1A1A 几乎一致（浅色视觉零变化），夜间自动翻成浅色可读。
-// 链接蓝沿用微信经典 #576B95（深浅两版背景上都够可读，保留辨识度）。
-const WECHAT_LINK_COLOR = "#576B95";
+// 链接蓝（作者/点赞/评论名字）走 --wechat-link-color：白天 #576B95（微信经典），
+// 夜间加亮到 #8aa0cf——否则 #576B95 落在夜间深底上对比度仅 ~3.2:1，小字不达 AA、
+// 名字发灰糊进背景。fallback #576B95 兜住任何没定义该 token 的上下文（如桌面壳，
+// 虽然桌面用的是 desktop-moment-row 不渲染本卡片）。
+const WECHAT_LINK_COLOR = "var(--wechat-link-color, #576B95)";
 const WECHAT_TIMESTAMP_COLOR = "var(--text-muted)";
 const WECHAT_TEXT_COLOR = "var(--text-primary)";
 
@@ -590,7 +593,7 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                 <div className="flex flex-wrap items-start gap-1 px-2.5 py-1.5 text-[length:var(--text-caption)] leading-[20px]">
                   <Heart
                     size={13}
-                    className="mt-1 shrink-0 fill-[#576B95] text-[#576B95]"
+                    className="mt-1 shrink-0 fill-[var(--wechat-link-color,#576B95)] text-[color:var(--wechat-link-color,#576B95)]"
                   />
                   <div className="flex min-w-0 flex-wrap gap-x-1">
                     {visibleLikes
@@ -652,7 +655,10 @@ export const WeChatMomentCard = memo(forwardRef<HTMLElement, WeChatMomentCardPro
                           event.stopPropagation();
                           onCommentTap?.(comment);
                         }}
-                        className="block w-full text-left active:bg-[color:var(--surface-secondary)]"
+                        // 走查 2026-05-29：active 态原本用 --surface-secondary，跟外层
+                        // 灰盒同色 → 点评论想回复时完全没有按下反馈。改 --surface-soft
+                        // （品牌淡紫叠加），深浅主题下都能透出一层可感知的按压色。
+                        className="block w-full text-left active:bg-[color:var(--surface-soft)]"
                         style={{ color: WECHAT_TEXT_COLOR }}
                         data-no-doubletap
                       >

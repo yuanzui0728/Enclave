@@ -242,6 +242,8 @@ body.yj-desktop-window[data-appearance="night"] {
   --text-muted: #8e85a8;
   --text-dim: #645c7d;
   --text-on-brand: #ffffff;
+  /* 夜间加亮的微信链接蓝：#576B95 在深底上 ~3.2:1 不达 AA，提到 ~6:1。 */
+  --wechat-link-color: #8aa0cf;
   --brand-primary: #8b7bf0;
   --brand-secondary: #a99bf5;
   --brand-accent: #e7b85c;
@@ -398,6 +400,10 @@ body.yj-mobile::after {
   --text-muted: #837791;
   --text-dim: #ada4bd;
   --text-on-brand: #ffffff;
+  /* 朋友圈卡片(wechat-moment-card)作者/点赞/评论名字用的微信经典链接蓝。
+   * 白天 #576B95 在浅底上达标；夜间见 night 块加亮版,避免在深底上对比度
+   * 掉到 ~3:1（小字不达 AA）。 */
+  --wechat-link-color: #576B95;
 
   --brand-primary: #7c5bd9;
   --brand-secondary: #9b7deb;
@@ -503,6 +509,8 @@ body.yj-mobile::after {
   --text-muted: #8e85a8;
   --text-dim: #645c7d;
   --text-on-brand: #ffffff;
+  /* 夜间加亮的微信链接蓝：#576B95 在深底上 ~3.2:1 不达 AA，提到 ~6:1。 */
+  --wechat-link-color: #8aa0cf;
 
   --brand-primary: #8b7bf0;
   --brand-secondary: #a99bf5;

@@ -2675,7 +2675,9 @@ export function DiscoverFeedPage() {
                                   openReply();
                                 }
                               }}
-                              className="block w-full cursor-pointer text-left text-[color:var(--text-primary)] active:bg-[color:var(--surface-secondary)]"
+                              // 走查 2026-05-29：active 与外层灰盒(--surface-secondary)
+                              // 同色 → 点评论没按下反馈。改 --surface-soft 透出按压色。
+                              className="block w-full cursor-pointer text-left text-[color:var(--text-primary)] active:bg-[color:var(--surface-soft)]"
                             >
                               {/* 长名字（wiki 走查角色叫 "走查词条_1778866835578221688"、
                                   群里改备注成一句话等）会按字宽 wrap，把后面的
@@ -2693,14 +2695,14 @@ export function DiscoverFeedPage() {
                                       comment.authorType,
                                     );
                                   }}
-                                  className="inline-block max-w-[160px] truncate align-bottom text-[#576B95] hover:opacity-80"
+                                  className="inline-block max-w-[160px] truncate align-bottom text-[color:var(--wechat-link-color,#576B95)] hover:opacity-80"
                                   title={comment.authorName}
                                 >
                                   {comment.authorName}
                                 </button>
                               ) : (
                                 <span
-                                  className="inline-block max-w-[160px] truncate align-bottom text-[#576B95]"
+                                  className="inline-block max-w-[160px] truncate align-bottom text-[color:var(--wechat-link-color,#576B95)]"
                                   title={comment.authorName}
                                 >
                                   {comment.authorName}
@@ -2719,14 +2721,14 @@ export function DiscoverFeedPage() {
                                           replyToComment.authorType,
                                         );
                                       }}
-                                      className="inline-block max-w-[160px] truncate align-bottom text-[#576B95] hover:opacity-80"
+                                      className="inline-block max-w-[160px] truncate align-bottom text-[color:var(--wechat-link-color,#576B95)] hover:opacity-80"
                                       title={replyToName}
                                     >
                                       {replyToName}
                                     </button>
                                   ) : (
                                     <span
-                                      className="inline-block max-w-[160px] truncate align-bottom text-[#576B95]"
+                                      className="inline-block max-w-[160px] truncate align-bottom text-[color:var(--wechat-link-color,#576B95)]"
                                       title={replyToName}
                                     >
                                       {replyToName}
@@ -2749,7 +2751,7 @@ export function DiscoverFeedPage() {
                               void expandFullComments(post.id);
                             }}
                             disabled={loadingFullCommentsPostIds.has(post.id)}
-                            className="mt-1 block text-left text-[length:var(--text-caption)] text-[#576B95] active:opacity-60 disabled:opacity-50"
+                            className="mt-1 block text-left text-[length:var(--text-caption)] text-[color:var(--wechat-link-color,#576B95)] active:opacity-60 disabled:opacity-50"
                           >
                             {loadingFullCommentsPostIds.has(post.id)
                               ? t(msg`正在读取全部评论…`)
@@ -2887,7 +2889,7 @@ export function DiscoverFeedPage() {
                 <button
                   type="button"
                   onClick={() => void fetchNextFeedPage()}
-                  className="block w-full py-3 text-center text-[length:var(--text-eyebrow)] text-[#576B95] active:opacity-60"
+                  className="block w-full py-3 text-center text-[length:var(--text-eyebrow)] text-[color:var(--wechat-link-color,#576B95)] active:opacity-60"
                 >
                   {t(msg`加载更多失败 · 点击重试`)}
                 </button>

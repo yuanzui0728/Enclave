@@ -411,6 +411,7 @@ export function ShareCardModal({
             ["--surface-secondary" as string]: "#f2eefb",
             ["--surface-soft" as string]: "rgba(124, 91, 217, 0.07)",
             ["--border-faint" as string]: "rgba(76, 40, 130, 0.06)",
+            ["--wechat-link-color" as string]: "#576B95",
           }}
         >
           {children}

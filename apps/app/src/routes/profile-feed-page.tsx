@@ -411,13 +411,13 @@ export function ProfileFeedPage() {
                             key={comment.id}
                             className="break-words text-[color:var(--text-primary)]"
                           >
-                            <span className="text-[#576B95]">
+                            <span className="text-[color:var(--wechat-link-color,#576B95)]">
                               {comment.authorName}
                             </span>
                             {replyToName ? (
                               <>
                                 <span> {t(msg`回复`)} </span>
-                                <span className="text-[#576B95]">
+                                <span className="text-[color:var(--wechat-link-color,#576B95)]">
                                   {replyToName}
                                 </span>
                               </>
@@ -431,7 +431,7 @@ export function ProfileFeedPage() {
                           type="button"
                           onClick={() => void handleExpandComments(post.id)}
                           disabled={expandingPostIds.has(post.id)}
-                          className="text-[length:var(--text-caption)] text-[#576B95] disabled:opacity-60"
+                          className="text-[length:var(--text-caption)] text-[color:var(--wechat-link-color,#576B95)] disabled:opacity-60"
                         >
                           {expandingPostIds.has(post.id)
                             ? t(msg`加载中…`)
