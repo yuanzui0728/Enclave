@@ -69,17 +69,13 @@ export const WORLD_LIFECYCLE_ACTION_RULES = {
   failed: ["resume", "retry", "reconcile"],
   disabled: ["reconcile"],
   deleting: ["reconcile"],
-  // 注销墓碑世界（仅供后台寻址浏览），无任何生命周期操作。
-  archived: [],
 } as const satisfies Record<
   CloudWorldLifecycleStatus,
   readonly WorldLifecycleAction[]
 >;
 
 function getAllowedWorldActions(status: CloudWorldLifecycleStatus) {
-  // 兜底空数组：任何未登记状态都不暴露操作，避免 .includes 读到 undefined 崩页。
-  return (WORLD_LIFECYCLE_ACTION_RULES[status] ??
-    []) as readonly WorldLifecycleAction[];
+  return WORLD_LIFECYCLE_ACTION_RULES[status] as readonly WorldLifecycleAction[];
 }
 
 export function canResumeWorld(status: CloudWorldLifecycleStatus) {
