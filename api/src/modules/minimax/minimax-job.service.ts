@@ -1,6 +1,7 @@
 // i18n-ignore-start: provider adapter — log strings only.
-import { Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
+import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
 import { InjectRepository } from '@nestjs/typeorm';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -760,6 +761,29 @@ export class MinimaxJobService {
     }
   }
 
+  // 会员到期 / 订阅硬拦：assertCanUseAi 在 submit 前直接抛 SubscriptionExpiredException
+  // （402，非 MinimaxClientError，所以走不到 retriable=false 分支）。这类是**永久性**失败，
+  // 重试毫无意义——每 30s 重打一次只会刷屏 4000+ 行日志，并持续占用共享世界
+  // 单事件循环把全体租户拖到 504「世界离线」。必须当场放弃。
+  private isPermanentBlockError(error: unknown): boolean {
+    if (error instanceof SubscriptionExpiredException) return true;
+    if (error instanceof HttpException) {
+      if (error.getStatus() === HttpStatus.PAYMENT_REQUIRED) return true;
+      const resp = error.getResponse();
+      if (
+        resp &&
+        typeof resp === 'object' &&
+        (resp as { code?: string }).code === SubscriptionExpiredException.CODE
+      ) {
+        return true;
+      }
+    }
+    // 兜底：经由其它层包装后只剩 message 时，按会员到期文案识别。
+    return /会员已到期|SUBSCRIPTION_EXPIRED/.test(
+      (error as Error)?.message ?? '',
+    );
+  }
+
   private async handleClientError(
     job: MinimaxJobEntity,
     error: unknown,
@@ -771,6 +795,16 @@ export class MinimaxJobService {
     const retriable =
       e instanceof MinimaxClientError ? e.retriable : true;
     const message = e?.message ?? 'unknown error';
+    // 永久性硬拦（会员到期等）：直接 markFailed（释放配额 + 触发 onFailed 退款/道歉），
+    // 不进重试队列。
+    if (this.isPermanentBlockError(error)) {
+      await this.markFailed(
+        job,
+        'SUBSCRIPTION_EXPIRED',
+        `${context}: ${message}`,
+      );
+      return;
+    }
     // 真实 minimax 服务端确认本 model 今日额度已耗尽 → 标记，后续
     // tryReserve 直接返回 false，避免今天剩余 cron tick 继续打无效请求。
     // 走查 yuanzui0728 本次 R5：parseMinimaxResetAt 让 5h-window 撞 2056 后真
@@ -784,6 +818,19 @@ export class MinimaxJobService {
       return;
     }
     const nextAttempt = job.attemptCount + 1;
+    // 重试上界：pending 态 submit 反复失败原本无 attemptCount 上限（POLL_EXHAUSTED
+    // 只挡 submitted 态），任意 retriable 错误都会无限重试。对齐 submitted 态的
+    // *_MAX_ATTEMPTS，超过即放弃，防止单个卡住的 job 永久刷 cron。
+    const maxAttempts =
+      job.kind === 'video' ? VIDEO_MAX_ATTEMPTS : MUSIC_MAX_ATTEMPTS;
+    if (nextAttempt >= maxAttempts) {
+      await this.markFailed(
+        job,
+        'RETRY_EXHAUSTED',
+        `${context}: retried ${nextAttempt} times (max=${maxAttempts}); last=${message}`,
+      );
+      return;
+    }
     const backoffMs = Math.min(
       VIDEO_POLL_INTERVAL_MS,
       5_000 * Math.pow(2, Math.min(nextAttempt, 5)),

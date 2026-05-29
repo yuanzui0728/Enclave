@@ -5,7 +5,8 @@ import { useRuntimeTranslator } from "@yinjie/i18n";
 import { Button } from "@yinjie/ui";
 import { useCloudSessionStore } from "../../store/cloud-session-store";
 import { useWorldUnavailableDialogStore } from "../../store/world-unavailable-dialog-store";
-import { disconnectChatSocket } from "../../lib/socket";
+import { disconnectChatSocket, getChatSocket } from "../../lib/socket";
+import { queryClient } from "../../lib/query-client";
 
 export function WorldUnavailableDialogHost() {
   const t = useRuntimeTranslator();
@@ -52,6 +53,19 @@ export function WorldUnavailableDialogHost() {
     return null;
   }
 
+  // 主操作：温和重试。共享世界是常驻多租户进程，从不真的「休眠」——绝大多数
+  // 这个弹窗是服务端短暂繁忙/恢复中（502/503），登出对恢复毫无帮助，只会白白
+  // 让用户重新登录。这里只重连 socket + 重新拉取查询，不动 session。
+  const handleRetry = () => {
+    if (reloginInFlightRef.current) return;
+    reloginInFlightRef.current = true;
+    closeDialog();
+    getChatSocket();
+    void queryClient.invalidateQueries();
+    // 解锁让用户下次仍能重试（与 relogin 的一次性跳转不同）。
+    reloginInFlightRef.current = false;
+  };
+
   const handleRelogin = () => {
     // sync ref 锁：同帧双击 React state 还没 propagate，两次 click 都过门 →
     // clearSession + navigate 各跑 2 次；clearSession 幂等但 navigate 会撞
@@ -85,13 +99,13 @@ export function WorldUnavailableDialogHost() {
           id={titleId}
           className="mt-3 text-2xl font-semibold text-[color:var(--text-primary)]"
         >
-          {t(msg`世界暂时离线`)}
+          {t(msg`连接暂时中断`)}
         </h2>
         <p
           id={descId}
           className="mt-3 text-sm leading-7 text-[color:var(--text-secondary)]"
         >
-          {t(msg`你的世界正在启动或已自动休眠。重新登录会立即唤醒它，几秒内即可继续使用——你的账号和数据都已安全保存在云端。`)}
+          {t(msg`服务器正忙或正在恢复，通常几秒内就会自动恢复。你的账号和数据都安全保存在云端，点「重试」即可继续。`)}
         </p>
         <div className="mt-6">
           <Button
@@ -100,10 +114,17 @@ export function WorldUnavailableDialogHost() {
             // 走查新一轮 R1：补 active:bg- 让移动 tap 有按压反馈（同 R3 修过的
             // profile-subscription 邀请「复制链接」/「联系开通」）。
             className="w-full rounded-[var(--radius-md)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)] active:opacity-90"
+            onClick={handleRetry}
+          >
+            {t(msg`重试`)}
+          </Button>
+          <button
+            type="button"
+            className="mt-3 w-full text-center text-sm text-[color:var(--text-muted)] underline-offset-4 hover:underline"
             onClick={handleRelogin}
           >
-            {t(msg`重新登录`)}
-          </Button>
+            {t(msg`仍无法恢复？重新登录`)}
+          </button>
         </div>
       </div>
     </div>

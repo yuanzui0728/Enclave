@@ -32,6 +32,7 @@ import { REMINDER_CHARACTER_ID } from '../characters/reminder-character';
 import { SchedulerTelemetryService } from './scheduler-telemetry.service';
 import type { SchedulerJobId } from './scheduler-telemetry.types';
 import { SubscriptionExpiredException } from '../subscription/subscription-expired.exception';
+import { SubscriptionService } from '../subscription/subscription.service';
 import { ReplyLogicRulesService } from '../ai/reply-logic-rules.service';
 import { CharactersService } from '../characters/characters.service';
 import { MomentsService } from '../moments/moments.service';
@@ -143,7 +144,47 @@ export class SchedulerService {
     private readonly worldLanguage: WorldLanguageService,
     private readonly tenantService: TenantService,
     private readonly worldOwner: WorldOwnerService,
+    private readonly subscription: SubscriptionService,
   ) {}
+
+  // 会员到期 / 订阅硬拦的 owner：这些 AI 重活每 tick 会遍历全部角色、逐个跑
+  // getRuntimeProfile + buildOwnerMomentContext 等 DB 读，最后在 LLM 闸处抛
+  // SubscriptionExpiredException（被 generateMomentForChar 等 catch 吞掉，不短路）。
+  // 对到期 owner 这是纯浪费，还持续占用共享世界单事件循环把全体租户拖到 504。
+  // 在 per-owner 帧入口用一次（60s 缓存的）订阅查询整帧短路。
+  // 不含纯 DB 维护类 job（好友请求过期/自动接受/火花清算/在线状态翻牌）——
+  // 它们不调 AI，到期 owner 也该照常跑以保持世界一致性。
+  private static readonly AI_HEAVY_GATED_JOBS = new Set<SchedulerJobId>([
+    'trigger_due_reminder_tasks',
+    'trigger_reminder_checkins',
+    'world_context_snapshot',
+    'discover_need_characters_short_interval',
+    'discover_need_characters_daily',
+    'check_moment_schedule',
+    'trigger_followup_recommendations',
+    'trigger_self_agent_heartbeat',
+    'check_real_world_news_bulletins',
+    'trigger_scene_friend_requests',
+    'process_pending_feed_reactions',
+    'check_channels_schedule',
+    'channel_proactive_forward',
+    'trigger_memory_proactive_messages',
+    'update_recent_memory_daily',
+    'update_core_memory_weekly',
+    'npc_autonomy_tick',
+  ]);
+
+  // 当前租户帧的 AI 是否被硬拦（会员到期）。全局哨兵 owner 永远放行（SubscriptionService
+  // 对 GLOBAL_WORLD_OWNER_PHONE 直接返 active），所以全局帧不会被这道闸拦下。
+  // 查询失败保守放行，沿用原行为，不误伤正常 owner。
+  private async isAiHardBlockedForCurrentOwner(): Promise<boolean> {
+    try {
+      const status = await this.subscription.getStatus();
+      return status.hardBlockEnabled && status.status !== 'active';
+    } catch {
+      return false;
+    }
+  }
 
   // 提醒触发：5min→10min。reminder 命中窗口最差延迟 +10min，可接受。
   @Cron('*/10 * * * *')
@@ -555,6 +596,16 @@ export class SchedulerService {
     if (isSharedWorldMode()) {
       const runInFrame = async () => {
         try {
+          // 会员到期 owner：AI 重活整帧短路，省掉每 tick 的全角色 DB 读 + LLM 抛错风暴。
+          if (
+            SchedulerService.AI_HEAVY_GATED_JOBS.has(jobId) &&
+            (await this.isAiHardBlockedForCurrentOwner())
+          ) {
+            this.logger.debug(
+              `${jobId}: owner AI hard-blocked (subscription expired), frame skipped`,
+            );
+            return;
+          }
           await this.executeTrackedJob(jobId, handler);
         } catch (error) {
           if (error instanceof SubscriptionExpiredException) {
@@ -2017,6 +2068,14 @@ export class SchedulerService {
               char.id,
               currentTime,
             );
+      // 全局广场池（buildGlobalPoolPromptAddons 仅在全局帧返回 qualityPipeline）→ 不注入
+      // 世界宪章与 owner 上下文；per-owner 朋友圈 → 装配「世界焦点 + 精简画像」，让自主动态
+      // 也围着当前用户转。text/reminder 短路不调 AI，跳过装配。
+      const isGlobalPool = Boolean(addons.qualityPipeline);
+      const ownerMoment =
+        !isGlobalPool && !options?.text && !reminderMoment
+          ? await this.contextHub.buildOwnerMomentContext()
+          : { portrait: '', worldFocus: '' };
       const text =
         options?.text ??
         reminderMoment?.text ??
@@ -2025,6 +2084,9 @@ export class SchedulerService {
           currentTime,
           extraSystemPromptSections: addons.extraSystemPromptSections,
           qualityPipeline: addons.qualityPipeline,
+          isGlobalPool,
+          ownerWorldFocus: ownerMoment.worldFocus,
+          ownerPortrait: ownerMoment.portrait,
           usageContext: {
             surface: 'scheduler',
             scene: 'moment_post_generate',
