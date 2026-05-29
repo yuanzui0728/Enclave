@@ -340,6 +340,7 @@ function MobileWorldPage() {
   return (
     <AppPage className="space-y-0 bg-[color:var(--bg-canvas)] px-0 py-0">
       <TabPageTopBar
+        className="mx-0 mt-0 sm:mx-0"
         title={t(msg`你的世界`)}
         subtitle={t(msg`第 ${worldDay} 天`)}
         rightActions={
@@ -377,8 +378,8 @@ function MobileWorldPage() {
         <WorldNowStrip conversations={conversationList} />
 
         {/* 探索 · 相遇 / 动态 / 生活（原发现全量入口，去彩虹）。
-            相遇组提升为 featured 层（摇一摇大主卡），动态/生活标准层，
-            「我」tab 镜像来的个人/钱包入口折叠收纳到「更多」降权。 */}
+            三组各自有一个整宽重点卡（相遇→分身相遇、动态→朋友圈、生活→游戏），
+            其余入口落 2 列网格；「我」tab 镜像来的个人/钱包入口折叠收纳到「更多」降权。 */}
         <section className="space-y-4">
           <SectionHeader title={t(msg`探索`)} />
 
@@ -492,7 +493,13 @@ function WorldNowStrip({
 
   const recent = useMemo(() => {
     return conversations
-      .filter((c) => Boolean(c.lastMessage?.text?.trim()))
+      .filter(
+        (c) =>
+          // 排除「我」自己的会话（底部快聊已专门入口），世界此刻只呈现世界里的动静；
+          // 只取有最新文字消息的会话。
+          !(c.type === "direct" && c.participants[0] === SELF_CHARACTER_ID) &&
+          Boolean(c.lastMessage?.text?.trim()),
+      )
       .slice()
       .sort(
         (a, b) =>
@@ -536,7 +543,7 @@ function WorldNowStrip({
                 {conv.title}
               </span>
             </div>
-            <p className="line-clamp-2 min-h-[2.5em] text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
+            <p className="line-clamp-2 min-h-[2.5rem] text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
               {conv.lastMessage?.text ?? ""}
             </p>
           </button>
@@ -778,7 +785,7 @@ function useExploreLinkProps(entry: ExploreEntry, pathname: string) {
   };
 }
 
-// featured 组：首个入口整宽大主卡，其余走标准 2 列网格（相遇组专用）。
+// featured 组：按 featuredKey 取一个入口作整宽大主卡，其余按原顺序走 2 列网格。
 function FeaturedExploreGroup({
   title,
   entries,
