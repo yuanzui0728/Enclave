@@ -396,6 +396,21 @@ export function ShareCardModal({
             background: "#FFFFFF",
             fontFamily:
               "-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Segoe UI', sans-serif",
+            // 走查 2026-05-29：导出卡背景写死 #FFFFFF / #f8f5ec（浅色），但卡内
+            // 子组件（WeChatMomentCard 等）读 var(--text-primary) 这类语义 token，
+            // 而 token 仍继承自外层 .yj-mobile-shell[data-appearance=night] 的夜间
+            // 值。夜间外观下导出 = 浅白底 + 夜间浅色文字（#f1edff）→ 截图里文字
+            // 几乎不可见。离屏截图卡恒为浅色物料，这里把它依赖的 token 钉死成
+            // 白天调色板，让任何外观下导出的 PNG 都稳定浅色（修我刚把文字色换成
+            // token 引入的夜间回归，也根治此前夜间导出任意分享卡的同类隐性问题）。
+            // 值取自 index.css .yj-mobile-shell 白天块。
+            ["--text-primary" as string]: "#1c1430",
+            ["--text-secondary" as string]: "#463a5c",
+            ["--text-muted" as string]: "#837791",
+            ["--surface-card" as string]: "#ffffff",
+            ["--surface-secondary" as string]: "#f2eefb",
+            ["--surface-soft" as string]: "rgba(124, 91, 217, 0.07)",
+            ["--border-faint" as string]: "rgba(76, 40, 130, 0.06)",
           }}
         >
           {children}
