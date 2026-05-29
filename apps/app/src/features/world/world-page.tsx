@@ -624,26 +624,6 @@ function CyberAvatarStatusHero({
 
   const mood = profile?.liveState.mood?.trim() || "";
   const energy = profile?.liveState.energy?.trim() || "";
-  const focus = pickItems(
-    profile?.liveState.focus,
-    profile?.liveState.activeTopics,
-  );
-  const recent = pickItems(
-    profile?.recentState.recentGoals,
-    profile?.recentState.recurringTopics,
-  );
-  const signalCount = profile?.signalCount ?? 0;
-  const pendingCount = profile?.pendingSignalCount ?? 0;
-  // 「了解程度」进度 = 三档置信度均值（缺失按 0）。
-  const formedPct = profile
-    ? Math.round(
-        ((profile.confidence.liveState +
-          profile.confidence.recentState +
-          profile.confidence.stableCore) /
-          3) *
-          100,
-      )
-    : 0;
 
   const readinessLabel = ready
     ? t(msg`守护中`)
@@ -696,32 +676,12 @@ function CyberAvatarStatusHero({
         </span>
       </div>
 
-      {/* 信号进度（empty 态不展示进度，给引导语） */}
+      {/* empty 态给引导语；非 empty 不再展示「了解程度」进度 / 信号数 / 当前关注列表——
+          这些分析信号只在管理后台可见，用户端的世界页只保留温度感（立绘+心情+守护状态）。 */}
       {empty ? (
         <p className="mt-3 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
           {t(msg`多在世界里互动，分身会越来越像你`)}
         </p>
-      ) : (
-        <div className="mt-3 space-y-1">
-          <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--surface-soft)]">
-            <div
-              className="h-full rounded-full bg-[color:var(--brand-primary)] transition-[width] duration-[var(--motion-fast)] ease-[var(--ease-standard)]"
-              style={{ width: `${Math.max(0, Math.min(100, formedPct))}%` }}
-            />
-          </div>
-          <div className="text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
-            {t(msg`已分析 ${signalCount} 条信号`)}
-            {pendingCount > 0 ? t(msg` · 待分析 ${pendingCount} 条`) : ""}
-          </div>
-        </div>
-      )}
-
-      {/* 当前关注：只留一行精简列表（focus 为空回退 recent），最多 3 条，长句单行截断 */}
-      {(focus.length > 0 ? focus : recent).length > 0 ? (
-        <HeroFocusList
-          label={t(msg`当前关注`)}
-          items={(focus.length > 0 ? focus : recent).slice(0, 3)}
-        />
       ) : null}
 
       {/* 看完整画像 */}
@@ -740,37 +700,6 @@ function CyberAvatarStatusHero({
         <ChevronRight size={15} className="shrink-0 text-[color:var(--text-dim)]" />
       </Link>
     </section>
-  );
-}
-
-// 取首选数组，空则回退到次选；过滤空白，最多 6 个，避免主区过长。
-function pickItems(primary?: string[], fallback?: string[]): string[] {
-  const source = (primary ?? []).filter((s) => s && s.trim());
-  const list = source.length > 0 ? source : (fallback ?? []).filter((s) => s && s.trim());
-  return list.slice(0, 6);
-}
-
-// 当前关注：竖排精简列表（替代会换行的 chip 行）。每条单行截断，遗留长句也能裁干净。
-function HeroFocusList({ label, items }: { label: string; items: string[] }) {
-  return (
-    <div className="mt-3">
-      <div className="mb-1.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
-        {label}
-      </div>
-      <ul className="space-y-1">
-        {items.map((item, index) => (
-          <li
-            key={`${item}-${index}`}
-            className="flex items-start gap-1.5 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]"
-          >
-            <span className="mt-px shrink-0 text-[color:var(--brand-primary)]">
-              ·
-            </span>
-            <span className="min-w-0 flex-1 truncate">{item}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
   );
 }
 

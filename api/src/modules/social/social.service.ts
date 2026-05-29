@@ -696,11 +696,6 @@ export class SocialService implements OnModuleInit {
   ): Promise<{
     request: FriendRequestEntity | null;
     matchSource: SceneMatchSource;
-    characterPreview?: {
-      relationship?: string;
-      expertDomains?: string[];
-      bio?: string;
-    } | null;
   }> {
     const caller = options?.caller ?? 'user';
     // 走查 R1：直连接口曾接受 '' / null / undefined / 任意字符串，全部跌进
@@ -910,19 +905,7 @@ export class SocialService implements OnModuleInit {
       expiresAt: tomorrow,
     });
     const saved = await this.friendRequestRepo.save(req);
-    // 把匹配到的角色多维信息随响应透传（不落库），供「就地相遇卡片」在用户抉择前
-    // 展示关系/专长/简介（对齐摇一摇决策卡）。char 是已匹配的完整实体，零额外查询。
-    const characterPreview = {
-      relationship: char.relationship?.trim() || undefined,
-      expertDomains: Array.isArray(char.expertDomains)
-        ? char.expertDomains
-            .map((d) => (typeof d === 'string' ? d.trim() : ''))
-            .filter(Boolean)
-            .slice(0, 6)
-        : undefined,
-      bio: char.bio?.trim() || undefined,
-    };
-    return { request: saved, matchSource, characterPreview };
+    return { request: saved, matchSource };
   }
 
   async shake(): Promise<{
