@@ -13,7 +13,9 @@ import { AdminConversationReviewEntity } from '../admin/admin-conversation-revie
 
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
 type PricingCurrency = 'CNY' | 'USD';
-type LedgerStatus = 'success' | 'failed';
+// 'retried' = 此次 attempt 失败但被同 provider 退避重试 / fallback 救回，仅留观测，
+// **不**计入 requestCount / failedCount（失败率只反映用户侧真实最终失败）。
+type LedgerStatus = 'success' | 'failed' | 'retried';
 type LedgerSurface = 'app' | 'admin' | 'scheduler' | 'system';
 type LedgerBillingSource = 'owner_custom' | 'instance_default';
 type LedgerScopeType =
@@ -534,7 +536,10 @@ export class AiUsageLedgerService {
       completionTokens: this.sum(records, 'completionTokens'),
       totalTokens: this.sum(records, 'totalTokens'),
       estimatedCost: this.roundCost(this.sum(records, 'estimatedCost')),
-      requestCount: records.length,
+      // requestCount 只统计有最终结局的逻辑请求（success + failed）；retried 是被救回的
+      // 中途 attempt，排除在外，避免重试/fallback 把失败率虚高。
+      requestCount: records.filter((record) => record.status !== 'retried')
+        .length,
       successCount: records.filter((record) => record.status === 'success')
         .length,
       failedCount: records.filter((record) => record.status === 'failed')
@@ -2209,10 +2214,12 @@ export class AiUsageLedgerService {
     bucket.completionTokens += record.completionTokens ?? 0;
     bucket.totalTokens += record.totalTokens ?? 0;
     bucket.estimatedCost += record.estimatedCost ?? 0;
-    bucket.requestCount += 1;
+    // retried（被救回的中途 attempt）不计入 requestCount / 成败计数，仅 tokens/成本累加。
     if (record.status === 'success') {
+      bucket.requestCount += 1;
       bucket.successCount += 1;
-    } else {
+    } else if (record.status === 'failed') {
+      bucket.requestCount += 1;
       bucket.failedCount += 1;
     }
   }

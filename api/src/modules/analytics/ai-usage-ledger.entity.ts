@@ -19,6 +19,8 @@ export class AiUsageLedgerEntity {
   @Column({ type: 'text', nullable: true })
   requestId?: string | null;
 
+  // 'success' | 'failed' | 'retried'（retried = 此次 attempt 失败但被重试/fallback
+  // 救回，不计入失败率 / requestCount）。schema 无需迁移：仍是普通 text 列。
   @Column({ default: 'success' })
   status: string;
 

@@ -91,6 +91,27 @@ export class MinimaxKeyPoolService {
     return this.currentKey()?.fingerprint ?? MINIMAX_SINGLE_KEY_FINGERPRINT;
   }
 
+  // 换一把 key：返回池中**不等于 excludeKey** 的另一把，供 429（token-plan 限流，
+  // 2062）退避重试时切到不同的 per-key 并发桶——sticky hash 把重度租户恒钉在同一把
+  // key 上，撞限流时同 key 干等往往还是被限，换另一把（另一个 plan）更可能立刻过。
+  // 池 ≤1 或找不到不同的 key → null（无可换，调用方退回同 key 重试）。
+  // 仅用于聊天补全的 HTTP 调用层临时换 key，不改 currentFingerprint 的配额分桶口径
+  // （文本补全不走 reserve/commit 配额账，无错配）。
+  alternateKey(excludeKey: string | null | undefined): MinimaxKeySelection | null {
+    if (this.pool.length <= 1) return null;
+    const startIdx = excludeKey
+      ? this.pool.findIndex((k) => k === excludeKey)
+      : -1;
+    // 从 excludeKey 的下一位起环形找第一把不同的 key（多 key 池里也能轮换）。
+    for (let step = 1; step <= this.pool.length; step += 1) {
+      const idx = (((startIdx >= 0 ? startIdx : 0) + step) % this.pool.length);
+      if (this.pool[idx] !== excludeKey) {
+        return this.selectionAt(idx);
+      }
+    }
+    return null;
+  }
+
   private selectionAt(idx: number): MinimaxKeySelection {
     const key = this.pool[idx];
     return { key, fingerprint: key.slice(-4), index: idx, total: this.pool.length };

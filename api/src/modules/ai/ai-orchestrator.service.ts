@@ -34,7 +34,11 @@ import {
   sanitizeAiMessageText,
   sanitizeAiText,
 } from './ai-text-sanitizer';
-import { validateGeneratedSceneOutput } from './moment-output-validator';
+import {
+  compileMomentValidationConfig,
+  validateGeneratedSceneOutput,
+  type MomentValidationConfig,
+} from './moment-output-validator';
 import {
   type QualityScore,
   type QualityScoreComponents,
@@ -54,6 +58,7 @@ import {
   type WorldLanguageCode,
 } from '../config/world-language.service';
 import { ReplyLogicRulesService } from './reply-logic-rules.service';
+import type { ReplyLogicMomentQuality } from './reply-logic.constants';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { resolveReadableChatAttachmentPath } from '../chat/chat-attachment-storage';
 import { resolveReadableMomentMediaPath } from '../moments/moment-media.storage';
@@ -223,10 +228,19 @@ type ProviderFallbackCandidate = {
     | 'enabled_provider_route';
 };
 
+// 聊天补全 transient（429 token-plan 限流 2062 等）同 provider 退避重试上限。
+const CHAT_TRANSIENT_MAX_ATTEMPTS = 3;
+// provider 配额/余额耗尽（403 user quota is not enough / 余额不足）后的熔断冷却窗口。
+// 期间该 provider 直接跳过、不发请求、不记 attempt——止住死掉 fallback 通道（如余额
+// 烧光的 n1n.ai）对每个请求都干撞一次 403 的噪声；到点自动重试，充值后自愈。
+const QUOTA_EXHAUSTED_COOLDOWN_MS = 10 * 60 * 1000;
+
 @Injectable()
 export class AiOrchestratorService {
   private readonly logger = new Logger(AiOrchestratorService.name);
   private readonly client: OpenAI;
+  // providerKey(mode:endpoint) → 冷却到期 epoch ms。配额耗尽 provider 的内存熔断表。
+  private readonly quotaExhaustedUntil = new Map<string, number>();
 
   constructor(
     private readonly config: ConfigService,
@@ -965,6 +979,87 @@ export class AiOrchestratorService {
     });
   }
 
+  // MiniMax token-plan 池里换一把 key（429 重试用）。仅对 MiniMax 默认 provider 且
+  // 非 BYOK（owner 自带 key）生效；单 key 池 / 非 MiniMax → null（退回同 key 重试）。
+  private alternateMinimaxKey(
+    provider: ResolvedProviderConfig,
+  ): string | null {
+    if (provider.accountId !== MINIMAX_PROVIDER_ID) return null;
+    if (provider.appliedOwnerKeyOverride) return null;
+    if (!this.minimaxKeyPool.isConfigured() || this.minimaxKeyPool.size() <= 1) {
+      return null;
+    }
+    return this.minimaxKeyPool.alternateKey(provider.apiKey)?.key ?? null;
+  }
+
+  // 聊天补全请求执行器：对 transient（429 token-plan 限流 2062 等）做有界同 provider
+  // 退避重试，MiniMax 多 key 池则重试前换另一把 key 切并发桶。内部重试**不**产生独立
+  // ledger 行——仅最终成功/抛出由外层 attempt 循环按 success/retried/failed 记一次。
+  //   - 命中 token-plan 当日耗尽（2056）/非 transient/达上限 → 立刻抛出（交外层 fallback）。
+  // 复用 retrySpeechRequest 的退避形态，泛化到文本任务。
+  private async invokeChatWithTransientRetry<T>(
+    baseProvider: ResolvedProviderConfig,
+    label: string,
+    run: (provider: ResolvedProviderConfig) => Promise<T>,
+  ): Promise<T> {
+    let activeProvider = baseProvider;
+    let lastError: unknown;
+    for (
+      let attempt = 1;
+      attempt <= CHAT_TRANSIENT_MAX_ATTEMPTS;
+      attempt += 1
+    ) {
+      try {
+        return await run(activeProvider);
+      } catch (error) {
+        lastError = error;
+        if (
+          this.isMinimaxTokenPlanExhausted(error) ||
+          attempt >= CHAT_TRANSIENT_MAX_ATTEMPTS ||
+          !this.isTransientProviderFailure(error)
+        ) {
+          throw error;
+        }
+        const altKey = this.alternateMinimaxKey(activeProvider);
+        if (altKey) {
+          activeProvider = { ...activeProvider, apiKey: altKey };
+        }
+        this.logger.warn(`${label} transient retry scheduled`, {
+          attempt,
+          maxAttempts: CHAT_TRANSIENT_MAX_ATTEMPTS,
+          rotatedKey: Boolean(altKey),
+          errorMessage: this.extractErrorMessage(error),
+        });
+        await new Promise((resolve) => {
+          setTimeout(resolve, 600 * attempt + Math.floor(200 * attempt));
+        });
+      }
+    }
+    throw lastError;
+  }
+
+  // 配额耗尽熔断：provider 是否仍在冷却窗口内（应跳过，不发请求、不记 attempt）。
+  private isProviderInQuotaCooldown(provider: ResolvedProviderConfig): boolean {
+    const until = this.quotaExhaustedUntil.get(this.buildProviderKey(provider));
+    if (until === undefined) return false;
+    if (until <= Date.now()) {
+      this.quotaExhaustedUntil.delete(this.buildProviderKey(provider));
+      return false;
+    }
+    return true;
+  }
+
+  // 捕获到 403 配额/余额耗尽时标熔断冷却。
+  private markProviderQuotaExhausted(provider: ResolvedProviderConfig) {
+    const key = this.buildProviderKey(provider);
+    this.quotaExhaustedUntil.set(key, Date.now() + QUOTA_EXHAUSTED_COOLDOWN_MS);
+    this.logger.warn('provider quota exhausted — circuit open', {
+      providerKey: key,
+      model: provider.model,
+      cooldownMs: QUOTA_EXHAUSTED_COOLDOWN_MS,
+    });
+  }
+
   private hasProviderCapability(
     provider: ResolvedProviderConfig,
     capability: ProviderFallbackCapability,
@@ -1208,15 +1303,18 @@ export class AiOrchestratorService {
     });
   }
 
+  // status: 'failed' = 该逻辑请求最终失败（计入失败率）；'retried' = 此次 attempt 失败
+  // 但被后续重试/fallback 救回（不计入失败率 / requestCount，仅留观测）。
   private async recordFailedUsage(
     provider: ResolvedProviderConfig,
     billingSource: AiUsageBillingSource,
     usageContext: AiUsageContext,
     error: unknown,
+    status: 'failed' | 'retried' = 'failed',
   ) {
     const errorStatus = this.extractErrorStatus(error);
     await this.safeRecordUsage({
-      status: 'failed',
+      status,
       surface: usageContext.surface,
       scene: usageContext.scene,
       scopeType: usageContext.scopeType,
@@ -1240,6 +1338,32 @@ export class AiOrchestratorService {
             : 'REQUEST_FAILED',
       errorMessage: this.extractErrorMessage(error) || 'Unknown provider error',
     });
+  }
+
+  // 延迟收集的失败 attempt 统一落账（指标去重）：逻辑请求被救回 → 全记 'retried'；
+  // 最终失败 → 前面的 attempt 记 'retried'、**最后一个**记 'failed'（一次逻辑失败
+  // 只贡献 1 个 failed / 1 个 requestCount，不再每个 attempt 各记一行虚高失败率）。
+  private async flushFailedAttempts(
+    attempts: Array<{
+      provider: ResolvedProviderConfig;
+      billingSource: AiUsageBillingSource;
+      error: unknown;
+    }>,
+    succeeded: boolean,
+    usageContext: AiUsageContext,
+  ) {
+    if (attempts.length === 0) return;
+    const terminalIndex = succeeded ? -1 : attempts.length - 1;
+    for (let index = 0; index < attempts.length; index += 1) {
+      const attempt = attempts[index];
+      await this.recordFailedUsage(
+        attempt.provider,
+        attempt.billingSource,
+        usageContext,
+        attempt.error,
+        index === terminalIndex ? 'failed' : 'retried',
+      );
+    }
   }
 
   private async prepareBudgetAwareProvider(
@@ -1356,10 +1480,21 @@ export class AiOrchestratorService {
     let lastError: unknown = new ServiceUnavailableException(
       '当前实例未配置可用的 AI Key，暂时无法完成该 AI 任务。',
     );
+    // 延迟落账：失败的 attempt 先缓存，最终知道是否被救回再统一记 retried/failed。
+    const failedAttempts: Array<{
+      provider: ResolvedProviderConfig;
+      billingSource: AiUsageBillingSource;
+      error: unknown;
+    }> = [];
 
     for (let index = 0; index < attempts.length; index += 1) {
       const attempt = attempts[index];
       if (!this.hasProviderCapability(attempt.provider, 'text')) {
+        continue;
+      }
+      // 配额耗尽熔断：冷却窗口内的 provider 直接跳过（不发请求、不记 attempt），
+      // 止住死掉 fallback 通道（如余额烧光的 n1n）对每个请求干撞一次 403。
+      if (this.isProviderInQuotaCooldown(attempt.provider)) {
         continue;
       }
 
@@ -1370,10 +1505,17 @@ export class AiOrchestratorService {
         options.usageContext,
       );
       const provider = budgetedProvider.provider;
-      const client = this.createProviderClient(provider);
 
       try {
-        const response = await options.request(client, provider);
+        const response = await this.invokeChatWithTransientRetry(
+          provider,
+          options.label,
+          (activeProvider) =>
+            options.request(
+              this.createProviderClient(activeProvider),
+              activeProvider,
+            ),
+        );
         const usage = this.normalizeUsageMetrics(response.usage);
         await this.recordSuccessfulUsage(
           provider,
@@ -1385,15 +1527,22 @@ export class AiOrchestratorService {
           },
           budgetedProvider.usageAudit,
         );
+        await this.flushFailedAttempts(
+          failedAttempts,
+          true,
+          options.usageContext,
+        );
         return response;
       } catch (error) {
         lastError = error;
-        await this.recordFailedUsage(
+        failedAttempts.push({
           provider,
-          attempt.billingSource,
-          options.usageContext,
+          billingSource: attempt.billingSource,
           error,
-        );
+        });
+        if (this.isProviderQuotaOrBillingFailure(error)) {
+          this.markProviderQuotaExhausted(provider);
+        }
 
         const hasMoreFallback = index < attempts.length - 1;
         if (
@@ -1407,6 +1556,11 @@ export class AiOrchestratorService {
             billingSource: attempt.billingSource,
             errorMessage: this.extractErrorMessage(error),
           });
+          await this.flushFailedAttempts(
+            failedAttempts,
+            false,
+            options.usageContext,
+          );
           throw error;
         }
 
@@ -1422,12 +1576,18 @@ export class AiOrchestratorService {
     }
 
     if (!attemptedProvider) {
+      // 所有 provider 都没能尝试（无 Key / 全在配额冷却中）：把已缓存失败落账后抛。
+      await this.flushFailedAttempts(failedAttempts, false, options.usageContext);
+      if (failedAttempts.length > 0) {
+        throw lastError;
+      }
       throw new AppError('AI_PROVIDER_UNAVAILABLE', {
         status: HttpStatus.SERVICE_UNAVAILABLE,
         legacyMessage: '当前实例未配置可用的 AI Key，暂时无法完成该 AI 任务。',
       });
     }
 
+    await this.flushFailedAttempts(failedAttempts, false, options.usageContext);
     throw lastError;
   }
 
@@ -2490,9 +2650,18 @@ export class AiOrchestratorService {
     let failedError: unknown = new ServiceUnavailableException(
       '当前实例未配置可用的 AI Key，暂时无法完成该 AI 任务。',
     );
+    // 延迟落账：失败 attempt 先缓存，最终知道是否被救回再统一记 retried/failed（指标去重）。
+    const failedAttempts: Array<{
+      provider: ResolvedProviderConfig;
+      billingSource: AiUsageBillingSource;
+      error: unknown;
+    }> = [];
 
     for (let index = 0; index < replyProviderAttempts.length; index += 1) {
       const attemptProvider = replyProviderAttempts[index];
+      if (this.isProviderInQuotaCooldown(attemptProvider)) {
+        continue;
+      }
       let budgetedProvider: BudgetAwareProviderResult = {
         provider: attemptProvider,
       };
@@ -2502,9 +2671,11 @@ export class AiOrchestratorService {
           billingSource,
           usageContext,
         );
-        const result = await this.requestReplyFromProvider(
+        const result = await this.invokeChatWithTransientRetry(
           budgetedProvider.provider,
-          request,
+          'AI reply',
+          (activeProvider) =>
+            this.requestReplyFromProvider(activeProvider, request),
         );
         await this.recordSuccessfulUsage(
           budgetedProvider.provider,
@@ -2513,6 +2684,7 @@ export class AiOrchestratorService {
           result,
           budgetedProvider.usageAudit,
         );
+        await this.flushFailedAttempts(failedAttempts, true, usageContext);
         return {
           ...result,
           billingSource,
@@ -2521,12 +2693,14 @@ export class AiOrchestratorService {
         failedProvider = budgetedProvider.provider;
         failedBillingSource = billingSource;
         failedError = err;
-        await this.recordFailedUsage(
-          budgetedProvider.provider,
+        failedAttempts.push({
+          provider: budgetedProvider.provider,
           billingSource,
-          usageContext,
-          err,
-        );
+          error: err,
+        });
+        if (this.isProviderQuotaOrBillingFailure(err)) {
+          this.markProviderQuotaExhausted(budgetedProvider.provider);
+        }
         const hasMoreReplyCandidates = index < replyProviderAttempts.length - 1;
         if (
           hasMoreReplyCandidates &&
@@ -2555,6 +2729,10 @@ export class AiOrchestratorService {
       });
 
       for (const candidate of fallbackCandidates) {
+        // 配额耗尽熔断：冷却中的 fallback（如余额烧光的 n1n）直接跳过，不发请求、不记 attempt。
+        if (this.isProviderInQuotaCooldown(candidate.provider)) {
+          continue;
+        }
         this.logger.warn('AI reply provider fallback scheduled', {
           characterId: profile.characterId,
           fromModel: failedProvider.model,
@@ -2572,9 +2750,11 @@ export class AiOrchestratorService {
               usageContext,
             );
           fallbackProvider = budgetedFallbackProvider.provider;
-          const fallbackResult = await this.requestReplyFromProvider(
+          const fallbackResult = await this.invokeChatWithTransientRetry(
             fallbackProvider,
-            request,
+            'AI reply fallback',
+            (activeProvider) =>
+              this.requestReplyFromProvider(activeProvider, request),
           );
           await this.recordSuccessfulUsage(
             fallbackProvider,
@@ -2583,6 +2763,7 @@ export class AiOrchestratorService {
             fallbackResult,
             budgetedFallbackProvider.usageAudit,
           );
+          await this.flushFailedAttempts(failedAttempts, true, usageContext);
           return {
             ...fallbackResult,
             billingSource: candidate.billingSource,
@@ -2591,12 +2772,14 @@ export class AiOrchestratorService {
           failedProvider = fallbackProvider;
           failedBillingSource = candidate.billingSource;
           failedError = fallbackError;
-          await this.recordFailedUsage(
-            fallbackProvider,
-            candidate.billingSource,
-            usageContext,
-            fallbackError,
-          );
+          failedAttempts.push({
+            provider: fallbackProvider,
+            billingSource: candidate.billingSource,
+            error: fallbackError,
+          });
+          if (this.isProviderQuotaOrBillingFailure(fallbackError)) {
+            this.markProviderQuotaExhausted(fallbackProvider);
+          }
           this.logger.warn('AI reply provider fallback failed', {
             characterId: profile.characterId,
             model: fallbackProvider.model,
@@ -2611,6 +2794,8 @@ export class AiOrchestratorService {
       }
     }
 
+    // 全部 attempt 耗尽：前面的记 retried、最后一个记 failed（一次逻辑失败只计一次）。
+    await this.flushFailedAttempts(failedAttempts, false, usageContext);
     this.logger.error('AI provider error', failedError);
     if (this.isAuthenticationFailure(failedError)) {
       throw new AiProviderAuthError(failedBillingSource);
@@ -2628,6 +2813,7 @@ export class AiOrchestratorService {
       generationContext,
       usageContext,
       extraSystemPromptSections,
+      isGlobalPool,
     } = options;
     const extraSystemPromptSuffix =
       extraSystemPromptSections
@@ -2648,6 +2834,12 @@ export class AiOrchestratorService {
       conversationId: usageContext?.conversationId,
       groupId: usageContext?.groupId,
     };
+    // 质量管线配置（评委 prompt / 校验正则 / 打分权重 / 阈值）统一来自云平台可编辑的
+    // reply_logic_runtime_rules.momentQuality；默认值 = 历史硬编码，运营改前行为不变。
+    const momentQuality = (await this.replyLogicRules.getRules()).momentQuality;
+    const validationConfig = compileMomentValidationConfig(
+      momentQuality.validation,
+    );
     if (sceneKey !== 'moments_post') {
       const baseSystemPrompt = await this.buildSystemPrompt(
         profile,
@@ -2696,6 +2888,7 @@ export class AiOrchestratorService {
           text,
           profile,
           sceneKey,
+          config: validationConfig,
         });
         if (validation.valid) {
           return validation.normalizedText;
@@ -2719,11 +2912,24 @@ export class AiOrchestratorService {
         recentTopics,
         usageContext: resolvedUsageContext,
       }));
+    // 单人世界中枢：把 per-owner 调用方传入的「世界焦点 + 精简画像」合并进生成上下文，
+    // 让自主发的朋友圈也围着当前用户转；全局广场池一律不注入（无某一个用户）。
+    const momentGenerationCtx: MomentGenerationContext = isGlobalPool
+      ? resolvedGenerationContext
+      : {
+          ...resolvedGenerationContext,
+          ownerWorldFocus:
+            options.ownerWorldFocus ??
+            resolvedGenerationContext.ownerWorldFocus,
+          ownerPortrait:
+            options.ownerPortrait ?? resolvedGenerationContext.ownerPortrait,
+        };
     const promptRequest = await this.promptBuilder.buildMomentRequest(
       profile,
       currentTime,
-      resolvedGenerationContext,
+      momentGenerationCtx,
       sceneKey,
+      { isGlobalPool },
     );
     if (extraSystemPromptSuffix) {
       promptRequest.systemPrompt = `${promptRequest.systemPrompt}\n\n${extraSystemPromptSuffix}`;
@@ -2740,11 +2946,18 @@ export class AiOrchestratorService {
     ];
 
     // 全局共享池：best-of-N + 打分 + 评委 + 遥测。否则走下方现有单发 2 次重试路径。
-    const candidateCount = Math.max(
-      1,
-      Math.floor(options.qualityPipeline?.candidateCount ?? 1),
-    );
-    if (candidateCount > 1) {
+    // 候选数默认来自云平台 momentQuality.candidateCount（调用方传 qualityPipeline 即启用，
+    // 可显式覆盖候选数）。
+    const candidateCount = options.qualityPipeline
+      ? Math.max(
+          1,
+          Math.floor(
+            options.qualityPipeline.candidateCount ??
+              momentQuality.candidateCount,
+          ),
+        )
+      : 1;
+    if (options.qualityPipeline && candidateCount > 1) {
       return await this.generateMomentViaQualityPipeline({
         profile,
         sceneKey,
@@ -2752,8 +2965,10 @@ export class AiOrchestratorService {
         userPrompts,
         resolvedUsageContext,
         generationContext: resolvedGenerationContext,
-        pipeline: options.qualityPipeline ?? {},
+        pipeline: options.qualityPipeline,
         candidateCount,
+        momentQuality,
+        validationConfig,
       });
     }
 
@@ -2780,6 +2995,7 @@ export class AiOrchestratorService {
         context: resolvedGenerationContext,
         profile,
         sceneKey,
+        config: validationConfig,
       });
       if (validation.valid) {
         return validation.normalizedText;
@@ -2807,6 +3023,8 @@ export class AiOrchestratorService {
     generationContext?: MomentGenerationContext;
     pipeline: MomentQualityPipelineOptions;
     candidateCount: number;
+    momentQuality: ReplyLogicMomentQuality;
+    validationConfig: MomentValidationConfig;
   }): Promise<string> {
     const {
       profile,
@@ -2814,9 +3032,11 @@ export class AiOrchestratorService {
       generationContext,
       resolvedUsageContext,
       pipeline,
+      momentQuality,
     } = input;
     const recentTexts = pipeline.recentTexts ?? [];
-    const minAcceptScore = pipeline.minAcceptScore ?? 0;
+    const minAcceptScore =
+      pipeline.minAcceptScore ?? momentQuality.minAcceptScore;
 
     const candidates = await this.generateMomentCandidates(input);
     const valid = candidates.filter((c) => c.valid);
@@ -2842,6 +3062,9 @@ export class AiOrchestratorService {
         profile,
         context: generationContext,
         recentTexts,
+        weights: momentQuality.scorerWeights,
+        nearDupSimilarity: momentQuality.nearDupSimilarity,
+        validationConfig: input.validationConfig,
       }),
     }));
 
@@ -2851,10 +3074,16 @@ export class AiOrchestratorService {
         candidates: scored.map((s) => s.text),
         profile,
         resolvedUsageContext,
+        judgeSystemPrompt: momentQuality.judgeSystemPrompt,
       });
       scored = scored.map((s, i) => {
         const jc = judged[i];
-        return jc ? { text: s.text, score: combineWithJudge(s.score, jc) } : s;
+        return jc
+          ? {
+              text: s.text,
+              score: combineWithJudge(s.score, jc, momentQuality.scorerWeights),
+            }
+          : s;
       });
     }
 
@@ -2898,6 +3127,7 @@ export class AiOrchestratorService {
     resolvedUsageContext: AiUsageContext;
     generationContext?: MomentGenerationContext;
     candidateCount: number;
+    validationConfig: MomentValidationConfig;
   }): Promise<Array<{ text: string; valid: boolean }>> {
     const temps = [0.95, 0.85, 0.75];
     // 并行发 N 个候选请求 —— 全局池 N=3 时单条朋友圈延迟从 ~3× 降到 ~1×。
@@ -2932,6 +3162,7 @@ export class AiOrchestratorService {
         context: input.generationContext,
         profile: input.profile,
         sceneKey: input.sceneKey,
+        config: input.validationConfig,
       });
       return { text: validation.normalizedText, valid: validation.valid };
     });
@@ -2941,11 +3172,13 @@ export class AiOrchestratorService {
     candidates: string[];
     profile: PersonalityProfile;
     resolvedUsageContext: AiUsageContext;
+    judgeSystemPrompt?: string;
   }): Promise<Array<QualityScoreComponents | null>> {
     try {
       const prompt = buildMomentJudgePrompt({
         candidates: input.candidates,
         personaSummary: this.buildJudgePersonaSummary(input.profile),
+        systemPrompt: input.judgeSystemPrompt,
       });
       const response = await this.requestChatTaskWithFallback({
         usageContext: { ...input.resolvedUsageContext, scene: 'moment_quality_judge' },
