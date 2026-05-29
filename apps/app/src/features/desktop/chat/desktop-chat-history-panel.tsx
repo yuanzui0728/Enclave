@@ -383,7 +383,7 @@ export function DesktopChatHistoryPanel({
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-card)]">
       <div
         className={cn(
-          "bg-white",
+          "bg-[color:var(--surface-card)]",
           isDialog ? "px-6 pb-1.5 pt-2" : "border-b border-[rgba(0,0,0,0.06)] px-4 py-3",
         )}
       >
@@ -394,7 +394,7 @@ export function DesktopChatHistoryPanel({
         >
         <label
           className={cn(
-            "flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.04)] bg-[color:var(--surface-card)] transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-white",
+            "flex items-center gap-2 rounded-[10px] border border-[rgba(0,0,0,0.04)] bg-[color:var(--surface-card)] transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-[color:var(--surface-card)]",
             isDialog ? "px-3 py-2" : "px-3 py-2.5",
           )}
         >
@@ -435,14 +435,14 @@ export function DesktopChatHistoryPanel({
 
         {isDialog ? null : (
           <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 rounded-[10px] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
-            <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]">
+            <span className="shrink-0 rounded-full bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.04)]">
               {isGroupConversation ? t(msg`群聊`) : t(msg`单聊`)}
             </span>
             <span className="truncate text-[length:var(--text-caption)] text-[color:var(--text-primary)]">
               {getConversationDisplayTitle(conversation.title)}
             </span>
             {openedFromDetails ? (
-              <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_14%,transparent)]">
+              <span className="shrink-0 rounded-full bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_14%,transparent)]">
                 {t(msg`聊天信息入口`)}
               </span>
             ) : null}
@@ -454,7 +454,7 @@ export function DesktopChatHistoryPanel({
 
       <div
         className={cn(
-          "border-b border-[rgba(0,0,0,0.06)] bg-white",
+          "border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)]",
           isDialog ? "px-6" : "px-4",
         )}
       >
@@ -524,7 +524,7 @@ export function DesktopChatHistoryPanel({
       {selectorView === "date" ? (
         <div
           className={cn(
-            "border-b border-[rgba(0,0,0,0.06)] bg-white",
+            "border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)]",
             isDialog ? "px-6 py-2.5" : "px-4 py-2.5",
           )}
         >
@@ -651,7 +651,7 @@ export function DesktopChatHistoryPanel({
       {selectorView === "sender" ? (
         <div
           className={cn(
-            "border-b border-[rgba(0,0,0,0.06)] bg-white",
+            "border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)]",
             isDialog ? "px-6 py-2.5" : "px-4 py-2.5",
           )}
         >
@@ -660,7 +660,7 @@ export function DesktopChatHistoryPanel({
               isDialog ? "mx-auto w-full max-w-[680px]" : "",
             )}
           >
-            <label className="flex h-8 items-center gap-2 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-2.5 transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-white">
+            <label className="flex h-8 items-center gap-2 rounded-[8px] border border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-2.5 transition-[border-color,background-color] focus-within:border-[color-mix(in_srgb,var(--brand-primary)_20%,transparent)] focus-within:bg-[color:var(--surface-card)]">
               <Search
                 size={13}
                 className="shrink-0 text-[color:var(--text-muted)]"
@@ -773,7 +773,7 @@ export function DesktopChatHistoryPanel({
 
       {showResultsView ? (
         <div className="min-h-0 flex-1 overflow-auto">
-          <div className="sticky top-0 z-[2] flex items-center justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] bg-white/96 px-5 py-1.5 backdrop-blur">
+          <div className="sticky top-0 z-[2] flex items-center justify-between gap-3 border-b border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)]/96 px-5 py-1.5 backdrop-blur">
             <div className="text-[length:var(--text-eyebrow)] tracking-[0.08em] text-[color:var(--text-dim)]">
               {hasSearchRequest ? t(msg`搜索结果`) : t(msg`聊天记录`)}
             </div>
@@ -830,7 +830,7 @@ export function DesktopChatHistoryPanel({
           ) : null}
 
           {resultSections.length ? (
-            <div className="bg-white">
+            <div className="bg-[color:var(--surface-card)]">
               {resultSections.map((section) => (
                 <section key={section.key}>
                   <div className="flex items-center justify-between gap-3 border-y border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-4 py-1.5 text-[10px] text-[color:var(--text-dim)]">
@@ -853,7 +853,7 @@ export function DesktopChatHistoryPanel({
           ) : null}
 
           {resultsQuery.hasNextPage ? (
-            <div className="border-t border-[rgba(0,0,0,0.06)] bg-white px-4 py-3">
+            <div className="border-t border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] px-4 py-3">
               <button
                 type="button"
                 disabled={resultsQuery.isFetchingNextPage}
@@ -970,7 +970,7 @@ function DesktopSearchFeedbackState({
 }) {
   return (
     <div className={cn("px-3 py-3", className)} role={role}>
-      <div className="rounded-[var(--radius-sm)] border border-[rgba(0,0,0,0.05)] bg-white px-5 py-8 text-center">
+      <div className="rounded-[var(--radius-sm)] border border-[rgba(0,0,0,0.05)] bg-[color:var(--surface-card)] px-5 py-8 text-center">
         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--surface-card)]">
           {icon}
         </div>

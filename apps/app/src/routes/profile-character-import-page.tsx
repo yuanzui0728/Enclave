@@ -645,8 +645,8 @@ function SuccessCard({
       className={cn(
         "space-y-3 rounded-2xl border p-4",
         isBlocked
-          ? "border-amber-400/30 bg-[color:var(--brand-primary)]/8"
-          : "border-emerald-400/30 bg-[color:var(--state-success-bg)]",
+          ? "border-[color:var(--state-warning-bg)]/30 bg-[color:var(--brand-primary)]/8"
+          : "border-[color:var(--state-success-bg)]/30 bg-[color:var(--state-success-bg)]",
       )}
     >
       <div

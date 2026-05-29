@@ -325,7 +325,7 @@ export function DesktopFeedbackPage() {
               />
             </div>
 
-            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4">
+            <div className="mt-4 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
                 <AlertCircle
                   size={16}
@@ -403,7 +403,7 @@ export function DesktopFeedbackPage() {
           </div>
         ) : null}
 
-        <section className="mt-4 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+        <section className="mt-4 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
             {t(msg`提交反馈`)}
           </div>
@@ -437,7 +437,7 @@ export function DesktopFeedbackPage() {
                         "rounded-[var(--radius-sm)] border p-4 text-left transition",
                         draft.category === item.id
                           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_4%,transparent)]"
-                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-[color:var(--surface-card)]",
                       )}
                     >
                       <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -500,7 +500,7 @@ export function DesktopFeedbackPage() {
                         "flex-1 rounded-[10px] border px-3 py-2 text-xs font-medium transition",
                         draft.priority === item.id
                           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
-                          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]",
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]",
                       )}
                     >
                       {item.label}
@@ -571,7 +571,7 @@ export function DesktopFeedbackPage() {
               <Button
                 type="button"
                 onClick={() => void handleSubmitFeedback()}
-                className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+                className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
               >
                 <Send size={15} />
                 {t(msg`保存反馈`)}
@@ -580,7 +580,7 @@ export function DesktopFeedbackPage() {
                 type="button"
                 variant="secondary"
                 onClick={() => void handleCopyFeedbackPackage()}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 <Sparkles size={15} />
                 {t(msg`复制反馈包`)}
@@ -589,7 +589,7 @@ export function DesktopFeedbackPage() {
                 type="button"
                 variant="secondary"
                 onClick={() => void handleSaveFeedbackPackage()}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 <Download size={15} />
                 {t(msg`保存反馈包`)}
@@ -606,7 +606,7 @@ export function DesktopFeedbackPage() {
                   });
                   setError(null);
                 }}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 {t(msg`清空草稿`)}
               </Button>
@@ -812,7 +812,7 @@ function FeedbackTextarea({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="min-h-[116px] w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-4 py-3.5 text-sm leading-7 text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
+        className="min-h-[116px] w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3.5 text-sm leading-7 text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] hover:bg-[color:var(--surface-console)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
       />
     </div>
   );
@@ -826,7 +826,7 @@ function FeedbackStatCard({
   value: string;
 }) {
   return (
-    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 font-medium text-[color:var(--text-primary)] text-base">
         {value}

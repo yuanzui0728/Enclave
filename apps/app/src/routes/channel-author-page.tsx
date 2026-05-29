@@ -644,7 +644,7 @@ export function ChannelAuthorPage() {
                       "h-11 rounded-full px-5 shadow-none",
                       profile.isFollowing
                         ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
-                        : "bg-[color:var(--brand-primary)] text-white hover:opacity-95",
+                        : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95",
                     )}
                   >
                     {followMutation.isPending
@@ -926,7 +926,7 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
         />
         <div
           className={cn(
-            "absolute inset-x-0 top-0 flex items-center justify-between px-2.5 py-2 text-white",
+            "absolute inset-x-0 top-0 flex items-center justify-between px-2.5 py-2 text-[color:var(--text-on-brand)]",
             coverPresentation.overlayClassName,
           )}
         >
@@ -941,7 +941,7 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
           </div>
         </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.86))] px-2.5 py-2">
-          <div className="text-[10px] text-white/88">
+          <div className="text-[10px] text-[color:var(--text-on-brand)]/88">
             {coverPresentation.secondaryLabel}
           </div>
         </div>
@@ -952,12 +952,12 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
   return (
     <div
       className={cn(
-        "flex h-[8.75rem] w-[7rem] shrink-0 flex-col justify-between rounded-[var(--radius-lg)] px-3 py-3 text-white",
+        "flex h-[8.75rem] w-[7rem] shrink-0 flex-col justify-between rounded-[var(--radius-lg)] px-3 py-3 text-[color:var(--text-on-brand)]",
         coverPresentation.panelClassName,
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/12">
+        <div className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[color:var(--surface-card)]/12">
           {coverPresentation.icon}
         </div>
         <div
@@ -970,10 +970,10 @@ function ChannelPostCover({ post }: { post: FeedPostListItem }) {
         </div>
       </div>
       <div>
-        <div className="text-[length:var(--text-eyebrow)] font-medium text-white/86">
+        <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-on-brand)]/86">
           {coverPresentation.title}
         </div>
-        <div className="mt-1 text-[10px] text-white/62">
+        <div className="mt-1 text-[10px] text-[color:var(--text-on-brand)]/62">
           {coverPresentation.secondaryLabel}
         </div>
       </div>
@@ -1010,7 +1010,7 @@ function matchesChannelAuthorCollection(
 function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListItem) {
   if (post.sourceKind === "live_clip") {
     return {
-      badgeClassName: "bg-[color:var(--surface-card)] text-white",
+      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
       icon: <RadioTower size={14} />,
       label: t(msg`直播回放`),
       overlayClassName:
@@ -1026,7 +1026,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
 
   if (post.mediaType === "video") {
     return {
-      badgeClassName: "bg-[color:var(--surface-card)] text-white",
+      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
       icon: <PlaySquare size={14} />,
       label: t(msg`视频`),
       overlayClassName:
@@ -1048,7 +1048,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
   // 既误导分类又跟整套 audio 沉浸式播放 UI 不一致。给 audio 一套独立陈述。
   if (post.mediaType === "audio") {
     return {
-      badgeClassName: "bg-[color:var(--surface-card)] text-white",
+      badgeClassName: "bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)]",
       icon: <Music2 size={14} />,
       label: t(msg`音乐`),
       overlayClassName:
@@ -1065,7 +1065,7 @@ function resolveChannelPostCoverPresentation(t: Translator, post: FeedPostListIt
   }
 
   return {
-    badgeClassName: "bg-[color:var(--brand-primary)]/18 text-white",
+    badgeClassName: "bg-[color:var(--brand-primary)]/18 text-[color:var(--text-on-brand)]",
     icon: <MessageCircleMore size={14} />,
     label: t(msg`动态`),
     overlayClassName:

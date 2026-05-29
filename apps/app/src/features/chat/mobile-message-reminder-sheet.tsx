@@ -143,7 +143,7 @@ export function MobileMessageReminderSheet({
         aria-labelledby={titleId}
         className={
           isDesktop
-            ? "relative w-full max-w-[440px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white/96 px-5 py-4 shadow-[var(--shadow-overlay)]"
+            ? "relative w-full max-w-[440px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 px-5 py-4 shadow-[var(--shadow-overlay)]"
             : "absolute inset-x-0 bottom-0 overflow-hidden rounded-t-[var(--radius-lg)] border-t border-[color:var(--border-subtle)] bg-[color:var(--surface-panel)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] pt-2 shadow-[0_-14px_28px_rgba(60, 40, 110, 0.10)]"
         }
       >

@@ -153,7 +153,7 @@ export function DesktopContactsWorkspace({
                   <button
                     type="button"
                     onClick={onSpeechButtonClick}
-                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] text-[color:var(--text-dim)] transition hover:bg-white/70 hover:text-[color:var(--text-primary)]"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] text-[color:var(--text-dim)] transition hover:bg-[color:var(--surface-card)]/70 hover:text-[color:var(--text-primary)]"
                     aria-label={
                       speechListening ? t(msg`结束语音输入`) : t(msg`开始语音输入`)
                     }
@@ -193,8 +193,8 @@ export function DesktopContactsWorkspace({
                       tone={notice.tone}
                       className={
                         notice.tone === "danger"
-                          ? "border-[color:var(--state-danger-bg)] bg-white text-xs"
-                          : "border-[rgba(0,0,0,0.06)] bg-white text-xs"
+                          ? "border-[color:var(--state-danger-bg)] bg-[color:var(--surface-card)] text-xs"
+                          : "border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] text-xs"
                       }
                     >
                       {notice.message}
@@ -343,10 +343,10 @@ function DesktopFriendListRow({
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       className={cn(
-        "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/80",
+        "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card)]/80",
         index > 0 ? "border-t border-[rgba(0,0,0,0.04)]" : undefined,
         active
-          ? "bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+          ? "bg-[color:var(--surface-card)] shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
           : undefined,
       )}
     >
@@ -355,8 +355,8 @@ function DesktopFriendListRow({
           className={cn(
             "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors",
             selected
-              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-              : "border-[color:var(--border-subtle)] bg-white",
+              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+              : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]",
           )}
         >
           {selected ? (
@@ -415,10 +415,10 @@ function DesktopWorldCharacterRow({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/80",
+        "flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[color:var(--surface-card)]/80",
         index > 0 ? "border-t border-[rgba(0,0,0,0.04)]" : undefined,
         active
-          ? "bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
+          ? "bg-[color:var(--surface-card)] shadow-[0_1px_2px_rgba(15,23,42,0.05)]"
           : undefined,
       )}
     >

@@ -215,16 +215,16 @@ function MomentMediaGalleryInner({
 
             <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(60, 40, 110, 0.04),rgba(60, 40, 110, 0.42))]" />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-black/56 text-white transition group-hover:scale-[1.04] group-active:scale-[0.98]">
+              <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-black/56 text-[color:var(--text-on-brand)] transition group-hover:scale-[1.04] group-active:scale-[0.98]">
                 <Play size={22} className="translate-x-[1px] fill-current" />
               </span>
             </div>
-            <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
+            <div className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-on-brand)]">
               <Play size={12} className="fill-current" />
               {t(msg`视频`)}
             </div>
             {video.durationMs ? (
-              <div className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
+              <div className="pointer-events-none absolute bottom-3 right-3 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-on-brand)]">
                 {formatMomentDurationLabel(video.durationMs)}
               </div>
             ) : null}
@@ -292,7 +292,7 @@ function MomentMediaGalleryInner({
               decoding="async"
             />
             {single.livePhoto?.enabled ? (
-              <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-[2px] bg-black/58 px-1.5 py-0.5 text-[10px] font-medium text-white">
+              <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-[2px] bg-black/58 px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--text-on-brand)]">
                 {t(msg`实况`)}
               </div>
             ) : null}
@@ -498,7 +498,7 @@ function MomentMediaGalleryInner({
               decoding="async"
             />
             {asset.livePhoto?.enabled ? (
-              <div className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/58 px-2.5 py-1 text-[10px] font-medium text-white">
+              <div className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/58 px-2.5 py-1 text-[10px] font-medium text-[color:var(--text-on-brand)]">
                 {t(msg`实况`)}
               </div>
             ) : null}
@@ -603,11 +603,11 @@ function MomentImageViewerOverlay({
         aria-label={t(msg`关闭图片预览`)}
         tabIndex={-1}
       />
-      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-white">
+      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-[color:var(--text-on-brand)]">
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/12 text-white"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--surface-card)]/12 text-[color:var(--text-on-brand)]"
           aria-label={t(msg`关闭图片预览`)}
         >
           <X size={18} />
@@ -616,7 +616,7 @@ function MomentImageViewerOverlay({
           <div className="truncate text-sm font-medium">
             {image.fileName || t(msg`朋友圈图片`)}
           </div>
-          <div className="mt-1 text-xs text-white/70">
+          <div className="mt-1 text-xs text-[color:var(--text-on-brand)]/70">
             {activeIndex + 1} / {total}
           </div>
         </div>
@@ -746,13 +746,13 @@ function MomentVideoViewerOverlay({
           只能整页刷新。bump 到 z-20 让顶栏永远浮在 backdrop 之上；下面那条
           play 按钮虽然拦不到 X 区域，但视频中段巨大的 tap 区域仍能命中
           handleManualPlay，体验不破。 */}
-      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-20 flex items-center justify-between gap-3 px-4 text-white">
+      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-20 flex items-center justify-between gap-3 px-4 text-[color:var(--text-on-brand)]">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">
             {video.fileName || t(msg`朋友圈视频`)}
           </div>
           {video.durationMs ? (
-            <div className="mt-1 text-xs text-white/70">
+            <div className="mt-1 text-xs text-[color:var(--text-on-brand)]/70">
               {t(msg`时长 ${formatMomentDurationLabel(video.durationMs)}`)}
             </div>
           ) : null}
@@ -760,7 +760,7 @@ function MomentVideoViewerOverlay({
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/12 text-white"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--surface-card)]/12 text-[color:var(--text-on-brand)]"
           aria-label={t(msg`关闭视频预览`)}
         >
           <X size={18} />
@@ -791,7 +791,7 @@ function MomentVideoViewerOverlay({
             className="absolute inset-0 z-10 flex items-center justify-center bg-black/30"
             aria-label={t(msg`播放视频`)}
           >
-            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-black/68 text-white">
+            <span className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-black/68 text-[color:var(--text-on-brand)]">
               <Play size={28} className="translate-x-[2px] fill-current" />
             </span>
           </button>
@@ -831,7 +831,7 @@ function WeChatGridCell({
         decoding="async"
       />
       {asset.livePhoto?.enabled ? (
-        <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-[2px] bg-black/58 px-1.5 py-0.5 text-[10px] font-medium text-white">
+        <div className="pointer-events-none absolute left-1.5 top-1.5 rounded-[2px] bg-black/58 px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--text-on-brand)]">
           {t(msg`实况`)}
         </div>
       ) : null}
@@ -882,7 +882,7 @@ function ViewerNavButton({
       onClick={onClick}
       aria-label={label}
       className={cn(
-        "absolute z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/12 text-white transition hover:bg-white/18",
+        "absolute z-10 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--surface-card)]/12 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/18",
         position === "left" ? "left-5 top-1/2 -translate-y-1/2" : "",
         position === "right" ? "right-5 top-1/2 -translate-y-1/2" : "",
         position === "bottom-left"

@@ -492,7 +492,7 @@ export function ProfileSettingsDesktop() {
               onClick={() => saveProfileMutation.mutate()}
               disabled={!canSaveProfile || saveProfileMutation.isPending}
               variant="primary"
-              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-white shadow-none hover:opacity-95"
+              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
             >
               {saveProfileMutation.isPending
                 ? t(msg`保存中...`)
@@ -534,7 +534,7 @@ export function ProfileSettingsDesktop() {
                         "flex-1 rounded-[10px] border px-3 py-2 text-[length:var(--text-caption)] font-medium transition-colors",
                         active
                           ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-soft)] text-[color:var(--text-primary)]"
-                          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card-hover)]",
+                          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card-hover)]",
                       )}
                     >
                       {t(option.label)}
@@ -646,7 +646,7 @@ export function ProfileSettingsDesktop() {
                 !canSaveSupplementary || saveSupplementaryMutation.isPending
               }
               variant="primary"
-              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-white shadow-none hover:opacity-95"
+              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
             >
               {saveSupplementaryMutation.isPending
                 ? t(msg`保存中...`)
@@ -704,8 +704,8 @@ export function ProfileSettingsDesktop() {
                     className={cn(
                       "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition",
                       selected
-                        ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-                        : "border-[color:var(--border-faint)] bg-white text-transparent",
+                        ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-transparent",
                     )}
                     aria-hidden="true"
                   >
@@ -750,7 +750,7 @@ export function ProfileSettingsDesktop() {
             </InlineNotice>
           ) : null}
 
-          <div className="space-y-2.5 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-3.5 py-3">
+          <div className="space-y-2.5 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3.5 py-3">
             <SettingsFieldGroup label={t(msg`专属 API Key`)}>
               <TextField
                 type="password"
@@ -779,7 +779,7 @@ export function ProfileSettingsDesktop() {
               onClick={() => saveApiKeyMutation.mutate()}
               disabled={aiSettingsBusy || !apiKeyDraft.trim()}
               variant="primary"
-              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-white shadow-none hover:opacity-95"
+              className="h-9 w-full rounded-[10px] bg-[color:var(--brand-primary)] text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
             >
               {saveApiKeyMutation.isPending
                 ? t(msg`保存中...`)
@@ -789,7 +789,7 @@ export function ProfileSettingsDesktop() {
               onClick={() => clearApiKeyMutation.mutate()}
               disabled={aiSettingsBusy || !ownerQuery.data?.hasCustomApiKey}
               variant="secondary"
-              className="h-9 w-full rounded-[10px] border-[color:var(--border-faint)] bg-white text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
+              className="h-9 w-full rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
             >
               {clearApiKeyMutation.isPending
                 ? t(msg`清除中...`)
@@ -858,8 +858,8 @@ export function ProfileSettingsDesktop() {
                   className={cn(
                     "flex-1 rounded-[10px] py-2 text-[length:var(--text-caption)] font-medium transition-all duration-[var(--motion-fast)]",
                     selected
-                      ? "bg-white text-[color:var(--text-primary)] shadow-sm"
-                      : "text-[color:var(--text-muted)] hover:bg-white/70",
+                      ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-sm"
+                      : "text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card)]/70",
                   )}
                 >
                   {t(tab.label)}
@@ -958,7 +958,7 @@ export function ProfileSettingsDesktop() {
         <Button
           onClick={() => navigate({ to: desktopBackTo })}
           variant="secondary"
-          className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
+          className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-card)]"
         >
           {desktopBackLabel}
         </Button>
@@ -982,7 +982,7 @@ export function ProfileSettingsDesktop() {
                     "flex w-full items-center justify-between rounded-[var(--radius-sm)] px-3 py-2.5 text-left text-sm transition",
                     activeTab === tab.id
                       ? "bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)] text-[color:var(--text-primary)]"
-                      : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
+                      : "text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card)]/80 hover:text-[color:var(--text-primary)]",
                   )}
                 >
                   <span>{t(tab.label)}</span>
@@ -1022,7 +1022,7 @@ function SettingsSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="space-y-2 rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-section)]">
+    <section className="space-y-2 rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-5 shadow-[var(--shadow-section)]">
       {title || description ? (
         <div>
           {title ? (

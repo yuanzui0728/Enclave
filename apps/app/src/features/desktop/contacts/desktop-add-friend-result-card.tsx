@@ -125,7 +125,7 @@ export function DesktopAddFriendResultCard({
   const PrimaryIcon = statusMeta.icon;
 
   return (
-    <section className="overflow-hidden rounded-[10px] border border-[color:var(--border-subtle)] bg-white shadow-none">
+    <section className="overflow-hidden rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] shadow-none">
       <div className="border-b border-[color:var(--border-faint)] px-8 py-8">
         <div className="flex items-start gap-5">
           <AvatarChip name={displayName} src={character.avatar} size="xl" />
@@ -206,7 +206,7 @@ export function DesktopAddFriendResultCard({
             variant="secondary"
             size="lg"
             onClick={onOpenProfile}
-            className="rounded-[8px] border-[color:var(--border-strong)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`查看资料`)}
           </Button>
@@ -218,10 +218,10 @@ export function DesktopAddFriendResultCard({
             className={cn(
               "rounded-[8px] px-5 shadow-none",
               status === "pending"
-                ? "bg-[color:var(--state-info-bg)] text-white hover:bg-[color:var(--state-info-bg)]"
+                ? "bg-[color:var(--state-info-bg)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-info-bg)]"
                 : undefined,
               status === "blocked"
-                ? "bg-[color:var(--state-danger-bg)] text-white hover:bg-[color:var(--state-danger-bg)]"
+                ? "bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-bg)]"
                 : undefined,
             )}
           >

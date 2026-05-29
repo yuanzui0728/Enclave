@@ -322,7 +322,7 @@ function SelfQuickChatBar({
         type="button"
         onClick={go}
         aria-label={t(msg`发送`)}
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-white transition-opacity active:opacity-90"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] transition-opacity active:opacity-90"
       >
         <Send size={17} />
       </button>

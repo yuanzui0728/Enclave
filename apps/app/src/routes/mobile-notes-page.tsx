@@ -238,7 +238,7 @@ export function MobileNotesPage() {
               <Button
                 variant="primary"
                 onClick={handleCreate}
-                className="h-10 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-5 text-white hover:opacity-95"
+                className="h-10 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-5 text-[color:var(--text-on-brand)] hover:opacity-95"
               >
                 <Plus size={16} />
                 <span className="ml-1">{t(msg`新建笔记`)}</span>
@@ -312,7 +312,7 @@ function DraftRow({
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-center gap-3 rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-strong)]/40 bg-white/72 px-3 py-3 text-left active:bg-[color:var(--surface-console)]"
+      className="flex w-full items-center gap-3 rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-strong)]/40 bg-[color:var(--surface-card)]/72 px-3 py-3 text-left active:bg-[color:var(--surface-console)]"
     >
       <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--border-faint)] text-[color:var(--text-secondary)]">
         <FileText size={18} />

@@ -198,7 +198,7 @@ export function AudioCard({
           <button
             type="button"
             onClick={handleToggle}
-            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-[color:var(--surface-card)]/15 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/25"
             aria-label={playing ? t(msg`暂停`) : t(msg`播放`)}
           >
             {playing ? (
@@ -230,10 +230,10 @@ export function AudioCard({
                 ? `${formatSeconds(progress)} / ${formatSeconds(duration)}`
                 : undefined
             }
-            className="h-1 w-full min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-white/20 accent-white"
+            className="h-1 w-full min-w-0 flex-1 cursor-pointer appearance-none rounded-full bg-[color:var(--surface-card)]/20 accent-[color:var(--text-on-brand)]"
             disabled={!duration}
           />
-          <span className="flex-none whitespace-nowrap text-right font-mono text-[length:var(--text-eyebrow)] leading-none text-white/70">
+          <span className="flex-none whitespace-nowrap text-right font-mono text-[length:var(--text-eyebrow)] leading-none text-[color:var(--text-on-brand)]/70">
             {formatSeconds(progress)}/{formatSeconds(duration)}
           </span>
         </div>

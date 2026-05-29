@@ -221,19 +221,19 @@ export function MobileMiniProgramsWorkspace({
           )}
         >
           <div className="pointer-events-none absolute inset-0">
-            <div className="absolute -right-10 top-0 h-36 w-36 rounded-full bg-white/12 blur-3xl" />
+            <div className="absolute -right-10 top-0 h-36 w-36 rounded-full bg-[color:var(--surface-card)]/12 blur-3xl" />
             <div className="absolute bottom-0 left-8 h-28 w-28 rounded-full bg-black/10 blur-3xl" />
           </div>
           <div className="relative">
             <div className="flex items-start justify-between gap-3.5">
               <div className="min-w-0">
-                <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-white/82">
+                <div className="inline-flex rounded-full border border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/12 px-2 py-0.5 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--text-on-brand)]/82">
                   {selectedMiniProgram.badge}
                 </div>
-                <div className="mt-2.5 text-[length:var(--text-section)] font-semibold leading-tight text-white">
+                <div className="mt-2.5 text-[length:var(--text-section)] font-semibold leading-tight text-[color:var(--text-on-brand)]">
                   {selectedMiniProgram.name}
                 </div>
-                <div className="mt-1 text-[length:var(--text-caption)] leading-[1.35rem] text-white/82">
+                <div className="mt-1 text-[length:var(--text-caption)] leading-[1.35rem] text-[color:var(--text-on-brand)]/82">
                   {selectedMiniProgram.slogan}
                 </div>
               </div>
@@ -253,7 +253,7 @@ export function MobileMiniProgramsWorkspace({
               {selectedMiniProgram.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="rounded-full border border-white/18 bg-white/10 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-white/82"
+                  className="rounded-full border border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/10 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/82"
                 >
                   {tag}
                 </span>
@@ -265,7 +265,7 @@ export function MobileMiniProgramsWorkspace({
                 variant="secondary"
                 size="lg"
                 onClick={() => onOpenMiniProgram(selectedMiniProgram.id)}
-                className="h-8.5 flex-1 border-white/18 bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)] hover:bg-white/92"
+                className="h-8.5 flex-1 border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)] px-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-card)]/92"
               >
                 {t(msg`打开小程序`)}
               </Button>
@@ -273,7 +273,7 @@ export function MobileMiniProgramsWorkspace({
                 variant="secondary"
                 size="lg"
                 onClick={() => onTogglePinnedMiniProgram(selectedMiniProgram.id)}
-                className="h-8.5 border-white/18 bg-white/10 px-3 text-[length:var(--text-eyebrow)] text-white hover:bg-white/18"
+                className="h-8.5 border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/10 px-3 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/18"
               >
                 {pinnedMiniProgramIds.includes(selectedMiniProgram.id)
                   ? t(msg`已加入`)
@@ -511,11 +511,11 @@ function MobileFeatureComingSoonOverlay({ onBack }: { onBack: () => void }) {
         variant="ghost"
         size="icon"
         aria-label={t(msg`返回`)}
-        className="absolute left-3 top-3 h-10 w-10 rounded-full bg-white/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-[color:var(--surface-card)]"
+        className="absolute left-3 top-3 h-10 w-10 rounded-full bg-[color:var(--surface-card)]/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-[color:var(--surface-card)]"
       >
         <ArrowLeft size={18} />
       </Button>
-      <div className="mx-6 max-w-[280px] rounded-2xl border border-[color:var(--border-faint)] bg-white/98 px-6 py-6 text-center shadow-[var(--shadow-card)]">
+      <div className="mx-6 max-w-[280px] rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/98 px-6 py-6 text-center shadow-[var(--shadow-card)]">
         <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
           {t(msg`功能开发中`)}
         </div>
@@ -527,7 +527,7 @@ function MobileFeatureComingSoonOverlay({ onBack }: { onBack: () => void }) {
           onClick={onBack}
           variant="primary"
           size="md"
-          className="mt-5 h-10 w-full rounded-full bg-[color:var(--brand-primary)] text-white"
+          className="mt-5 h-10 w-full rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
         >
           {t(msg`返回`)}
         </Button>
@@ -538,11 +538,11 @@ function MobileFeatureComingSoonOverlay({ onBack }: { onBack: () => void }) {
 
 function MobileMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-md)] border border-white/18 bg-white/12 px-2.5 py-2.25 backdrop-blur-sm">
-      <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.12em] text-white/68">
+    <div className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/12 px-2.5 py-2.25 backdrop-blur-sm">
+      <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.12em] text-[color:var(--text-on-brand)]/68">
         {label}
       </div>
-      <div className="mt-1 text-[length:var(--text-caption)] font-medium leading-5 text-white">
+      <div className="mt-1 text-[length:var(--text-caption)] font-medium leading-5 text-[color:var(--text-on-brand)]">
         {value}
       </div>
     </div>

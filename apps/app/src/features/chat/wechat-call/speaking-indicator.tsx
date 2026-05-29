@@ -82,8 +82,8 @@ export function SpeakingIndicator({
       ) : null}
       {speaking ? (
         <>
-          <span className="absolute inset-0 animate-ping rounded-full border-2 border-white/50" />
-          <span className="absolute inset-0 rounded-full border border-white/30" />
+          <span className="absolute inset-0 animate-ping rounded-full border-2 border-[color:var(--border-faint)]/50" />
+          <span className="absolute inset-0 rounded-full border border-[color:var(--border-faint)]/30" />
         </>
       ) : null}
     </span>

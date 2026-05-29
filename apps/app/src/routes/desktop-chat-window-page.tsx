@@ -224,7 +224,7 @@ export function DesktopChatWindowPage() {
   if (!routeState) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
-        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
           <div className="mb-5 inline-flex rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--brand-primary)]">
             {t(msg`独立聊天窗口`)}
           </div>
@@ -238,7 +238,7 @@ export function DesktopChatWindowPage() {
               onClick={() => {
                 focusMainChatWindow("/tabs/chat");
               }}
-              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
+              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {t(msg`回到消息页`)}
             </Button>
@@ -255,7 +255,7 @@ export function DesktopChatWindowPage() {
   ) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
-        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
           <div className="mb-5 inline-flex rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--brand-primary)]">
             {t(msg`独立聊天窗口`)}
           </div>
@@ -269,7 +269,7 @@ export function DesktopChatWindowPage() {
               onClick={() => {
                 focusMainChatWindow(fallbackPath);
               }}
-              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
+              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {t(msg`回到消息页`)}
             </Button>
@@ -350,7 +350,7 @@ function StandaloneActionButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
     >
       {children}
     </button>

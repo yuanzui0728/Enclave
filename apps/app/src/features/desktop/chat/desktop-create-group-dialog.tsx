@@ -756,7 +756,7 @@ export function DesktopCreateGroupDialog({
               </span>
             ) : null}
             {aliasName ? (
-              <span className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-white px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
+              <span className="shrink-0 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-1.5 py-0.5 text-[10px] text-[color:var(--text-dim)]">
                 {aliasName}
               </span>
             ) : null}
@@ -769,8 +769,8 @@ export function DesktopCreateGroupDialog({
           className={cn(
             "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors",
             checked
-              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-              : "border-[color:var(--state-info-bg)] bg-white text-transparent",
+              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+              : "border-[color:var(--state-info-bg)] bg-[color:var(--surface-card)] text-transparent",
           )}
         >
           <Check size={12} strokeWidth={3} />
@@ -851,7 +851,7 @@ export function DesktopCreateGroupDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-[min(700px,82vh)] w-full max-w-[560px] flex-col overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative flex h-[min(700px,82vh)] w-full max-w-[560px] flex-col overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
         onKeyDown={handleDialogKeyDown}
       >
         <div className="relative border-b border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-6 py-4 text-center">
@@ -895,7 +895,7 @@ export function DesktopCreateGroupDialog({
               // name。SR focus 进来只听到「编辑栏 搜索联系人 空」（placeholder
               // 部分实现读、部分不读），盲人用户得自己摸 dialog 标题猜 scope。
               aria-label={t(msg`搜索联系人`)}
-              className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-10 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
+              className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] pl-10 pr-10 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
             />
             {searchTerm.trim() ? (
               <button
@@ -909,7 +909,7 @@ export function DesktopCreateGroupDialog({
             ) : null}
           </label>
 
-          <div className="mt-3 min-h-[72px] rounded-[10px] border border-[color:var(--border-subtle)] bg-white px-3 py-3">
+          <div className="mt-3 min-h-[72px] rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-3">
             {selectedFriends.length ? (
               <div className="flex gap-3 overflow-x-auto pb-1">
                 {selectedFriends.map((item) => {
@@ -928,7 +928,7 @@ export function DesktopCreateGroupDialog({
                           src={item.character.avatar}
                           size="wechat"
                         />
-                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-white">
+                        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-[color:var(--text-on-brand)]">
                           <X size={10} />
                         </span>
                       </div>
@@ -961,7 +961,7 @@ export function DesktopCreateGroupDialog({
 
         <div
           ref={friendListScrollRef}
-          className="min-h-0 flex-1 overflow-auto bg-white"
+          className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-card)]"
         >
           {friendsQuery.isLoading ? (
             <LoadingBlock
@@ -1094,7 +1094,7 @@ export function DesktopCreateGroupDialog({
             {!shareableMessagesQuery.isLoading &&
             !shareableMessagesQuery.isError &&
             !shareableMessages.length ? (
-              <div className="rounded-[10px] border border-[color:var(--border-subtle)] bg-white px-3 py-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
+              <div className="rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 py-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                 {t(msg`当前单聊里还没有可分享的消息。`)}
               </div>
             ) : null}
@@ -1127,7 +1127,7 @@ export function DesktopCreateGroupDialog({
                           "rounded-full border px-2.5 py-1 transition",
                           recentPresetSelectionState.get(count)
                             ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
-                            : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
+                            : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
                         )}
                       >
                         {t(msg`最近 ${count} 条`)}
@@ -1145,7 +1145,7 @@ export function DesktopCreateGroupDialog({
                         "rounded-full border px-2.5 py-1 transition",
                         allShareableMessagesSelected
                           ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
-                          : "border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
+                          : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
                       )}
                     >
                       {t(msg`全选`)}
@@ -1153,7 +1153,7 @@ export function DesktopCreateGroupDialog({
                     <button
                       type="button"
                       onClick={() => setSelectedMessageIds([])}
-                      className="rounded-full border border-[color:var(--border-subtle)] bg-white px-2.5 py-1 text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.03)]"
+                      className="rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2.5 py-1 text-[color:var(--text-secondary)] transition hover:bg-[rgba(0,0,0,0.03)]"
                     >
                       {t(msg`清空`)}
                     </button>
@@ -1163,7 +1163,7 @@ export function DesktopCreateGroupDialog({
                 <div
                   tabIndex={0}
                   onKeyDown={handleSharedMessagesKeyDown}
-                  className="max-h-56 overflow-auto rounded-[10px] border border-[color:var(--border-subtle)] bg-white outline-none ring-offset-0 focus:ring-2 focus:ring-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
+                  className="max-h-56 overflow-auto rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] outline-none ring-offset-0 focus:ring-2 focus:ring-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)]"
                   aria-label={t(msg`可分享聊天记录列表`)}
                 >
                   {shareableMessageSections.map((section) => (
@@ -1200,8 +1200,8 @@ export function DesktopCreateGroupDialog({
                                 className={cn(
                                   "mt-0.5 flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[4px] border transition-colors",
                                   checked
-                                    ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-white"
-                                    : "border-[color:var(--state-info-bg)] bg-white text-transparent",
+                                    ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
+                                    : "border-[color:var(--state-info-bg)] bg-[color:var(--surface-card)] text-transparent",
                                 )}
                               >
                                 <Check size={12} strokeWidth={3} />
@@ -1265,7 +1265,7 @@ export function DesktopCreateGroupDialog({
                   "rounded-full px-3 py-1 transition",
                   shareHistory
                     ? "bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
-                    : "bg-white text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
+                    : "bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.03)]",
                 )}
               >
                 {shareHistory && selectedMessageIds.length
@@ -1282,7 +1282,7 @@ export function DesktopCreateGroupDialog({
               variant="secondary"
               onClick={onClose}
               disabled={createMutation.isPending}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`取消`)}
             </Button>
@@ -1291,7 +1291,7 @@ export function DesktopCreateGroupDialog({
               variant="primary"
               onClick={handleCreate}
               disabled={!selectedIds.length || createMutation.isPending}
-              className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {createMutation.isPending ? t(msg`正在创建...`) : t(msg`完成`)}
             </Button>

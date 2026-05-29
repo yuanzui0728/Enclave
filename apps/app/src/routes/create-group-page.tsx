@@ -568,7 +568,7 @@ export function CreateGroupPage() {
                         />
                         <span
                           aria-hidden="true"
-                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-white"
+                          className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-[color:var(--text-on-brand)]"
                         >
                           <X size={10} />
                         </span>

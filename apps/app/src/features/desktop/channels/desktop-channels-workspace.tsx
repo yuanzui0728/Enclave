@@ -782,7 +782,7 @@ export function DesktopChannelsWorkspace({
 
   return (
     <div className="relative flex h-full min-h-0 flex-col bg-[color:var(--surface-section)]">
-      <div className="border-b border-[color:var(--border-faint)] bg-white/92 backdrop-blur-xl">
+      <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/92 backdrop-blur-xl">
         <div className="flex h-14 items-center justify-between gap-4 px-6">
           {/*
             走查 2026-05-18 新会话（本会话）R3：原 section tabs（推荐 / 朋友 / 关注
@@ -936,7 +936,7 @@ export function DesktopChannelsWorkspace({
         modal，用户在 picker 内时本来就不需要看 notice，让它盖掉无妨）。
       */}
       {successNotice || errorMessage ? (
-        <div className="pointer-events-none absolute left-0 right-0 top-14 z-50 space-y-2 border-b border-[color:var(--border-faint)] bg-white/92 px-6 py-2 backdrop-blur-xl">
+        <div className="pointer-events-none absolute left-0 right-0 top-14 z-50 space-y-2 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/92 px-6 py-2 backdrop-blur-xl">
           {successNotice ? (
             <div className="pointer-events-auto">
               <InlineNotice
@@ -957,7 +957,7 @@ export function DesktopChannelsWorkspace({
                     ? "alert"
                     : "status"
                 }
-                className="border-[color:var(--border-faint)] bg-white"
+                className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
               >
                 {successNotice}
               </InlineNotice>
@@ -980,7 +980,7 @@ export function DesktopChannelsWorkspace({
                       variant="secondary"
                       size="sm"
                       onClick={onRetryLoad}
-                      className="rounded-full bg-white"
+                      className="rounded-full bg-[color:var(--surface-card)]"
                     >
                       <RefreshCcw size={13} />
                       {t(msg`重试读取`)}
@@ -1337,7 +1337,7 @@ function ForwardNotice({
     <div
       role={isDanger ? "alert" : "status"}
       className={cn(
-        "fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full px-4 py-2 text-[length:var(--text-caption)] text-white shadow-lg",
+        "fixed left-1/2 top-6 z-[120] -translate-x-1/2 rounded-full px-4 py-2 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-lg",
         isDanger
           ? "bg-[color:var(--state-danger-bg)]"
           : "bg-[color:var(--state-info-bg)]",
@@ -1404,11 +1404,11 @@ function ChannelActionButton({
           "flex h-11 w-11 items-center justify-center rounded-full border transition-colors",
           isDark
             ? active
-              ? "border-[color-mix(in_srgb,var(--brand-primary)_65%,transparent)] bg-white/12 text-[color:var(--brand-primary)]"
-              : "border-white/14 bg-white/12 text-white group-hover:bg-white/22"
+              ? "border-[color-mix(in_srgb,var(--brand-primary)_65%,transparent)] bg-[color:var(--surface-card)]/12 text-[color:var(--brand-primary)]"
+              : "border-[color:var(--border-faint)]/14 bg-[color:var(--surface-card)]/12 text-[color:var(--text-on-brand)] group-hover:bg-[color:var(--surface-card)]/22"
             : active
-              ? "border-[color-mix(in_srgb,var(--brand-primary)_42%,transparent)] bg-white text-[color:var(--brand-primary)] shadow-[var(--shadow-section)]"
-              : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-[var(--shadow-section)] group-hover:bg-[color:var(--surface-console)] group-hover:text-[color:var(--text-primary)]",
+              ? "border-[color-mix(in_srgb,var(--brand-primary)_42%,transparent)] bg-[color:var(--surface-card)] text-[color:var(--brand-primary)] shadow-[var(--shadow-section)]"
+              : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-[var(--shadow-section)] group-hover:bg-[color:var(--surface-console)] group-hover:text-[color:var(--text-primary)]",
         )}
       >
         {icon}
@@ -1419,7 +1419,7 @@ function ChannelActionButton({
           isDark
             ? active
               ? "font-medium text-[color:var(--brand-primary)]"
-              : "text-white/72"
+              : "text-[color:var(--text-on-brand)]/72"
             : active
               ? "font-medium text-[color:var(--brand-primary)]"
               : "text-[color:var(--text-muted)]",
@@ -1617,14 +1617,14 @@ function ChannelMediaSurface({
   if (post.title?.trim() || textContent.trim()) {
     return (
       <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10] px-10">
-        <div className="max-w-[28rem] text-center text-white">
+        <div className="max-w-[28rem] text-center text-[color:var(--text-on-brand)]">
           {post.title?.trim() ? (
             <div className="text-[24px] font-semibold leading-[1.6]">
               {post.title}
             </div>
           ) : null}
           {textContent.trim() && textContent !== post.title ? (
-            <div className="mt-3 text-[length:var(--text-base)] leading-[1.7] text-white/82 line-clamp-[10]">
+            <div className="mt-3 text-[length:var(--text-base)] leading-[1.7] text-[color:var(--text-on-brand)]/82 line-clamp-[10]">
               {textContent}
             </div>
           ) : null}
@@ -1636,10 +1636,10 @@ function ChannelMediaSurface({
   return (
     <div className="flex flex-1 items-center justify-center text-center">
       <div className="px-6">
-        <div className="text-[length:var(--text-title)] font-semibold text-white">
+        <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-on-brand)]">
           {t(msg`暂无可播放内容`)}
         </div>
-        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-white/72">
+        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/72">
           {t(msg`稍后再来看看`)}
         </div>
       </div>
@@ -1715,8 +1715,8 @@ function ChannelFallbackImage({
         // 原图标用 Music2 是错的，这两类帖都不是音乐；用户图集 / 文字帖封面
         // 404 时却看到一个音乐符号 + "封面暂时无法显示"，体感「这帖是音乐还
         // 是图片到底」。换成更贴语义的 ImageOff。
-        <div className="flex flex-col items-center gap-2 text-white/70">
-          <ImageOff size={48} className="text-white/40" />
+        <div className="flex flex-col items-center gap-2 text-[color:var(--text-on-brand)]/70">
+          <ImageOff size={48} className="text-[color:var(--text-on-brand)]/40" />
           <div className="text-[length:var(--text-caption)]">{t(msg`封面暂时无法显示`)}</div>
         </div>
       ) : (
@@ -1902,7 +1902,7 @@ function ChannelVideoPlayer({
           event.stopPropagation();
           onToggleUnmuted();
         }}
-        className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-white/22 bg-black/45 text-white backdrop-blur-sm transition hover:bg-black/65"
+        className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-faint)]/22 bg-black/45 text-[color:var(--text-on-brand)] backdrop-blur-sm transition hover:bg-black/65"
       >
         {unmuted ? <Volume2 size={16} /> : <VolumeX size={16} />}
       </button>
@@ -2049,7 +2049,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
             unmuted={unmuted}
             onToggleUnmuted={onToggleUnmuted}
           />
-          <div className="pointer-events-none absolute left-4 top-4 rounded-md bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
+          <div className="pointer-events-none absolute left-4 top-4 rounded-md bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-on-brand)]">
             {sectionBadge}
           </div>
 
@@ -2091,10 +2091,10 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                   />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[length:var(--text-body)] font-semibold text-white">
+                  <div className="truncate text-[length:var(--text-body)] font-semibold text-[color:var(--text-on-brand)]">
                     {post.authorName}
                   </div>
-                  <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-white/72">
+                  <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/72">
                     {formatTimestamp(post.createdAt)} ·{" "}
                     {formatChannelMeta(post)}
                   </div>
@@ -2131,8 +2131,8 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                   className={cn(
                     "rounded-full px-3 py-1 text-[length:var(--text-caption)] transition disabled:cursor-not-allowed disabled:opacity-70",
                     post.ownerState?.isFollowingAuthor
-                      ? "border border-white/28 bg-transparent text-white/85 hover:bg-white/10"
-                      : "bg-[color:var(--brand-primary)] text-white hover:opacity-95",
+                      ? "border border-[color:var(--border-faint)]/28 bg-transparent text-[color:var(--text-on-brand)]/85 hover:bg-[color:var(--surface-card)]/10"
+                      : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95",
                   )}
                 >
                   {followPending
@@ -2144,7 +2144,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
               ) : null}
             </div>
             {post.title ? (
-              <div className="mt-3 line-clamp-2 text-[length:var(--text-base)] font-semibold text-white">
+              <div className="mt-3 line-clamp-2 text-[length:var(--text-base)] font-semibold text-[color:var(--text-on-brand)]">
                 {post.title}
               </div>
             ) : null}
@@ -2152,7 +2152,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
               // 视频号 audio post 后端常把 title 和 text 都填成 "X·音乐"，标题和
               // 正文重复出现没意义；slideBodyText useMemo（同 slide 顶部）已经把
               // "cleanText===title" 的情况返回 null，本节点只负责显隐渲染。
-              <div className="mt-2 line-clamp-3 text-[length:var(--text-caption)] leading-6 text-white/82">
+              <div className="mt-2 line-clamp-3 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/82">
                 {slideBodyText}
               </div>
             ) : null}
@@ -2161,7 +2161,7 @@ const ChannelFeedSlide = memo(function ChannelFeedSlide({
                 {post.topicTags.slice(0, 4).map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full bg-white/14 px-2 py-0.5 text-[10px] text-white"
+                    className="rounded-full bg-[color:var(--surface-card)]/14 px-2 py-0.5 text-[10px] text-[color:var(--text-on-brand)]"
                   >
                     #{tag}
                   </span>
@@ -2480,7 +2480,7 @@ function ChannelCommentsDrawer({
         // 列里 —— focus trap 兜底：极端无 focusable child 时也能把焦点拉进来
         // 不漏。
         tabIndex={-1}
-        className="pointer-events-auto flex max-h-[85vh] w-[380px] flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white shadow-[0_24px_60px_rgba(0,0,0,0.32)] sm:translate-x-[260px]"
+        className="pointer-events-auto flex max-h-[85vh] w-[380px] flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_24px_60px_rgba(0,0,0,0.32)] sm:translate-x-[260px]"
       >
         <div className="flex items-center justify-between gap-3 border-b border-[color:var(--border-faint)] px-4 py-3">
           <div>
@@ -2530,7 +2530,7 @@ function ChannelCommentsDrawer({
                       variant="secondary"
                       size="sm"
                       onClick={onCommentsErrorAction}
-                      className="rounded-full bg-white"
+                      className="rounded-full bg-[color:var(--surface-card)]"
                     >
                       <RefreshCcw size={13} />
                       {commentsErrorActionLabel}
@@ -2778,7 +2778,7 @@ function ChannelAuthorOverlay({
         // tabIndex=-1 让 dialog 自身可程序聚焦但不在 sequential Tab 序列里 ——
         // focus trap 兜底：极端无 focusable child 时也能把焦点拉进来不漏。
         tabIndex={-1}
-        className="relative flex max-h-[90vh] w-full max-w-[720px] flex-col overflow-auto rounded-[var(--radius-xl)] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative flex max-h-[90vh] w-full max-w-[720px] flex-col overflow-auto rounded-[var(--radius-xl)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
       >
         <DesktopChannelAuthorPanel
           authorId={authorId}
@@ -2816,7 +2816,7 @@ function FeedNavArrows({
         aria-label={t(msg`上一条`)}
         disabled={!canPrev}
         onClick={onPrev}
-        className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/22 bg-white/14 text-white transition hover:bg-white/24 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white/14"
+        className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-[color:var(--border-faint)]/22 bg-[color:var(--surface-card)]/14 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/24 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-[color:var(--surface-card)]/14"
       >
         <ChevronUp size={20} />
       </button>
@@ -2825,7 +2825,7 @@ function FeedNavArrows({
         aria-label={t(msg`下一条`)}
         disabled={!canNext}
         onClick={onNext}
-        className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/22 bg-white/14 text-white transition hover:bg-white/24 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-white/14"
+        className="pointer-events-auto flex h-12 w-12 items-center justify-center rounded-full border border-[color:var(--border-faint)]/22 bg-[color:var(--surface-card)]/14 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/24 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-[color:var(--surface-card)]/14"
       >
         <ChevronDown size={20} />
       </button>
@@ -2910,7 +2910,7 @@ function DesktopChannelAuthorPanel({
   const postCount = profile?.postCount ?? profile?.recentPosts.length ?? 0;
 
   return (
-    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-section)]">
       <div className="flex items-start justify-between gap-3">
         <div>
           <div
@@ -2958,7 +2958,7 @@ function DesktopChannelAuthorPanel({
                   variant="secondary"
                   size="sm"
                   onClick={onRetryAuthorProfile}
-                  className="rounded-full bg-white"
+                  className="rounded-full bg-[color:var(--surface-card)]"
                 >
                   <RefreshCcw size={13} />
                   {t(msg`重试读取`)}
@@ -3044,8 +3044,8 @@ function DesktopChannelAuthorPanel({
                 }
                 className={
                   profile.isFollowing
-                    ? "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-                    : "bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                    ? "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                    : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
                 }
               >
                 {followPending
@@ -3089,15 +3089,15 @@ function DesktopChannelAuthorPanel({
                     className={cn(
                       "w-full rounded-[var(--radius-md)] border px-3 py-3 text-left transition",
                       selectedPostId === post.id
-                        ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-white shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]"
-                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white hover:shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
+                        ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color:var(--surface-card)] shadow-[inset_3px_0_0_0_var(--brand-primary),0_8px_18px_rgba(15,23,42,0.04)]"
+                        : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-[color:var(--surface-card)] hover:shadow-[0_8px_18px_rgba(15,23,42,0.04)]",
                     )}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="text-sm font-medium text-[color:var(--text-primary)]">
                         {post.title?.trim() || t(msg`查看这条内容`)}
                       </div>
-                      <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
+                      <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] text-[color:var(--text-secondary)]">
                         {/*
                           走查 2026-05-19 第七轮 R3：原来只分 "直播回放" / "视频"
                           / "动态" 三类，audio (mediaType="audio") 跟 image
@@ -3578,7 +3578,7 @@ function DesktopChannelCommentsPanel({
         </div>
       ) : null}
       {threadIdsWithReplies.length ? (
-        <div className="flex items-center justify-between rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-3 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
+        <div className="flex items-center justify-between rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
           <span>
             {t(msg`共 ${threadIdsWithReplies.length} 个可折叠线程`)}
           </span>
@@ -3706,14 +3706,14 @@ function DesktopChannelCommentsPanel({
                   : t(msg`先选择一条内容`)
             }
             disabled={!selectedPost}
-            className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-white py-2.5 shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
+            className="min-w-0 flex-1 rounded-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-2.5 shadow-none hover:bg-[color:var(--surface-card)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
           />
           <Button
             variant="primary"
             size="sm"
             disabled={!selectedPost || !draft.trim() || submitPending}
             onClick={handleSubmit}
-            className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+            className="bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
           >
             {submitPending ? t(msg`发送中...`) : t(msg`发送`)}
           </Button>
@@ -3788,7 +3788,7 @@ const DesktopCommentThreadReplies = memo(function DesktopCommentThreadReplies({
   );
 
   return (
-    <div className="mt-3 rounded-[14px] border border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-white px-3 py-3">
+    <div className="mt-3 rounded-[14px] border border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color:var(--surface-card)] px-3 py-3">
       <button
         type="button"
         // 走查 2026-05-18 第二轮 R13："楼中楼" 折叠/展开按钮是经典的 disclosure
@@ -3910,7 +3910,7 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
         "rounded-[14px] border px-3 py-3 transition-colors",
         compact
           ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]"
-          : "border-[color:var(--border-faint)] bg-white",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)]",
         active &&
           "border-[color-mix(in_srgb,var(--brand-primary)_18%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] shadow-[inset_3px_0_0_0_var(--brand-primary)]",
       )}
@@ -3931,7 +3931,7 @@ const DesktopThreadCommentCard = memo(function DesktopThreadCommentCard({
                 "rounded-md border px-2 py-0.5 text-[10px] font-medium",
                 comment.authorType === "character"
                   ? "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)] text-[color:var(--brand-primary)]"
-                  : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
+                  : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
               )}
             >
               {comment.authorType === "character"

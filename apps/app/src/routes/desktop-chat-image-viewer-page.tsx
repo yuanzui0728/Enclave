@@ -458,7 +458,7 @@ export function DesktopChatImageViewerPage() {
   if (!routeState || !activeItem) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[#1f1f1f] p-6">
-        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-white/10 bg-[#2a2a2a] p-8 shadow-[0_24px_64px_rgba(0,0,0,0.28)]">
+        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-[color:var(--border-faint)]/10 bg-[#2a2a2a] p-8 shadow-[0_24px_64px_rgba(0,0,0,0.28)]">
           <EmptyState
             title={t(msg`这张图片已经失去上下文`)}
             description={t(msg`可能是新窗口参数被清掉了。回到消息页后重新打开一次即可。`)}
@@ -467,7 +467,7 @@ export function DesktopChatImageViewerPage() {
             <Button
               type="button"
               onClick={() => focusReturnTargetWindow(fallbackPath)}
-              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
+              className="h-9 rounded-[9px] bg-[color:var(--brand-primary)] px-4 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {t(msg`回到消息页`)}
             </Button>
@@ -478,7 +478,7 @@ export function DesktopChatImageViewerPage() {
   }
 
   return (
-    <div className="yj-desktop-image-print-root relative flex h-full min-h-0 flex-col bg-[#1f1f1f] text-white">
+    <div className="yj-desktop-image-print-root relative flex h-full min-h-0 flex-col bg-[#1f1f1f] text-[color:var(--text-on-brand)]">
       <style>{`
         @media print {
           .yj-desktop-image-print-root {
@@ -508,7 +508,7 @@ export function DesktopChatImageViewerPage() {
           }
         }
       `}</style>
-      <header className="yj-desktop-image-print-hidden flex items-start justify-between gap-4 border-b border-white/8 bg-[#242424] px-5 py-4">
+      <header className="yj-desktop-image-print-hidden flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)]/8 bg-[#242424] px-5 py-4">
         <div className="min-w-0">
           {/* 走查电脑端单聊 R141：和姊妹 desktop-chat-window-page R140 同款 ——
               独立图片查看器窗口（右键图片消息「在独立窗口打开」/ Tauri 多开
@@ -524,11 +524,11 @@ export function DesktopChatImageViewerPage() {
             {activeItem.title}
           </h1>
           {activeItem.meta ? (
-            <div className="mt-1 truncate text-[length:var(--text-caption)] text-white/62">
+            <div className="mt-1 truncate text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/62">
               {activeItem.meta}
             </div>
           ) : null}
-          <div className="mt-1 text-[length:var(--text-caption)] text-white/46">
+          <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/46">
             {activeItemIndex + 1} / {viewerItems.length}
           </div>
         </div>
@@ -660,7 +660,7 @@ function ViewerNavButton({
       type="button"
       aria-label={label}
       onClick={onClick}
-      className={`absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-white/12 bg-[#2b2b2b] text-white transition hover:bg-[#343434] ${
+      className={`absolute top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/12 bg-[#2b2b2b] text-[color:var(--text-on-brand)] transition hover:bg-[#343434] ${
         side === "left" ? "left-6" : "right-6"
       } ${className ?? ""}`}
     >
@@ -683,7 +683,7 @@ function StandaloneActionButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/12 bg-[#2b2b2b] text-white transition hover:bg-[#343434]"
+      className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)]/12 bg-[#2b2b2b] text-[color:var(--text-on-brand)] transition hover:bg-[#343434]"
       title={label}
     >
       {children}

@@ -104,9 +104,9 @@ export function DesktopChatHistoryDialog({
         role="dialog"
         aria-modal="true"
         aria-label={t(msg`查找聊天记录`)}
-        className="relative flex max-h-[85vh] w-full max-w-[960px] flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative flex max-h-[85vh] w-full max-w-[960px] flex-col overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
       >
-        <div className="flex items-center gap-2 bg-white px-4 py-2">
+        <div className="flex items-center gap-2 bg-[color:var(--surface-card)] px-4 py-2">
           {canReturnToDetails && onBackToDetails ? (
             <button
               type="button"

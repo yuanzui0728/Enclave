@@ -117,7 +117,7 @@ export function DesktopAddFriendSendDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative w-full max-w-[460px] overflow-hidden rounded-[10px] border border-[color:var(--border-strong)] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[460px] overflow-hidden rounded-[10px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
       >
         <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-4">
           <div
@@ -130,7 +130,7 @@ export function DesktopAddFriendSendDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="absolute right-4 top-3.5 flex h-8 w-8 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="absolute right-4 top-3.5 flex h-8 w-8 items-center justify-center rounded-[8px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label={t(msg`关闭`)}
           >
             <X size={16} />
@@ -165,7 +165,7 @@ export function DesktopAddFriendSendDialog({
               onChange={(event) => setGreeting(event.target.value)}
               placeholder={t(msg`请输入验证信息`)}
               rows={4}
-              className="min-h-[128px] w-full resize-none rounded-[8px] border border-[color:var(--border-strong)] bg-white px-4 py-3 text-[length:var(--text-body)] leading-7 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[color-mix(in_srgb,var(--brand-primary)_42%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
+              className="min-h-[128px] w-full resize-none rounded-[8px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-4 py-3 text-[length:var(--text-body)] leading-7 text-[color:var(--text-primary)] outline-none transition-[border-color,box-shadow] placeholder:text-[color:var(--text-dim)] focus:border-[color-mix(in_srgb,var(--brand-primary)_42%,transparent)] focus:shadow-[0_0_0_3px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
             />
             <div className="mt-2 flex items-center justify-between text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
               <span>{t(msg`支持按 \`Ctrl/Cmd + Enter\` 直接发送`)}</span>
@@ -180,7 +180,7 @@ export function DesktopAddFriendSendDialog({
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="rounded-[8px] border-[color:var(--border-strong)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`取消`)}
           </Button>
@@ -189,7 +189,7 @@ export function DesktopAddFriendSendDialog({
             variant="primary"
             disabled={pending || !greeting.trim()}
             onClick={() => void onSubmit(greeting.trim())}
-            className="rounded-[8px] bg-[color:var(--brand-primary)] px-5 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
+            className="rounded-[8px] bg-[color:var(--brand-primary)] px-5 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-secondary)]"
           >
             {pending ? t(msg`发送中...`) : t(msg`发送`)}
           </Button>

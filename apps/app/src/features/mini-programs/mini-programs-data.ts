@@ -516,7 +516,7 @@ export function getMiniProgramToneStyle(
         badgeClassName:
           "border-[color:var(--state-success-bg)] bg-[color:var(--surface-card)] text-[color:var(--state-success-text)]",
         heroCardClassName:
-          "bg-[linear-gradient(135deg,#2f7a3f_0%,#4ea96f_45%,#d9f5df_120%)] text-white",
+          "bg-[linear-gradient(135deg,#2f7a3f_0%,#4ea96f_45%,#d9f5df_120%)] text-[color:var(--text-on-brand)]",
         iconClassName: "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
         mutedPanelClassName:
           "border-[color:var(--state-success-bg)] bg-[color:var(--state-success-bg)]",
@@ -527,7 +527,7 @@ export function getMiniProgramToneStyle(
         badgeClassName:
           "border-[color:var(--state-warning-bg)] bg-[color:var(--surface-secondary)] text-[color:var(--state-warning-text)]",
         heroCardClassName:
-          "bg-[linear-gradient(135deg,#d56c18_0%,#ff9c42_45%,#ffe0bf_120%)] text-white",
+          "bg-[linear-gradient(135deg,#d56c18_0%,#ff9c42_45%,#ffe0bf_120%)] text-[color:var(--text-on-brand)]",
         iconClassName: "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]",
         mutedPanelClassName:
           "border-[color:var(--state-warning-bg)] bg-[color:var(--surface-card)]",
@@ -538,7 +538,7 @@ export function getMiniProgramToneStyle(
         badgeClassName:
           "border-[color:var(--state-info-bg)] bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
         heroCardClassName:
-          "bg-[linear-gradient(135deg,#285aa8_0%,#4f8ff7_45%,#dceaff_120%)] text-white",
+          "bg-[linear-gradient(135deg,#285aa8_0%,#4f8ff7_45%,#dceaff_120%)] text-[color:var(--text-on-brand)]",
         iconClassName: "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
         mutedPanelClassName:
           "border-[color:var(--state-info-bg)] bg-[color:var(--state-info-bg)]",
@@ -549,7 +549,7 @@ export function getMiniProgramToneStyle(
         badgeClassName:
           "border-[rgba(206,79,112,0.18)] bg-[rgba(255,239,244,0.94)] text-[#c14368]",
         heroCardClassName:
-          "bg-[linear-gradient(135deg,#b23b5e_0%,#d86d8c_45%,#ffe1eb_120%)] text-white",
+          "bg-[linear-gradient(135deg,#b23b5e_0%,#d86d8c_45%,#ffe1eb_120%)] text-[color:var(--text-on-brand)]",
         iconClassName: "bg-[rgba(206,79,112,0.12)] text-[#c14368]",
         mutedPanelClassName:
           "border-[rgba(206,79,112,0.16)] bg-[rgba(255,241,245,0.92)]",
@@ -561,7 +561,7 @@ export function getMiniProgramToneStyle(
         badgeClassName:
           "border-[rgba(71,85,105,0.16)] bg-[color:var(--surface-secondary)] text-[color:var(--state-info-text)]",
         heroCardClassName:
-          "bg-[linear-gradient(135deg,#344256_0%,#5f748f_45%,#e3ebf5_120%)] text-white",
+          "bg-[linear-gradient(135deg,#344256_0%,#5f748f_45%,#e3ebf5_120%)] text-[color:var(--text-on-brand)]",
         iconClassName: "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
         mutedPanelClassName:
           "border-[rgba(71,85,105,0.16)] bg-[color:var(--surface-secondary)]",

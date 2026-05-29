@@ -360,7 +360,7 @@ export function ProfileFeedbackPage() {
           }}
           disabled={submitting}
           className={cn(
-            "flex w-full items-center justify-center rounded-[var(--radius-sm)] px-4 py-3 text-[length:var(--text-body)] font-medium text-white transition-colors",
+            "flex w-full items-center justify-center rounded-[var(--radius-sm)] px-4 py-3 text-[length:var(--text-body)] font-medium text-[color:var(--text-on-brand)] transition-colors",
             submitting
               ? "bg-[color:var(--state-success-bg)]"
               : "bg-[color:var(--brand-primary)] active:bg-[color:var(--state-success-bg)]",

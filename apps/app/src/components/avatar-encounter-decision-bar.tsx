@@ -78,7 +78,7 @@ export function AvatarEncounterDecisionBar({
         disabled={pending}
         aria-busy={pending || undefined}
         className={cn(
-          "flex flex-[1.4] items-center justify-center gap-1.5 rounded-[14px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] px-3 py-2.5 text-[length:var(--text-caption)] font-semibold text-white transition-opacity active:opacity-90",
+          "flex flex-[1.4] items-center justify-center gap-1.5 rounded-[14px] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] px-3 py-2.5 text-[length:var(--text-caption)] font-semibold text-[color:var(--text-on-brand)] transition-opacity active:opacity-90",
           pending && "opacity-70",
         )}
       >

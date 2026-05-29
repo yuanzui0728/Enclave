@@ -113,7 +113,7 @@ export const AvatarChip = memo(function AvatarChip({
         // 不被 SR 朗读。
         role="img"
         aria-label={name?.trim() || translateRuntimeMessage(msg`头像`)}
-        className={`${classes} ${emojiTextSize} yj-no-callout flex items-center justify-center border border-white/80 bg-[color:var(--surface-console,#f5f1e6)] leading-none shadow-[var(--avatar-ring,0_0_0_0_transparent),var(--shadow-soft)]`}
+        className={`${classes} ${emojiTextSize} yj-no-callout flex items-center justify-center border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-console,#f5f1e6)] leading-none shadow-[var(--avatar-ring,0_0_0_0_transparent),var(--shadow-soft)]`}
       >
         <span aria-hidden="true">{trimmedSrc}</span>
       </span>
@@ -138,7 +138,7 @@ export const AvatarChip = memo(function AvatarChip({
         }
       }}
       draggable={false}
-      className={`${classes} yj-no-callout border border-white/80 object-cover shadow-[var(--avatar-ring,0_0_0_0_transparent),var(--shadow-soft)]`}
+      className={`${classes} yj-no-callout border border-[color:var(--border-faint)]/80 object-cover shadow-[var(--avatar-ring,0_0_0_0_transparent),var(--shadow-soft)]`}
     />
   );
 });

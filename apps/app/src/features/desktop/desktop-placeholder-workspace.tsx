@@ -34,7 +34,7 @@ export function DesktopPlaceholderWorkspace({
   if (!isDesktopLayout) {
     return (
       <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)]">
-        <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
           <div className="text-xl font-semibold text-[color:var(--text-primary)]">
             {t(msg`该入口当前仅提供桌面布局`)}
           </div>
@@ -43,7 +43,7 @@ export function DesktopPlaceholderWorkspace({
           </div>
           <a
             href={mobileFallbackTo}
-            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white hover:opacity-95"
+            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-[color:var(--text-on-brand)] hover:opacity-95"
           >
             {t(msg`返回继续使用`)}
           </a>
@@ -63,7 +63,7 @@ export function DesktopPlaceholderWorkspace({
       }
       aside={
         <div className="flex h-full flex-col bg-[rgba(247,250,250,0.86)]">
-          <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-5 py-4 backdrop-blur-xl">
             <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`工作区指引`)}
             </div>
@@ -73,7 +73,7 @@ export function DesktopPlaceholderWorkspace({
           </div>
 
           <div className="flex-1 px-4 py-4">
-            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+            <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
               <div className="text-xs tracking-[0.14em] text-[color:var(--text-dim)]">
                 {t(msg`当前重点`)}
               </div>
@@ -90,7 +90,7 @@ export function DesktopPlaceholderWorkspace({
       contentClassName="bg-[rgba(255,255,255,0.62)]"
     >
       <div className="space-y-5 p-5">
-        <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-card)]">
+        <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-6 shadow-[var(--shadow-card)]">
           <div className="text-xs tracking-[0.14em] text-[color:var(--text-dim)]">
             {t(msg`工作区规划`)}
           </div>
@@ -114,7 +114,7 @@ export function DesktopPlaceholderWorkspace({
               variant="primary"
               size="lg"
               onClick={onCtaClick}
-              className="mt-5 rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              className="mt-5 rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {ctaLabel}
             </Button>

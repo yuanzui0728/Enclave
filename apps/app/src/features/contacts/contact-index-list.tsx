@@ -219,7 +219,7 @@ export function ContactIndexList({
         <div className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center">
           <div
             className={cn(
-              "flex items-center justify-center bg-[rgba(22,22,22,0.72)] font-medium text-white shadow-[0_18px_40px_rgba(60, 40, 110, 0.22)] backdrop-blur",
+              "flex items-center justify-center bg-[rgba(22,22,22,0.72)] font-medium text-[color:var(--text-on-brand)] shadow-[0_18px_40px_rgba(60, 40, 110, 0.22)] backdrop-blur",
               compact
                 ? "h-20 w-20 rounded-[var(--radius-xl)] text-[length:var(--text-display)]"
                 : "h-24 w-24 rounded-[var(--radius-xl)] text-[34px]",

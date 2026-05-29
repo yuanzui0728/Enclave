@@ -166,7 +166,7 @@ export function DesktopProfileMomentsWorkspace({
       return (
         <LoadingBlock
           label={t(msg`正在加载我的朋友圈`)}
-          className="rounded-[var(--radius-lg)] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
+          className="rounded-[var(--radius-lg)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-10 shadow-[var(--shadow-section)]"
         />
       );
     }
@@ -264,13 +264,13 @@ export function DesktopProfileMomentsWorkspace({
     <div className="relative flex h-full min-h-0 bg-[color:var(--surface-section)]">
       <section className="min-w-0 flex-1 bg-[color:var(--surface-section)]">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
             <div className="mx-auto flex w-full max-w-[760px] items-center justify-between gap-4">
               <button
                 type="button"
                 onClick={onBack}
                 aria-label={t(msg`返回上一页`)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
               >
                 <ArrowLeft size={17} />
               </button>
@@ -301,12 +301,12 @@ export function DesktopProfileMomentsWorkspace({
           (likeErrorMessage && !(notice && noticeTone === "danger")) ||
           (commentErrorMessage && !(notice && noticeTone === "danger")) ||
           (deleteErrorMessage && !(notice && noticeTone === "danger")) ? (
-            <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-6 py-3 backdrop-blur-xl">
+            <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/82 px-6 py-3 backdrop-blur-xl">
               <div className="mx-auto w-full max-w-[760px] space-y-3">
                 {notice ? (
                   <InlineNotice
                     tone={noticeTone}
-                    className="border-[color:var(--border-faint)] bg-white"
+                    className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <span className="min-w-0 flex-1">{notice}</span>
@@ -316,7 +316,7 @@ export function DesktopProfileMomentsWorkspace({
                           variant="secondary"
                           size="sm"
                           onClick={onNoticeAction}
-                          className="shrink-0 border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                          className="shrink-0 border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                         >
                           {noticeActionLabel}
                         </Button>
@@ -368,7 +368,7 @@ export function DesktopProfileMomentsWorkspace({
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_25%,rgba(255,255,255,0.32),transparent_60%)]" />
               </div>
               <div className="absolute bottom-7 right-8 flex items-end gap-4">
-                <div className="text-right text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.28)]">
+                <div className="text-right text-[color:var(--text-on-brand)] drop-shadow-[0_1px_2px_rgba(0,0,0,0.28)]">
                   <div className="text-[18px] font-medium leading-tight">
                     {displayName}
                   </div>

@@ -101,7 +101,7 @@ export function DesktopGamesWorkspace({
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
       {/* Left: list panel */}
-      <aside className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
+      <aside className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
         <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] px-4 py-3">
           <span className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`游戏`)}
@@ -219,14 +219,14 @@ export function DesktopGamesWorkspace({
 
       {/* Right: detail */}
       <section className="flex min-w-0 flex-1 flex-col bg-[color:var(--surface-card)]">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-white px-6 py-3">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 py-3">
           <span className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
             {selectedGame.name}
           </span>
           <button
             type="button"
             onClick={() => onCopyGameToMobile(selectedGame.id)}
-            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-white px-3 text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.02)]"
+            className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] font-medium text-[color:var(--text-secondary)] hover:bg-[rgba(0,0,0,0.02)]"
             aria-label={
               nativeMobileShareSupported
                 ? t(msg`分享当前游戏`)
@@ -252,17 +252,17 @@ export function DesktopGamesWorkspace({
               style={{ aspectRatio: "16 / 6" }}
             >
               <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -right-12 top-0 h-44 w-44 rounded-full bg-white/12 blur-3xl" />
+                <div className="absolute -right-12 top-0 h-44 w-44 rounded-full bg-[color:var(--surface-card)]/12 blur-3xl" />
                 <div className="absolute bottom-0 left-12 h-32 w-32 rounded-full bg-black/10 blur-3xl" />
               </div>
               <div className="relative flex h-full flex-col justify-end">
-                <div className="inline-flex w-fit rounded-full border border-white/18 bg-white/15 px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-white/85">
+                <div className="inline-flex w-fit rounded-full border border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/15 px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium tracking-[0.08em] text-[color:var(--text-on-brand)]/85">
                   {selectedGame.badge}
                 </div>
-                <div className="mt-3 text-[24px] font-semibold leading-tight text-white">
+                <div className="mt-3 text-[24px] font-semibold leading-tight text-[color:var(--text-on-brand)]">
                   {selectedGame.name}
                 </div>
-                <div className="mt-1.5 text-[length:var(--text-body)] leading-snug text-white/85">
+                <div className="mt-1.5 text-[length:var(--text-body)] leading-snug text-[color:var(--text-on-brand)]/85">
                   {selectedGame.slogan}
                 </div>
               </div>
@@ -273,7 +273,7 @@ export function DesktopGamesWorkspace({
                 {selectedGame.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
+                    className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2.5 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]"
                   >
                     {tag}
                   </span>
@@ -308,7 +308,7 @@ export function DesktopGamesWorkspace({
                   type="button"
                   variant="primary"
                   onClick={handleLaunchClick}
-                  className="h-11 rounded-full bg-[color:var(--brand-primary)] px-6 text-[length:var(--text-body)] font-medium text-white hover:bg-[color:var(--brand-primary)]"
+                  className="h-11 rounded-full bg-[color:var(--brand-primary)] px-6 text-[length:var(--text-body)] font-medium text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]"
                 >
                   <Play size={16} />
                   {launchLabel}
@@ -329,7 +329,7 @@ export function DesktopGamesWorkspace({
                     <button
                       type="button"
                       onClick={noticeActionState.onAction}
-                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-white px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)]"
+                      className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)]"
                     >
                       {noticeActionState.label}
                     </button>
@@ -341,7 +341,7 @@ export function DesktopGamesWorkspace({
             ) : null}
 
             {isEmbeddedActive && activeGameId ? (
-              <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-white">
+              <div className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]">
                 <EmbeddedGameSlot
                   gameId={activeGameId}
                   onExit={onDismissActiveGame}
@@ -350,7 +350,7 @@ export function DesktopGamesWorkspace({
             ) : null}
 
             {detailFriends.length > 0 ? (
-              <section className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white">
+              <section className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
                 <div className="border-b border-[color:var(--border-faint)] px-4 py-2.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                   {t(msg`正在玩 ${selectedGame.name} 的好友`)}
                 </div>
@@ -514,7 +514,7 @@ function DesktopMetricCell({
   value: string;
 }) {
   return (
-    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white px-3 py-2.5">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5">
       <div className="text-[10px] uppercase tracking-[0.1em] text-[color:var(--text-muted)]">
         {label}
       </div>
@@ -555,8 +555,8 @@ function DesktopFriendDetailRow({
         className={cn(
           "h-8 shrink-0 rounded-full px-4 text-[length:var(--text-caption)] font-medium",
           invited
-            ? "border border-[color:var(--border-subtle)] bg-white text-[color:var(--text-secondary)]"
-            : "bg-[color:var(--brand-primary)] text-white hover:bg-[color:var(--brand-primary)]",
+            ? "border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]"
+            : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--brand-primary)]",
         )}
       >
         {invited ? t(msg`已邀约`) : t(msg`邀请`)}

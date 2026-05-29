@@ -32,15 +32,15 @@ export function WeChatCallControlButton({
           "flex items-center justify-center rounded-full transition active:scale-95 disabled:opacity-40",
           size === "lg" ? "h-[68px] w-[68px]" : "h-[58px] w-[58px]",
           variant === "danger"
-            ? "bg-[color:var(--state-danger-bg)] text-white active:bg-[color:var(--state-danger-bg)]"
+            ? "bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] active:bg-[color:var(--state-danger-bg)]"
             : variant === "active"
-              ? "bg-white text-[color:var(--text-primary)]"
-              : "bg-white/15 text-white active:bg-white/25",
+              ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+              : "bg-[color:var(--surface-card)]/15 text-[color:var(--text-on-brand)] active:bg-[color:var(--surface-card)]/25",
         )}
       >
         {icon}
       </button>
-      <span className="text-[length:var(--text-caption)] leading-none text-white/70">{label}</span>
+      <span className="text-[length:var(--text-caption)] leading-none text-[color:var(--text-on-brand)]/70">{label}</span>
     </div>
   );
 }

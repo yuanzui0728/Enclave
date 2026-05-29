@@ -164,7 +164,7 @@ export function DesktopContactTextEditDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className="relative w-full max-w-[520px] overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[520px] overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-overlay)]"
         onSubmit={(event) => {
           event.preventDefault();
           if (confirmDisabled || submittingRef.current) {
@@ -195,7 +195,7 @@ export function DesktopContactTextEditDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label={t(msg`关闭`)}
           >
             <X size={16} />
@@ -209,7 +209,7 @@ export function DesktopContactTextEditDialog({
             onChange={(event) => handleDraftChange(event.target.value)}
             placeholder={placeholder}
             disabled={pending}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
           />
 
           <div className="flex items-center justify-between gap-3 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
@@ -225,7 +225,7 @@ export function DesktopContactTextEditDialog({
               variant="secondary"
               onClick={onClose}
               disabled={pending}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`取消`)}
             </Button>
@@ -233,7 +233,7 @@ export function DesktopContactTextEditDialog({
               type="submit"
               variant="primary"
               disabled={confirmDisabled}
-              className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {pending ? t(msg`正在保存...`) : effectiveSubmitLabel}
             </Button>

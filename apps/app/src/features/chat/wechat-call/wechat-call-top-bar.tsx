@@ -29,18 +29,18 @@ export function WeChatCallTopBar({
         type="button"
         onClick={onMinimize}
         aria-label={minimizeLabel}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/12 text-white transition active:bg-white/20"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--surface-card)]/12 text-[color:var(--text-on-brand)] transition active:bg-[color:var(--surface-card)]/20"
       >
         <ChevronDown size={22} />
       </button>
 
       {centerTitle ? (
         <div className="min-w-0 flex-1 text-center">
-          <div className="truncate text-[length:var(--text-title)] font-medium text-white">
+          <div className="truncate text-[length:var(--text-title)] font-medium text-[color:var(--text-on-brand)]">
             {centerTitle}
           </div>
           {centerSubtitle ? (
-            <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-white/55">
+            <div className="mt-0.5 truncate text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/55">
               {centerSubtitle}
             </div>
           ) : null}

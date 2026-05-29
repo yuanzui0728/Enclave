@@ -1291,9 +1291,9 @@ function MobileChatListPage() {
                         type="button"
                         role="menuitem"
                         onClick={() => handleNavigate(to)}
-                        className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
+                        className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card)]/10 active:bg-[color:var(--surface-card)]/12"
                       >
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)]">
                           {/*
                             走查再再一轮 R1：菜单项视觉文本（发起群聊 / 添加朋友 /
                             新建笔记）已经在 <span> 给出 accessible name；Lucide
@@ -1327,16 +1327,16 @@ function MobileChatListPage() {
                       aria-label={disabledItemLabel}
                       tabIndex={item.disabled ? -1 : undefined}
                       className={cn(
-                        "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                        "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                         item.disabled
                           ? "cursor-not-allowed opacity-55"
-                          : "hover:bg-white/10 active:bg-white/12",
+                          : "hover:bg-[color:var(--surface-card)]/10 active:bg-[color:var(--surface-card)]/12",
                       )}
                     >
                       <div
                         className={cn(
-                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-white",
-                          item.disabled ? "bg-white/6" : "bg-white/10",
+                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-[color:var(--text-on-brand)]",
+                          item.disabled ? "bg-[color:var(--surface-card)]/6" : "bg-[color:var(--surface-card)]/10",
                         )}
                       >
                         {/* 同上：装饰 icon 不该被 AT 念额外英文文件名 */}
@@ -1345,7 +1345,7 @@ function MobileChatListPage() {
                       <div className="min-w-0 flex-1">
                         <div>{t(item.label)}</div>
                         {item.disabledLabel ? (
-                          <div className="mt-0.5 text-[10px] text-white/62">
+                          <div className="mt-0.5 text-[10px] text-[color:var(--text-on-brand)]/62">
                             {t(item.disabledLabel)}
                           </div>
                         ) : null}
@@ -2224,7 +2224,7 @@ function ConversationListItemLinkImpl({
                           )
                     }
                     className={cn(
-                      "flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] px-1 text-[length:var(--text-eyebrow)] leading-none text-white shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
+                      "flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] px-1 text-[length:var(--text-eyebrow)] leading-none text-[color:var(--text-on-brand)] shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
                       conversation.unreadCount > 9 ? "min-w-[22px]" : undefined,
                     )}
                   >
@@ -2366,7 +2366,7 @@ function ConversationListItemLinkImpl({
           <button
             type="button"
             onClick={onTogglePinned}
-            className="flex w-[68px] items-center justify-center bg-[#c4c7cc] text-white active:brightness-[0.96]"
+            className="flex w-[68px] items-center justify-center bg-[#c4c7cc] text-[color:var(--text-on-brand)] active:brightness-[0.96]"
           >
             <div className="flex flex-col items-center gap-0.5 text-[length:var(--text-eyebrow)]">
               <Pin size={13} aria-hidden="true" />
@@ -2380,7 +2380,7 @@ function ConversationListItemLinkImpl({
           type="button"
           onClick={onToggleMuted}
           className={cn(
-            "flex w-[68px] items-center justify-center text-white active:brightness-[0.96]",
+            "flex w-[68px] items-center justify-center text-[color:var(--text-on-brand)] active:brightness-[0.96]",
             muteActionClassName,
           )}
         >
@@ -2395,7 +2395,7 @@ function ConversationListItemLinkImpl({
           <button
             type="button"
             onClick={onToggleReadState}
-            className="flex w-[68px] items-center justify-center bg-[color:var(--state-info-bg)] text-white active:brightness-[0.96]"
+            className="flex w-[68px] items-center justify-center bg-[color:var(--state-info-bg)] text-[color:var(--text-on-brand)] active:brightness-[0.96]"
           >
             <div className="flex flex-col items-center gap-0.5 text-[length:var(--text-eyebrow)]">
               {conversation.unreadCount > 0 ? (
@@ -2410,7 +2410,7 @@ function ConversationListItemLinkImpl({
         <button
           type="button"
           onClick={onHide}
-          className="flex w-[68px] items-center justify-center bg-[color:var(--state-danger-bg)] text-white active:brightness-[0.96]"
+          className="flex w-[68px] items-center justify-center bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] active:brightness-[0.96]"
         >
           <div className="flex flex-col items-center gap-0.5 text-[length:var(--text-eyebrow)]">
             <Trash2 size={13} aria-hidden="true" />

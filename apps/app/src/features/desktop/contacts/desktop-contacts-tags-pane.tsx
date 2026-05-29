@@ -406,7 +406,7 @@ export function DesktopContactsTagsPane() {
   return (
     <div className="flex h-full min-h-0">
       <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-4 py-4 backdrop-blur-xl">
           <div className="text-base font-medium text-[color:var(--text-primary)]">
             {t(msg`标签`)}
           </div>
@@ -414,7 +414,7 @@ export function DesktopContactsTagsPane() {
             {t(msg`${tagGroups.length} 个标签 · ${taggedFriendCount} 位联系人`)}
           </div>
 
-          <label className="mt-3 flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+          <label className="mt-3 flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -480,7 +480,7 @@ export function DesktopContactsTagsPane() {
 
           {tagGroups.length ? (
             <>
-              <section className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+              <section className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
                 {tagGroups.map((group, index) => (
                   <button
                     key={group.tag}
@@ -515,8 +515,8 @@ export function DesktopContactsTagsPane() {
               </section>
 
               {selectedGroup ? (
-                <section className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
-                  <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-3 backdrop-blur-xl">
+                <section className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
+                  <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-4 py-3 backdrop-blur-xl">
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
                       {selectedGroup.tag}
                     </div>

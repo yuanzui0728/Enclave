@@ -130,16 +130,16 @@ export function MomentComposeMediaPreview({
 
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(60, 40, 110, 0.02),rgba(60, 40, 110, 0.36))]" />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-black/56 text-white transition group-hover:scale-[1.04]">
+                <span className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-black/56 text-[color:var(--text-on-brand)] transition group-hover:scale-[1.04]">
                   <Play size={22} className="translate-x-[1px] fill-current" />
                 </span>
               </div>
               <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between gap-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-on-brand)]">
                   <Play size={12} className="fill-current" />
                   {t(msg`视频`)}
                 </span>
-                <span className="rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-white">
+                <span className="rounded-full bg-black/58 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-on-brand)]">
                   {formatMomentDurationLabel(videoDraft.durationMs)}
                 </span>
               </div>
@@ -216,7 +216,7 @@ export function MomentComposeMediaPreview({
                       : "h-full w-full object-cover",
                   )}
                 />
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(60, 40, 110, 0.46))] px-3 py-2 text-[10px] text-white/88">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(60, 40, 110, 0.46))] px-3 py-2 text-[10px] text-[color:var(--text-on-brand)]/88">
                   {draft.width} × {draft.height}
                 </div>
               </button>
@@ -273,7 +273,7 @@ function RemoveDraftButton({
       aria-label={ariaLabel}
       disabled={disabled}
       className={cn(
-        "absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full text-white transition",
+        "absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--text-on-brand)] transition",
         disabled
           ? "bg-black/30 cursor-not-allowed"
           : "bg-black/58 hover:bg-black/72",
@@ -327,7 +327,7 @@ function ComposeImageViewer({
         className="absolute inset-0"
         aria-label={t(msg`关闭图片预览`)}
       />
-      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-white">
+      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-[color:var(--text-on-brand)]">
         <IconOverlayButton label={t(msg`关闭图片预览`)} onClick={onClose}>
           <X size={18} />
         </IconOverlayButton>
@@ -335,7 +335,7 @@ function ComposeImageViewer({
           <div className="truncate text-sm font-medium">
             {draft.file.name || t(msg`图片`)}
           </div>
-          <div className="mt-1 text-xs text-white/70">
+          <div className="mt-1 text-xs text-[color:var(--text-on-brand)]/70">
             {activeIndex + 1} / {total}
           </div>
         </div>
@@ -426,12 +426,12 @@ function ComposeVideoViewer({
         className="absolute inset-0"
         aria-label={t(msg`关闭视频预览`)}
       />
-      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-white">
+      <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.75rem)] z-10 flex items-center justify-between gap-3 px-4 text-[color:var(--text-on-brand)]">
         <div className="min-w-0">
           <div className="truncate text-sm font-medium">
             {draft.file.name || t(msg`视频`)}
           </div>
-          <div className="mt-1 text-xs text-white/70">
+          <div className="mt-1 text-xs text-[color:var(--text-on-brand)]/70">
             {t(msg`时长 ${formatMomentDurationLabel(draft.durationMs)}`)}
           </div>
         </div>
@@ -475,7 +475,7 @@ function IconOverlayButton({
       }}
       aria-label={label}
       className={cn(
-        "z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/12 text-white transition hover:bg-white/18",
+        "z-10 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--surface-card)]/12 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/18",
         className,
       )}
     >

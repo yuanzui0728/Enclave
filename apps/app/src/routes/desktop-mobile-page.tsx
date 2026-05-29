@@ -820,7 +820,7 @@ export function DesktopMobilePage() {
       sidebarClassName="w-[300px]"
       sidebar={
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/74 px-4 py-4 backdrop-blur-xl">
             <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`手机接力`)}
             </div>
@@ -831,7 +831,7 @@ export function DesktopMobilePage() {
 
           <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-shell)] px-4 py-4">
             <div className="space-y-4">
-              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
                 <div className="flex items-center gap-4">
                   <AvatarChip
                     name={ownerName ?? defaultOwnerName}
@@ -853,7 +853,7 @@ export function DesktopMobilePage() {
               <MetricCard label={t(msg`最近同步`)} value={syncLabel} />
               <MetricCard label={t(msg`最近接力`)} value={handoffLabel} />
 
-              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+              <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-section)]">
                 <div className="text-xs font-medium text-[color:var(--text-muted)]">
                   {t(msg`活跃接力`)}
                 </div>
@@ -896,7 +896,7 @@ export function DesktopMobilePage() {
             role="status"
             aria-live="polite"
             tone="success"
-            className="border-[color:var(--border-faint)] bg-white"
+            className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
           >
             {notice}
           </InlineNotice>
@@ -929,7 +929,7 @@ export function DesktopMobilePage() {
                     replace: true,
                   })
                 }
-                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)]"
               >
                 {t(msg`收起`)}
               </button>
@@ -950,14 +950,14 @@ export function DesktopMobilePage() {
                     setNotice,
                   })
                 }
-                className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+                className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
               >
                 <Copy size={14} />
                 {t(msg`复制到手机`)}
               </Button>
               <Link
                 to={callHandoffDesktopPath as never}
-                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
               >
                 {t(msg`桌面打开聊天`)}
               </Link>
@@ -999,7 +999,7 @@ export function DesktopMobilePage() {
                     replace: true,
                   })
                 }
-                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-white"
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)]"
               >
                 {t(msg`收起`)}
               </button>
@@ -1018,7 +1018,7 @@ export function DesktopMobilePage() {
                     setNotice,
                   })
                 }
-                className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+                className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
               >
                 <Copy size={14} />
                 {t(msg`复制到手机`)}
@@ -1027,7 +1027,7 @@ export function DesktopMobilePage() {
                 variant="secondary"
                 size="sm"
                 onClick={handleOpenOfficialHandoffOnDesktop}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 <ArrowUpRight size={14} />
                 {t(msg`桌面回到当前工作区`)}
@@ -1061,7 +1061,7 @@ export function DesktopMobilePage() {
         ) : null}
 
         <div className="grid gap-5 xl:grid-cols-[1.05fr_0.95fr]">
-          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
               <Smartphone
                 size={16}
@@ -1100,14 +1100,14 @@ export function DesktopMobilePage() {
                           setNotice,
                         })
                       }
-                      className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+                      className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
                     >
                       <Copy size={14} />
                       {t(msg`复制到手机`)}
                     </Button>
                     <Link
                       to={(item.desktopTo ?? item.to) as never}
-                      className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                      className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
                     >
                       {t(msg`桌面打开`)}
                     </Link>
@@ -1117,7 +1117,7 @@ export function DesktopMobilePage() {
             </div>
           </section>
 
-          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
               <Wifi size={16} className="text-[color:var(--brand-primary)]" />
               <span>{t(msg`同步概览`)}</span>
@@ -1178,7 +1178,7 @@ export function DesktopMobilePage() {
         </div>
 
         <div className="grid gap-5 xl:grid-cols-[1fr_1fr]">
-          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1192,7 +1192,7 @@ export function DesktopMobilePage() {
                 variant="secondary"
                 size="sm"
                 onClick={() => void conversationsQuery.refetch()}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 <RefreshCw size={14} />
                 {t(msg`刷新`)}
@@ -1241,7 +1241,7 @@ export function DesktopMobilePage() {
             </div>
           </section>
 
-          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+          <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1257,7 +1257,7 @@ export function DesktopMobilePage() {
                 variant="secondary"
                 size="sm"
                 onClick={() => void officialAccountsQuery.refetch()}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 <RefreshCw size={14} />
                 {t(msg`刷新`)}
@@ -1331,7 +1331,7 @@ export function DesktopMobilePage() {
           </section>
         </div>
 
-        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -1350,7 +1350,7 @@ export function DesktopMobilePage() {
             <div className="flex flex-wrap gap-2">
               <Link
                 to="/tabs/mini-programs"
-                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+                className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
               >
                 {t(msg`打开小程序面板`)}
               </Link>
@@ -1369,7 +1369,7 @@ export function DesktopMobilePage() {
                     },
                   );
                 }}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 <RefreshCw size={14} />
                 {t(msg`刷新`)}
@@ -1503,7 +1503,7 @@ export function DesktopMobilePage() {
           </div>
         </section>
 
-        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -1521,7 +1521,7 @@ export function DesktopMobilePage() {
             </div>
             <Link
               to="/desktop/channels/live-companion"
-              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+              className="inline-flex h-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-xs font-medium text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
             >
               {t(msg`打开直播伴侣`)}
             </Link>
@@ -1565,7 +1565,7 @@ export function DesktopMobilePage() {
                       setNotice,
                     })
                   }
-                  className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+                  className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
                 >
                   <Copy size={14} />
                   {t(msg`发准备到手机`)}
@@ -1584,7 +1584,7 @@ export function DesktopMobilePage() {
                       );
                     });
                   }}
-                  className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                  className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
                 >
                   <RefreshCw size={14} />
                   {t(msg`刷新直播状态`)}
@@ -1642,7 +1642,7 @@ export function DesktopMobilePage() {
                       setNotice,
                     })
                   }
-                  className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                  className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
                 >
                   <ArrowUpRight size={14} />
                   {t(msg`发直播状态到手机`)}
@@ -1652,7 +1652,7 @@ export function DesktopMobilePage() {
           </div>
         </section>
 
-        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+        <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
           <div className="flex items-center gap-2 text-sm font-medium text-[color:var(--text-primary)]">
             <CheckCircle2
               size={16}
@@ -1713,7 +1713,7 @@ export function DesktopMobilePage() {
                             setNotice,
                           })
                         }
-                        className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                        className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
                       >
                         {t(msg`再发一次`)}
                       </Button>
@@ -1734,7 +1734,7 @@ export function DesktopMobilePage() {
       </div>
     </DesktopUtilityShell>
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]">
-        <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
+        <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
           <div className="text-lg font-semibold text-[color:var(--text-primary)]">
             {t(msg`功能开发中`)}
           </div>
@@ -1783,7 +1783,7 @@ function RecentConversationRow({
             <Button
               size="sm"
               onClick={onCopy}
-              className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               <Copy size={14} />
               {t(msg`发到手机继续`)}
@@ -1831,7 +1831,7 @@ function RecentArticleRow({
             <Button
               size="sm"
               onClick={onCopyArticle}
-              className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               <Copy size={14} />
               {t(msg`发文章到手机`)}
@@ -1840,7 +1840,7 @@ function RecentArticleRow({
               variant="secondary"
               size="sm"
               onClick={onOpenArticle}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               <ArrowUpRight size={14} />
               {t(msg`桌面打开文章`)}
@@ -1849,7 +1849,7 @@ function RecentArticleRow({
               variant="secondary"
               size="sm"
               onClick={onCopyAccount}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               <ArrowUpRight size={14} />
               {t(msg`发主页到手机`)}
@@ -1858,7 +1858,7 @@ function RecentArticleRow({
               variant="secondary"
               size="sm"
               onClick={onOpenAccount}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               <ArrowUpRight size={14} />
               {t(msg`桌面打开主页`)}
@@ -1890,7 +1890,7 @@ function MiniProgramHandoffCard({
   onCopy: () => void;
 }) {
   return (
-    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1923,7 +1923,7 @@ function MiniProgramHandoffCard({
         <Button
           size="sm"
           onClick={onCopy}
-          className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+          className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
         >
           <Copy size={14} />
           {buttonLabel}
@@ -1935,7 +1935,7 @@ function MiniProgramHandoffCard({
 
 function MetricCard({ label, value }: { label: ReactNode; value: ReactNode }) {
   return (
-    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}

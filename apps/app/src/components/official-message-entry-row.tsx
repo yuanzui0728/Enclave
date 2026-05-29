@@ -57,8 +57,8 @@ export function OfficialMessageEntryRow({
           ? active
             ? "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--brand-primary)]/14 bg-[color:var(--surface-card)] px-3 py-2.5 text-left shadow-[0_8px_22px_rgba(60, 40, 110, 0.04)]"
             : contextMenuOpen
-              ? "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5 text-left"
-              : "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border border-transparent bg-transparent px-3 py-2.5 text-left transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-white/80"
+              ? "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/88 px-3 py-2.5 text-left"
+              : "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border border-transparent bg-transparent px-3 py-2.5 text-left transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]/80"
           : active
             ? "flex w-full items-center gap-2.5 bg-[color:var(--brand-primary)]/7 px-4 py-2.5 text-left"
             : "flex w-full items-center gap-2.5 bg-[color:var(--bg-canvas-elevated)] px-4 py-2.5 text-left",
@@ -147,7 +147,7 @@ export function OfficialMessageEntryRow({
                 <div
                   role="img"
                   className={cn(
-                    "flex items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] text-center text-white",
+                    "flex items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] text-center text-[color:var(--text-on-brand)]",
                     isDesktop
                       ? "min-w-5 px-1.5 py-0.5 text-[10px]"
                       : "min-h-[18px] min-w-[18px] px-1 text-[length:var(--text-eyebrow)] leading-none shadow-[0_4px_12px_rgba(250,81,81,0.18)]",

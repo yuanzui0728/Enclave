@@ -56,7 +56,7 @@ export function DigitalHumanPlayer({
     <button
       type="button"
       onClick={onRetryRender}
-      className="inline-flex h-10 items-center justify-center rounded-full border border-white/12 bg-white/8 px-4 text-sm text-white transition hover:bg-white/12"
+      className="inline-flex h-10 items-center justify-center rounded-full border border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/8 px-4 text-sm text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/12"
     >
       {t(msg`重新连接`)}
     </button>
@@ -67,9 +67,9 @@ export function DigitalHumanPlayer({
       return (
         <section
           className={cn(
-            "relative overflow-hidden border text-white",
+            "relative overflow-hidden border text-[color:var(--text-on-brand)]",
             variant === "mobile"
-              ? "rounded-[var(--radius-xl)] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
+              ? "rounded-[var(--radius-xl)] border-[color:var(--border-faint)]/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
               : "flex min-h-0 flex-1 rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
           )}
         >
@@ -105,19 +105,19 @@ export function DigitalHumanPlayer({
             className="absolute inset-0 h-full w-full border-0"
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 rounded-t-[22px] bg-[linear-gradient(180deg,rgba(2,6,23,0),rgba(2,6,23,0.78))] px-4 pb-4 pt-10">
-            <div className="rounded-[var(--radius-lg)] border border-white/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
-              <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/42">
+            <div className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)]/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
+              <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-on-brand)]/42">
                 {t(msg`通话提示`)}
               </div>
-              <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-white/78">
+              <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/78">
                 {statusHint}
               </div>
               {renderStatusHint ? (
-                <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-white/64">
+                <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/64">
                   {renderStatusHint}
                 </div>
               ) : null}
-              <div className="mt-2 flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-white/52">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/52">
                 <span>{providerLabel}</span>
                 {renderStatusLabel ? (
                   <span>{renderStatusLabel}</span>
@@ -154,9 +154,9 @@ export function DigitalHumanPlayer({
   return (
     <section
       className={cn(
-        "relative overflow-hidden border text-white",
+        "relative overflow-hidden border text-[color:var(--text-on-brand)]",
         variant === "mobile"
-          ? "rounded-[var(--radius-xl)] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
+          ? "rounded-[var(--radius-xl)] border-[color:var(--border-faint)]/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
           : "flex min-h-0 flex-1 rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
       )}
     >
@@ -183,8 +183,8 @@ export function DigitalHumanPlayer({
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="relative z-10 flex h-full flex-col justify-between bg-[linear-gradient(180deg,rgba(2,6,23,0.18),rgba(2,6,23,0.54))] p-4">
-        <div className="max-w-[196px] rounded-[var(--radius-lg)] border border-white/10 bg-[rgba(2,6,23,0.44)] px-3 py-2 backdrop-blur">
-          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/42">
+        <div className="max-w-[196px] rounded-[var(--radius-lg)] border border-[color:var(--border-faint)]/10 bg-[rgba(2,6,23,0.44)] px-3 py-2 backdrop-blur">
+          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-on-brand)]/42">
             {t(msg`状态`)}
           </div>
           <div className="mt-1 text-sm font-medium text-[color:var(--state-success-text)]">
@@ -210,19 +210,19 @@ export function DigitalHumanPlayer({
                   ? t(msg`画面正在排队，请稍候`)
                   : t(msg`画面已开启`)}
           </InlineNotice>
-          <div className="rounded-[var(--radius-xl)] border border-white/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
-            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/42">
+          <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/10 bg-[rgba(2,6,23,0.44)] px-4 py-3 backdrop-blur">
+            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-on-brand)]/42">
               {t(msg`通话提示`)}
             </div>
-            <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-white/78">
+            <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/78">
               {statusHint}
             </div>
             {renderStatusHint ? (
-              <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-white/64">
+              <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/64">
                 {renderStatusHint}
               </div>
             ) : null}
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-white/52">
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/52">
               <span>{providerLabel}</span>
               {renderStatusLabel ? (
                 <span>{t(msg`画面: ${renderStatusLabel}`)}</span>

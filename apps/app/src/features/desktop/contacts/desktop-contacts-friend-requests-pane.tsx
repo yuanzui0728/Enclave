@@ -62,7 +62,7 @@ export function DesktopContactsFriendRequestsPane({
     // 改成 header + 独立滚动容器（content），跟 starred-friends pane 同款结构，
     // 用户批处理时顶端的"x 条待处理"一直可见。
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-soft)]">
-      <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-8 py-6 backdrop-blur-xl">
+      <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/82 px-8 py-6 backdrop-blur-xl">
         <div className="min-w-0">
           <div className="text-[length:var(--text-section)] font-medium text-[color:var(--text-primary)]">
             {t(msg`新的朋友`)}
@@ -83,7 +83,7 @@ export function DesktopContactsFriendRequestsPane({
         // 把 banner 放在 header 和 scroll content 之间（非 scroll 容器的子节点），
         // 用户滚到列表底部接受一条好友申请时 banner 仍然挂在顶上可见的 2.4s，
         // 不会随列表滚出视区被错过。
-        <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-8 py-3 backdrop-blur-xl">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/82 px-8 py-3 backdrop-blur-xl">
           {actionError ? (
             <InlineNotice tone="danger">{actionError}</InlineNotice>
           ) : (
@@ -131,7 +131,7 @@ export function DesktopContactsFriendRequestsPane({
               return (
                 <section
                   key={request.id}
-                  className="rounded-[22px] border border-[color:var(--border-faint)] bg-white px-5 py-5 shadow-[var(--shadow-soft)]"
+                  className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 py-5 shadow-[var(--shadow-soft)]"
                 >
                   <div className="flex items-start gap-4">
                     <div className={expired ? "opacity-70" : undefined}>
@@ -201,7 +201,7 @@ export function DesktopContactsFriendRequestsPane({
                               ? t(msg`清除 ${request.characterName} 的过期好友申请`)
                               : t(msg`拒绝 ${request.characterName} 的好友申请`)
                           }
-                          className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+                          className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 shadow-none hover:bg-[color:var(--surface-console)]"
                         >
                           {declinePendingId === request.id
                             ? expired
@@ -220,7 +220,7 @@ export function DesktopContactsFriendRequestsPane({
                             aria-label={t(
                               msg`接受 ${request.characterName} 的好友申请`,
                             )}
-                            className="rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-5 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
+                            className="rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-5 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-secondary)]"
                           >
                             {acceptPendingId === request.id
                               ? t(msg`接受中...`)

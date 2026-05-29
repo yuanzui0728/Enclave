@@ -566,7 +566,7 @@ function MobileGroupMemberPickerPage({
               selectedIds.length && !submitMutation.isPending
                 ? mode === "add"
                   ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:opacity-90"
-                  : "bg-[color:var(--state-danger-bg)] text-white active:opacity-90"
+                  : "bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >
@@ -608,7 +608,7 @@ function MobileGroupMemberPickerPage({
                         src={item.avatar}
                         size="wechat"
                       />
-                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-white">
+                      <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/55 text-[color:var(--text-on-brand)]">
                         <X size={10} />
                       </span>
                     </div>

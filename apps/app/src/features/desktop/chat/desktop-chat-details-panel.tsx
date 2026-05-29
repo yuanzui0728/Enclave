@@ -809,7 +809,7 @@ function DirectChatDetailsPanel({
               variant="primary"
               onClick={handleAddToContacts}
               disabled={busy || !targetCharacterId}
-              className="rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-secondary)]"
             >
               {hasPendingFriendRequest ? t(msg`待处理`) : t(msg`添加到通讯录`)}
             </Button>
@@ -2237,7 +2237,7 @@ function DesktopWechatGroupSection({
       {title ? (
         <div className="px-4 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">{title}</div>
       ) : null}
-      <div className="border-y border-[rgba(0,0,0,0.07)] bg-white">
+      <div className="border-y border-[rgba(0,0,0,0.07)] bg-[color:var(--surface-card)]">
         {children}
       </div>
     </section>
@@ -2317,7 +2317,7 @@ function DesktopWechatGroupRow({
           >
             <span
               className={cn(
-                "absolute top-[1px] h-[22px] w-[22px] rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.12)] transition-transform",
+                "absolute top-[1px] h-[22px] w-[22px] rounded-full bg-[color:var(--surface-card)] shadow-[0_1px_2px_rgba(0,0,0,0.12)] transition-transform",
                 checked ? "translate-x-5" : "translate-x-[1px]",
               )}
             />
@@ -2347,7 +2347,7 @@ function DesktopWechatDangerButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "flex h-11 w-full items-center justify-center rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-white text-[length:var(--text-body)] transition",
+        "flex h-11 w-full items-center justify-center rounded-[10px] border border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] text-[length:var(--text-body)] transition",
         danger ? "text-[color:var(--state-danger-text)]" : "text-[#111111]",
         disabled
           ? "cursor-not-allowed opacity-50"
@@ -2762,9 +2762,9 @@ function DesktopGroupMemberBrowserDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative flex max-h-[85vh] w-full max-w-[760px] flex-col overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
           <div>
             <div
               id={titleId}
@@ -2784,14 +2784,14 @@ function DesktopGroupMemberBrowserDialog({
               }
             }}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label={t(msg`关闭`)}
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-6 py-4">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/72 px-6 py-4">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
             <span>{t(msg`全部 ${members.length} 人`)}</span>
             <span className="text-black/10">·</span>
@@ -2818,7 +2818,7 @@ function DesktopGroupMemberBrowserDialog({
                   // SR 进来只听到「编辑栏 搜索昵称、角色或成员 ID 空」分裂行为。
                   // 和姊妹 chat-history R24 / 移动端 group-member-picker R3 同款。
                   aria-label={t(msg`搜索群成员`)}
-                  className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
+                  className="h-10 w-full rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
                 />
               </label>
 
@@ -2843,7 +2843,7 @@ function DesktopGroupMemberBrowserDialog({
                         "rounded-full border px-3 py-1.5 text-xs transition",
                         activeFilter === tab.id
                           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--text-primary)] shadow-[0_1px_3px_rgba(15,23,42,0.04)]"
-                          : "border-transparent bg-white text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-white",
+                          : "border-transparent bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]",
                       )}
                     >
                       {tab.label} {tab.count}
@@ -2861,13 +2861,13 @@ function DesktopGroupMemberBrowserDialog({
             <div className="text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-dim)]">
               {t(msg`先看完整列表，再继续加人、减人或跳转资料。`)}
             </div>
-            <div className="flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white p-1">
+            <div className="flex items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1">
               <Button
                 type="button"
                 variant="secondary"
                 onClick={onRemoveMembers}
                 disabled={pending || !canRemoveMembers}
-                className="h-8 rounded-full border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-console)]"
+                className="h-8 rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 {t(msg`移除成员`)}
               </Button>
@@ -2876,7 +2876,7 @@ function DesktopGroupMemberBrowserDialog({
                 variant="primary"
                 onClick={onAddMembers}
                 disabled={pending}
-                className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-white hover:opacity-95"
+                className="h-8 rounded-full bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] hover:opacity-95"
               >
                 {t(msg`添加成员`)}
               </Button>
@@ -2932,7 +2932,7 @@ function DesktopGroupMemberBrowserDialog({
                       canViewProfile && activeMemberId === member.id
                         ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
                         : canViewProfile
-                          ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white"
+                          ? "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-[color:var(--surface-card)]"
                           : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
                       canViewProfile
                         ? "focus-visible:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus-visible:bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] focus-visible:outline-none"
@@ -2959,7 +2959,7 @@ function DesktopGroupMemberBrowserDialog({
                               ? "bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
                               : member.role === "admin"
                                 ? "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]"
-                                : "border border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
+                                : "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-muted)]",
                           )}
                         >
                           {roleLabel}
@@ -3006,7 +3006,7 @@ function DesktopGroupMemberBrowserDialog({
             </div>
           ) : (
             <div className="flex h-full items-center justify-center px-6">
-              <div className="flex max-w-[320px] flex-col items-center rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-6 py-8 text-center">
+              <div className="flex max-w-[320px] flex-col items-center rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/84 px-6 py-8 text-center">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--surface-console)] text-[color:var(--text-dim)]">
                   <Search size={18} />
                 </div>

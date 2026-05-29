@@ -610,7 +610,7 @@ export function DesktopChatFilesPage() {
         sidebarClassName="w-[300px]"
         sidebar={
           <>
-            <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
+            <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/74 px-4 py-4 backdrop-blur-xl">
               <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
                 {t(msg`聊天文件`)}
               </div>
@@ -629,7 +629,7 @@ export function DesktopChatFilesPage() {
                 // 实现读 placeholder、部分不读），盲人用户从 sidebar
                 // 进来不知道这个输入框是搜什么的。
                 aria-label={t(msg`搜索聊天文件`)}
-                className="mt-4 h-9 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-sm shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
+                className="mt-4 h-9 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-sm shadow-none hover:bg-[color:var(--surface-card)] focus:border-[color:var(--border-brand)] focus:bg-[color:var(--surface-card)] focus:shadow-none"
               />
             </div>
 
@@ -657,7 +657,7 @@ export function DesktopChatFilesPage() {
                     "rounded-[10px] border px-3 py-1.5 text-xs transition",
                     filter === item
                       ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--text-primary)] shadow-[0_6px_16px_rgba(15,23,42,0.04)]"
-                      : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-white",
+                      : "border-transparent bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]",
                   )}
                 >
                   {item === "all" ? t(msg`全部`) : item === "image" ? t(msg`图片`) : t(msg`文件`)}
@@ -704,7 +704,7 @@ export function DesktopChatFilesPage() {
                       : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-console)]",
                   )}
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-sm font-medium text-[color:var(--text-secondary)]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-sm font-medium text-[color:var(--text-secondary)]">
                     {t(msg`全部`)}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -834,7 +834,7 @@ export function DesktopChatFilesPage() {
                 return (
                   <div
                     key={item.id}
-                    className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)] transition hover:bg-[color:var(--surface-console)]"
+                    className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)] transition hover:bg-[color:var(--surface-console)]"
                   >
                     <div className="flex items-start gap-4">
                       {isImage ? (
@@ -867,13 +867,13 @@ export function DesktopChatFilesPage() {
                             // 窗口可放下区域，意外触发"下载这张图到桌面"。
                             draggable={false}
                           />
-                          <div className="absolute inset-x-0 bottom-0 border-t border-white/12 bg-black/36 px-2 py-1.5 text-left text-[10px] text-white">
+                          <div className="absolute inset-x-0 bottom-0 border-t border-[color:var(--border-faint)]/12 bg-black/36 px-2 py-1.5 text-left text-[10px] text-[color:var(--text-on-brand)]">
                             {t(msg`点击预览`)}
                           </div>
                         </button>
                       ) : (
                         <div className="flex h-24 w-24 shrink-0 flex-col items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-4 text-center">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-white text-[color:var(--state-info-text)] shadow-[0_4px_12px_rgba(15,23,42,0.05)]">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--surface-card)] text-[color:var(--state-info-text)] shadow-[0_4px_12px_rgba(15,23,42,0.05)]">
                             <FileText size={18} />
                           </div>
                           <div className="mt-3 line-clamp-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-secondary)]">
@@ -900,7 +900,7 @@ export function DesktopChatFilesPage() {
                               variant="secondary"
                               size="sm"
                               onClick={() => setViewerAttachmentId(item.id)}
-                              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
+                              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
                             >
                               {t(msg`预览图片`)}
                             </Button>
@@ -916,7 +916,7 @@ export function DesktopChatFilesPage() {
                                     : "file",
                               });
                             }}
-                            className="inline-flex h-8 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] font-medium text-white transition hover:opacity-95"
+                            className="inline-flex h-8 items-center justify-center rounded-[10px] bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)] transition hover:opacity-95"
                           >
                             {t(msg`打开附件`)}
                           </button>
@@ -933,7 +933,7 @@ export function DesktopChatFilesPage() {
                                     : "file",
                               });
                             }}
-                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
                           >
                             {t(msg`保存附件`)}
                           </Button>
@@ -943,7 +943,7 @@ export function DesktopChatFilesPage() {
                             onClick={() => {
                               navigateToAttachmentMessage(item);
                             }}
-                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
                           >
                             {t(msg`定位到原消息`)}
                           </Button>
@@ -973,7 +973,7 @@ export function DesktopChatFilesPage() {
                                 ),
                               );
                             }}
-                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
+                            className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
                           >
                             {collected ? t(msg`取消收藏`) : t(msg`收藏`)}
                           </Button>
@@ -1164,7 +1164,7 @@ function resolveAttachmentExtension(
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-soft)]">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}
@@ -1288,12 +1288,12 @@ function DesktopChatFilesImageViewer({
         className="absolute inset-0"
       />
 
-      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between border-b border-white/10 px-6 py-4 text-white">
+      <div className="absolute inset-x-0 top-0 z-10 flex items-center justify-between border-b border-[color:var(--border-faint)]/10 px-6 py-4 text-[color:var(--text-on-brand)]">
         <div className="min-w-0">
           <div className="truncate text-[length:var(--text-base)] font-medium">
             {item.attachment.fileName}
           </div>
-          <div className="mt-1 text-[length:var(--text-caption)] text-white/70">
+          <div className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/70">
             {t(msg`${item.conversationTitle} · ${item.senderName} · ${formatMessageTimestamp(item.createdAt)}`)}
           </div>
         </div>
@@ -1301,7 +1301,7 @@ function DesktopChatFilesImageViewer({
           <button
             type="button"
             onClick={onOpenInWindow}
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)]/15 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/18"
             aria-label={t(msg`新窗口打开`)}
           >
             <ExternalLink size={16} />
@@ -1309,7 +1309,7 @@ function DesktopChatFilesImageViewer({
           <button
             type="button"
             onClick={onSave}
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)]/15 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/18"
             aria-label={t(msg`保存图片`)}
           >
             <Download size={16} />
@@ -1317,7 +1317,7 @@ function DesktopChatFilesImageViewer({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)]/15 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/18"
             aria-label={t(msg`关闭`)}
           >
             <X size={16} />
@@ -1329,7 +1329,7 @@ function DesktopChatFilesImageViewer({
         <button
           type="button"
           onClick={onPrevious}
-          className="absolute left-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+          className="absolute left-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/15 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/18"
           aria-label={t(msg`上一张`)}
         >
           <ChevronLeft size={20} />
@@ -1340,7 +1340,7 @@ function DesktopChatFilesImageViewer({
         <button
           type="button"
           onClick={onNext}
-          className="absolute right-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-white/15 bg-white/10 text-white transition hover:bg-white/18"
+          className="absolute right-6 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/15 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/18"
           aria-label={t(msg`下一张`)}
         >
           <ChevronRight size={20} />
@@ -1364,7 +1364,7 @@ function DesktopChatFilesImageViewer({
         />
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between border-t border-white/10 px-6 py-4 text-white/76">
+      <div className="absolute inset-x-0 bottom-0 z-10 flex items-center justify-between border-t border-[color:var(--border-faint)]/10 px-6 py-4 text-[color:var(--text-on-brand)]/76">
         <div className="text-[length:var(--text-caption)]">
           {formatAttachmentMeta(item.attachment, t)}
         </div>

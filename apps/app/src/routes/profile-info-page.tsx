@@ -458,7 +458,7 @@ export function ProfileInfoPage() {
           role="status"
           aria-live="polite"
         >
-          <div className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[length:var(--text-caption)] text-white">
+          <div className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]">
             {toast.message}
           </div>
         </div>

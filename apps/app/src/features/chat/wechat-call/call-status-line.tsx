@@ -11,7 +11,7 @@ export function CallStatusLine({ text, className }: CallStatusLineProps) {
     return null;
   }
   return (
-    <div className={cn("text-[length:var(--text-caption)] leading-5 text-white/55", className)}>
+    <div className={cn("text-[length:var(--text-caption)] leading-5 text-[color:var(--text-on-brand)]/55", className)}>
       {text}
     </div>
   );

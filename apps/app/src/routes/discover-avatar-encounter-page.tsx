@@ -307,7 +307,7 @@ function DiscoverTab({
             disabled={startDisabled}
             aria-busy={startMutation.isPending || undefined}
             className={cn(
-              "flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[length:var(--text-body)] font-semibold text-white transition-opacity active:opacity-90",
+              "flex h-12 w-full items-center justify-center gap-2 rounded-[var(--radius-md)] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[length:var(--text-body)] font-semibold text-[color:var(--text-on-brand)] transition-opacity active:opacity-90",
               startDisabled && "opacity-60",
             )}
           >
@@ -805,7 +805,7 @@ function MatchedContactBlock({
         <button
           type="button"
           onClick={onCopy}
-          className="flex shrink-0 items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[length:var(--text-caption)] font-medium text-white active:opacity-90"
+          className="flex shrink-0 items-center gap-1 rounded-full bg-[color:var(--brand-primary)] px-3 py-1.5 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)] active:opacity-90"
         >
           <Copy size={13} />
           {copied ? t(msg`已复制`) : t(msg`复制`)}

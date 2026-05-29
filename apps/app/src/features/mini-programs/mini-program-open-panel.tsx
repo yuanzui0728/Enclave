@@ -149,7 +149,7 @@ export function MiniProgramOpenPanel({
             onClick={onDismiss}
             aria-label={t(msg`关闭`)}
             className={cn(
-              "shrink-0 border border-white/80 bg-white/72",
+              "shrink-0 border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/72",
               compact ? "h-9 w-9 rounded-full" : "rounded-2xl",
             )}
           >
@@ -194,7 +194,7 @@ export function MiniProgramOpenPanel({
           <span
             key={tag}
             className={cn(
-              "rounded-full bg-white/84 text-[color:var(--text-muted)]",
+              "rounded-full bg-[color:var(--surface-card)]/84 text-[color:var(--text-muted)]",
               compact ? "px-2 py-0.5 text-[10px]" : "px-2.5 py-1 text-[length:var(--text-eyebrow)]",
             )}
           >
@@ -206,7 +206,7 @@ export function MiniProgramOpenPanel({
       {tasks.length ? (
         <div
           className={cn(
-            "mt-4.5 border border-white/80 bg-white/78",
+            "mt-4.5 border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/78",
             compact ? "rounded-[var(--radius-md)] p-3" : "rounded-[var(--radius-xl)] p-4",
           )}
         >
@@ -232,7 +232,7 @@ export function MiniProgramOpenPanel({
               <div
                 key={task.id}
                 className={cn(
-                  "border border-[color:var(--border-faint)] bg-white/86",
+                  "border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/86",
                   compact ? "rounded-[var(--radius-md)] px-3 py-2.5" : "rounded-[var(--radius-lg)] px-4 py-4",
                 )}
               >
@@ -272,7 +272,7 @@ export function MiniProgramOpenPanel({
                     size="sm"
                     onClick={() => onToggleTask(miniProgram.id, task.id)}
                     className={cn(
-                      "shrink-0 border-white/80 bg-[color:var(--surface-card)]",
+                      "shrink-0 border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]",
                       compact && "h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]",
                     )}
                   >
@@ -299,7 +299,7 @@ export function MiniProgramOpenPanel({
             variant="secondary"
             onClick={() => onCopyToMobile(miniProgram.id)}
             className={cn(
-              "border-white/80 bg-white/88",
+              "border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/88",
               compact && "h-8 rounded-full px-3.5 text-[length:var(--text-eyebrow)]",
             )}
           >
@@ -311,7 +311,7 @@ export function MiniProgramOpenPanel({
           variant="secondary"
           onClick={() => onTogglePinned(miniProgram.id)}
           className={cn(
-            "border-white/80 bg-white/88",
+            "border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/88",
             compact && "h-8 rounded-full px-3.5 text-[length:var(--text-eyebrow)]",
           )}
         >
@@ -350,7 +350,7 @@ function PanelMetric({
   return (
     <div
       className={cn(
-        "border border-white/80 bg-white/84",
+        "border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/84",
         compact ? "rounded-[var(--radius-md)] px-2.5 py-2.5" : "rounded-[var(--radius-xl)] px-4 py-4",
       )}
     >

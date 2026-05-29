@@ -47,7 +47,7 @@ export const GroupAvatarChip = memo(function GroupAvatarChip({
 
   return (
     <div
-      className={`${frameClassName} yj-no-callout grid grid-cols-2 gap-[2px] overflow-hidden border border-white/80 bg-[color:var(--surface-secondary)] shadow-[var(--shadow-soft)]`}
+      className={`${frameClassName} yj-no-callout grid grid-cols-2 gap-[2px] overflow-hidden border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-secondary)] shadow-[var(--shadow-soft)]`}
       // 走查电脑端群聊 R11：原版 `name ?? "group avatar"` 有 2 个问题：
       // 1) ?? 漏防空串 — name === "" 时 aria-label="" 屏幕阅读器跳过整张
       //    group avatar 图，盲人在群聊列表 / 群通话面板 / 消息气泡里听不到群

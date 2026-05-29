@@ -127,7 +127,7 @@ export function FeatureUnavailableDialog({
             type="button"
             variant="primary"
             onClick={onClose}
-            className="w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] py-2 text-white shadow-none hover:opacity-95"
+            className="w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] py-2 text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
           >
             {resolvedConfirmLabel}
           </Button>

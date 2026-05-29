@@ -1077,7 +1077,7 @@ export function DesktopNotesWorkspace({
   ) {
     return (
       <div className="flex h-full items-center justify-center bg-[color:var(--bg-canvas)] p-6">
-        <div className="w-full max-w-xl rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-6 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-xl rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-6 shadow-[var(--shadow-card)]">
           <ErrorBlock
             // R54：笔记 standalone window 读取失败时的 fatal 落地页，盲人
             // SR 必须立刻知道（页面只剩"回到来源"一个按钮，没其他焦点
@@ -1093,7 +1093,7 @@ export function DesktopNotesWorkspace({
             <Button
               variant="secondary"
               onClick={() => void handleClose()}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
             >
               {t(msg`回到来源`)}
             </Button>
@@ -1120,7 +1120,7 @@ export function DesktopNotesWorkspace({
               <button
                 type="button"
                 onClick={requestClose}
-                className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-white hover:text-[color:var(--text-primary)]"
+                className="flex h-8 w-8 items-center justify-center rounded-[10px] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
                 aria-label={t(msg`返回收藏`)}
               >
                 <ArrowLeft size={16} />
@@ -1176,7 +1176,7 @@ export function DesktopNotesWorkspace({
               // 跟 sendMutation 同款逻辑：保存中 disable 删除 trigger，让用户等保存
               // 落地再决定要不要删。
               disabled={deleteMutation.isPending || saveMutation.isPending}
-              className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--state-danger-text)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-9 items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--state-danger-text)] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 size={15} />
               {t(msg`删除`)}
@@ -1186,7 +1186,7 @@ export function DesktopNotesWorkspace({
             variant="secondary"
             onClick={() => void requestSend()}
             disabled={saveMutation.isPending || sendMutation.isPending}
-            className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-white px-4 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             <Send size={15} />
             {sendMutation.isPending ? t(msg`发送中...`) : t(msg`发送`)}
@@ -1195,7 +1195,7 @@ export function DesktopNotesWorkspace({
             variant="primary"
             onClick={() => void handleSave()}
             disabled={saveMutation.isPending}
-            className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
+            className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-[color:var(--text-on-brand)] hover:opacity-95"
           >
             <Save size={15} />
             {saveMutation.isPending ? t(msg`保存中...`) : t(msg`保存`)}
@@ -1204,7 +1204,7 @@ export function DesktopNotesWorkspace({
             <button
               type="button"
               onClick={requestClose}
-              className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
+              className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]"
               aria-label={t(msg`关闭笔记窗口`)}
             >
               <X size={16} />
@@ -1309,12 +1309,12 @@ export function DesktopNotesWorkspace({
                 // 不知道当前 input 是干嘛的——前面已有「标签」工具栏按钮
                 // 但 input 自己没 label 关联。补 aria-label="添加标签"。
                 aria-label={t(msg`添加标签`)}
-                className="h-9 w-[180px] rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
+                className="h-9 w-[180px] rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--brand-primary)]"
               />
               <Button
                 variant="secondary"
                 onClick={handleTagCommit}
-                className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 shadow-none"
+                className="h-9 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 shadow-none"
               >
                 {t(msg`添加`)}
               </Button>
@@ -1340,7 +1340,7 @@ export function DesktopNotesWorkspace({
           </div>
         ) : null}
 
-        <div className="mx-auto flex w-full max-w-[840px] flex-col rounded-[var(--radius-xl)] border border-[color:var(--border-subtle)] bg-white px-10 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
+        <div className="mx-auto flex w-full max-w-[840px] flex-col rounded-[var(--radius-xl)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-10 py-8 shadow-[0_24px_60px_rgba(15,23,42,0.08)]">
           <div className="mb-4 flex items-center gap-2 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
             <span className="rounded-full border border-[color:var(--border-subtle)] px-2 py-1">
               {t(msg`收藏笔记`)}
@@ -1453,7 +1453,7 @@ function ToolbarButton({
         "inline-flex h-9 items-center gap-2 rounded-[10px] border px-3 text-[length:var(--text-caption)] transition",
         active
           ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)] text-[color:var(--brand-primary)]"
-          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
       )}
     >
       {children}
@@ -1514,7 +1514,7 @@ function DesktopNoteUnsavedDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full max-w-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
       >
         <div className="border-b border-[color:var(--border-faint)] px-6 py-5">
           <div
@@ -1535,7 +1535,7 @@ function DesktopNoteUnsavedDialog({
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-5 shadow-none"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-5 shadow-none"
           >
             {t(msg`取消`)}
           </Button>
@@ -1551,7 +1551,7 @@ function DesktopNoteUnsavedDialog({
             variant="primary"
             onClick={onSave}
             disabled={pending}
-            className="rounded-[10px] bg-[color:var(--brand-primary)] px-5 text-white hover:opacity-95"
+            className="rounded-[10px] bg-[color:var(--brand-primary)] px-5 text-[color:var(--text-on-brand)] hover:opacity-95"
           >
             {pending ? t(msg`保存中...`) : t(msg`保存并关闭`)}
           </Button>

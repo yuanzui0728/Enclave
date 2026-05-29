@@ -590,7 +590,7 @@ function DesktopFavoritesPage() {
             variant="primary"
             size="sm"
             onClick={() => openInlineNoteEditor()}
-            className="h-9 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
+            className="h-9 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-3 text-[color:var(--text-on-brand)] hover:opacity-95"
           >
             <FileText size={15} />
             {t(msg`新建笔记`)}
@@ -623,12 +623,12 @@ function DesktopFavoritesPage() {
                       "flex w-full items-center justify-between rounded-[var(--radius-sm)] px-3 py-2.5 text-left text-sm transition",
                       isActive
                         ? "bg-[color:var(--brand-primary)]/7 text-[color:var(--text-primary)]"
-                        : "text-[color:var(--text-secondary)] hover:bg-white/80 hover:text-[color:var(--text-primary)]",
+                        : "text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card)]/80 hover:text-[color:var(--text-primary)]",
                     )}
                   >
                     <span>{item.label}</span>
                     <span
-                      className="rounded-full bg-white/88 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
+                      className="rounded-full bg-[color:var(--surface-card)]/88 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]"
                       aria-label={t(msg`${counts[item.id]} 项`)}
                     >
                       {counts[item.id]}
@@ -758,7 +758,7 @@ function DesktopFavoritesPage() {
                             noteId,
                           });
                         }}
-                        className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
+                        className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-[color:var(--text-on-brand)] transition hover:opacity-95"
                       >
                         {t(msg`打开笔记`)}
                       </button>
@@ -767,7 +767,7 @@ function DesktopFavoritesPage() {
                         to={selectedFavoriteNavigationTarget?.to as never}
                         search={selectedFavoriteNavigationTarget?.search as never}
                         hash={selectedFavoriteNavigationTarget?.hash}
-                        className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-white transition hover:opacity-95"
+                        className="inline-flex h-10 items-center justify-center rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-4 text-sm font-medium text-[color:var(--text-on-brand)] transition hover:opacity-95"
                       >
                         {t(msg`打开内容`)}
                       </Link>
@@ -861,7 +861,7 @@ function DesktopFavoritesPage() {
           {!favoritesQuery.isLoading &&
           !(favoritesQuery.isError && !favorites.length) &&
           !filteredFavorites.length ? (
-            <div className="rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+            <div className="rounded-[var(--radius-lg)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/80 p-6">
               <EmptyState
                 title={
                   normalizedSearchText

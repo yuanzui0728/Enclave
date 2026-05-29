@@ -121,7 +121,7 @@ export function DesktopMiniProgramsWorkspace({
   return (
     <div className="relative isolate flex h-full min-h-0 bg-[color:var(--bg-app)]">
       <aside className="flex w-[288px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-5 py-5 backdrop-blur-xl">
           <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
             Mini Programs
           </div>
@@ -134,14 +134,14 @@ export function DesktopMiniProgramsWorkspace({
         </div>
 
         <div className="min-h-0 space-y-4 overflow-auto bg-[color:var(--surface-shell)] px-4 py-4">
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-section)]">
             <label className="relative block">
               <input
                 type="search"
                 value={searchText}
                 onChange={(event) => onSearchTextChange(event.target.value)}
                 placeholder={t(msg`搜索小程序、服务和场景`)}
-                className="h-11 w-full rounded-[var(--radius-md)] border border-transparent bg-[color:var(--state-info-bg)] px-4 pr-12 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-faint)] focus:bg-white"
+                className="h-11 w-full rounded-[var(--radius-md)] border border-transparent bg-[color:var(--state-info-bg)] px-4 pr-12 text-sm text-[color:var(--text-primary)] outline-none transition-[background-color,border-color] placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-faint)] focus:bg-[color:var(--surface-card)]"
               />
               {searchText ? (
                 <button
@@ -164,7 +164,7 @@ export function DesktopMiniProgramsWorkspace({
                     "w-full rounded-[18px] border px-3 py-3 text-left transition",
                     activeCategory === tab.id
                       ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
-                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
+                      : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-[color:var(--surface-card)]",
                   )}
                 >
                   <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -219,7 +219,7 @@ export function DesktopMiniProgramsWorkspace({
       </aside>
 
       <section className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-5 backdrop-blur-xl">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-5 backdrop-blur-xl">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <div className="text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)]">
@@ -265,7 +265,7 @@ export function DesktopMiniProgramsWorkspace({
 
         <div className="min-h-0 flex-1 overflow-auto bg-[rgba(255,255,255,0.62)] px-6 py-6">
           {showEmptyResults ? (
-            <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+            <div className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
               <EmptyState
                 title={t(msg`没有匹配的小程序`)}
                 description={
@@ -287,19 +287,19 @@ export function DesktopMiniProgramsWorkspace({
                 )}
               >
                 <div className="pointer-events-none absolute inset-0">
-                  <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-white/12 blur-3xl" />
+                  <div className="absolute -right-10 top-0 h-40 w-40 rounded-full bg-[color:var(--surface-card)]/12 blur-3xl" />
                   <div className="absolute bottom-0 left-10 h-32 w-32 rounded-full bg-black/10 blur-3xl" />
                 </div>
                 <div className="relative">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="min-w-0">
-                      <div className="inline-flex rounded-full border border-white/18 bg-white/12 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.18em] text-white/82">
+                      <div className="inline-flex rounded-full border border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/12 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.18em] text-[color:var(--text-on-brand)]/82">
                         {selectedMiniProgram.heroLabel}
                       </div>
                       <div className="mt-4 text-[32px] font-semibold tracking-[0.02em]">
                         {selectedMiniProgram.name}
                       </div>
-                      <div className="mt-2 max-w-2xl text-sm leading-7 text-white/82">
+                      <div className="mt-2 max-w-2xl text-sm leading-7 text-[color:var(--text-on-brand)]/82">
                         {selectedMiniProgram.description}
                       </div>
                     </div>
@@ -325,7 +325,7 @@ export function DesktopMiniProgramsWorkspace({
                     {selectedMiniProgram.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="rounded-full border border-white/18 bg-white/10 px-3 py-1 text-xs text-white/82"
+                        className="rounded-full border border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/10 px-3 py-1 text-xs text-[color:var(--text-on-brand)]/82"
                       >
                         {tag}
                       </span>
@@ -337,7 +337,7 @@ export function DesktopMiniProgramsWorkspace({
                       variant="secondary"
                       size="lg"
                       onClick={() => onOpenMiniProgram(selectedMiniProgram.id)}
-                      className="border-white/18 bg-white text-[color:var(--text-primary)] hover:bg-white/92"
+                      className="border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)] text-[color:var(--text-primary)] hover:bg-[color:var(--surface-card)]/92"
                     >
                       {t(msg`打开小程序`)}
                     </Button>
@@ -345,7 +345,7 @@ export function DesktopMiniProgramsWorkspace({
                       variant="secondary"
                       size="lg"
                       onClick={() => onTogglePinnedMiniProgram(selectedMiniProgram.id)}
-                      className="border-white/18 bg-white/10 text-white hover:bg-white/18"
+                      className="border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/18"
                     >
                       {pinnedMiniProgramIds.includes(selectedMiniProgram.id)
                         ? t(msg`移出我的小程序`)
@@ -355,7 +355,7 @@ export function DesktopMiniProgramsWorkspace({
                 </div>
               </article>
 
-              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -397,7 +397,7 @@ export function DesktopMiniProgramsWorkspace({
               {shelves.map((shelf) => (
                 <section
                   key={shelf.id}
-                  className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]"
+                  className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-card)]"
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -449,7 +449,7 @@ export function DesktopMiniProgramsWorkspace({
               />
 
               {launchContext && panelMiniProgram.id === "group-relay" ? (
-                <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+                <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-card)]">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -492,7 +492,7 @@ export function DesktopMiniProgramsWorkspace({
                 </section>
               ) : null}
 
-              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-card)]">
                 <div className="text-sm font-medium text-[color:var(--text-primary)]">
                   {t(msg`今日推荐`)}
                 </div>
@@ -532,7 +532,7 @@ export function DesktopMiniProgramsWorkspace({
                 </div>
               </section>
 
-              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+              <section className="rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-card)]">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -578,7 +578,7 @@ export function DesktopMiniProgramsWorkspace({
         </div>
       </section>
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]">
-        <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
+        <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
           <div className="text-lg font-semibold text-[color:var(--text-primary)]">
             {t(msg`功能开发中`)}
           </div>
@@ -603,7 +603,7 @@ function SidebarCard({
   const hasChildren = Array.isArray(children) ? children.length > 0 : Boolean(children);
 
   return (
-    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-4 shadow-[var(--shadow-section)]">
+    <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-[var(--shadow-section)]">
       <div className="text-sm font-medium text-[color:var(--text-primary)]">
         {title}
       </div>
@@ -639,7 +639,7 @@ function SidebarMiniProgramButton({
         "flex w-full items-center gap-3 rounded-[18px] border px-3 py-3 text-left transition",
         active
           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-[color:var(--surface-card)]",
       )}
     >
       <MiniProgramGlyph miniProgram={miniProgram} size="sm" />
@@ -655,11 +655,11 @@ function SidebarMiniProgramButton({
 
 function DesktopMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-white/18 bg-white/12 px-4 py-4 backdrop-blur-sm">
-      <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.14em] text-white/68">
+    <div className="rounded-[22px] border border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/12 px-4 py-4 backdrop-blur-sm">
+      <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.14em] text-[color:var(--text-on-brand)]/68">
         {label}
       </div>
-      <div className="mt-2 text-sm font-medium text-white">{value}</div>
+      <div className="mt-2 text-sm font-medium text-[color:var(--text-on-brand)]">{value}</div>
     </div>
   );
 }
@@ -692,7 +692,7 @@ function MiniProgramGridCard({
         "rounded-[var(--radius-xl)] border px-4 py-4 text-left transition",
         active
           ? tone.mutedPanelClassName
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-[color:var(--surface-card)]",
       )}
     >
       <div className="flex items-start gap-3">
@@ -735,7 +735,7 @@ function MiniProgramGridCard({
             event.stopPropagation();
             onTogglePinned(miniProgram.id);
           }}
-          className="border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+          className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
         >
           {pinned ? t(msg`移出常用`) : t(msg`加入常用`)}
         </Button>
@@ -774,7 +774,7 @@ function MiniProgramListRow({
         "w-full rounded-[22px] border px-4 py-4 text-left transition",
         active
           ? tone.mutedPanelClassName
-          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-[color:var(--surface-card)]",
       )}
     >
       <div className="flex items-start gap-3">
@@ -826,7 +826,7 @@ function MiniProgramListRow({
             event.stopPropagation();
             onTogglePinned(miniProgram.id);
           }}
-          className="border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+          className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
         >
           {pinned ? t(msg`移出常用`) : t(msg`加入常用`)}
         </Button>

@@ -527,7 +527,7 @@ export function ProfileFeedPage() {
               </Button>
               <Button
                 type="button"
-                className="flex-1 bg-[color:var(--state-danger-text)] text-white hover:opacity-90"
+                className="flex-1 bg-[color:var(--state-danger-text)] text-[color:var(--text-on-brand)] hover:opacity-90"
                 onClick={() => runDelete(pendingDeleteId)}
               >
                 {t(msg`删除`)}

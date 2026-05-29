@@ -52,7 +52,7 @@ export function DesktopMomentsToolbar({
 }: DesktopMomentsToolbarProps) {
   const t = useRuntimeTranslator();
   return (
-    <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-6 py-4 backdrop-blur-xl">
+    <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/74 px-6 py-4 backdrop-blur-xl">
       <div className="mx-auto w-full max-w-[720px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
@@ -86,7 +86,7 @@ export function DesktopMomentsToolbar({
                 // 保证点击穿透到 Button。
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute -right-0.5 -top-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--state-danger-bg)] ring-2 ring-white"
+                  className="pointer-events-none absolute -right-0.5 -top-0.5 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--state-danger-bg)] ring-2 ring-[color:var(--border-faint)]"
                 />
               ) : null}
             </span>
@@ -133,7 +133,7 @@ export function DesktopMomentsToolbar({
           <div className="mt-4">
             <InlineNotice
               tone={noticeTone}
-              className="border-[color:var(--border-faint)] bg-white"
+              className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="min-w-0 flex-1">{notice}</span>
@@ -143,7 +143,7 @@ export function DesktopMomentsToolbar({
                     variant="secondary"
                     size="sm"
                     onClick={onNoticeAction}
-                    className="shrink-0 border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                    className="shrink-0 border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                   >
                     {noticeActionLabel}
                   </Button>

@@ -75,7 +75,7 @@ export function DesktopContactsGroupsPane({
   return (
     <div className="flex h-full min-h-0">
       <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-4 py-4 backdrop-blur-xl">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-base font-medium text-[color:var(--text-primary)]">
@@ -90,14 +90,14 @@ export function DesktopContactsGroupsPane({
               variant="secondary"
               size="sm"
               onClick={onCreateGroup}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
             >
               <MessageSquarePlus size={14} />
               {t(msg`发起群聊`)}
             </Button>
           </div>
 
-          <label className="mt-3 flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+          <label className="mt-3 flex items-center gap-2 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -140,7 +140,7 @@ export function DesktopContactsGroupsPane({
             </div>
           ) : (
             <section className="px-3 py-3">
-              <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+              <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
                 {filteredGroups.map((group, index) => {
                   const isSelected = group.id === selectedGroup?.id;
 
@@ -153,7 +153,7 @@ export function DesktopContactsGroupsPane({
                         "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                         isSelected
                           ? "bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[inset_3px_0_0_0_var(--brand-primary)]"
-                          : "bg-white hover:bg-[color:var(--surface-console)]",
+                          : "bg-[color:var(--surface-card)] hover:bg-[color:var(--surface-console)]",
                         index > 0
                           ? "border-t border-[color:var(--border-faint)]"
                           : undefined,
@@ -291,7 +291,7 @@ function DesktopGroupDetailCard({
   );
 
   return (
-    <div className="w-full max-w-[520px] rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+    <div className="w-full max-w-[520px] rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
       <div className="flex items-center gap-4">
         <GroupAvatarChip
           name={group.name}
@@ -354,7 +354,7 @@ function DesktopGroupDetailCard({
       <div className="mt-6 flex gap-3">
         <Button
           type="button"
-          className="flex-1 rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+          className="flex-1 rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
           onClick={handleOpenGroup}
         >
           {t(msg`进入群聊`)}
@@ -362,7 +362,7 @@ function DesktopGroupDetailCard({
         <Button
           type="button"
           variant="secondary"
-          className="flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+          className="flex-1 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
           onClick={handleOpenGroupDetails}
         >
           {t(msg`群聊信息`)}

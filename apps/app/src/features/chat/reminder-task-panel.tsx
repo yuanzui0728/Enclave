@@ -274,7 +274,7 @@ export function ReminderTaskPanel({
                   return (
                     <article
                       key={task.id}
-                      className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-white/95 px-3 py-3"
+                      className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]/95 px-3 py-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -371,7 +371,7 @@ function ActionButton({
       className={cn(
         "h-8 rounded-full px-3 text-[length:var(--text-eyebrow)]",
         tone === "danger"
-          ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
+          ? "border-[color:var(--state-danger-bg)] bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)] hover:bg-[color:var(--state-danger-bg)]"
           : "",
       )}
     >

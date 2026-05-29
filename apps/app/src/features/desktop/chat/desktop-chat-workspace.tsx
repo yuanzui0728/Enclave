@@ -1888,7 +1888,7 @@ export function DesktopChatWorkspace({
                   // 覆盖聊天/联系人/收藏多个 scope。和姊妹搜索框 R23/R24
                   // 同款补 aria-label 让意图明确。
                   aria-label={t(msg`搜索聊天和联系人`)}
-                  className="flex-1 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] py-2 pl-3.5 pr-11 text-[length:var(--text-caption)] shadow-none hover:bg-white focus:border-[color:var(--border-brand)] focus:bg-white focus:shadow-none"
+                  className="flex-1 rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] py-2 pl-3.5 pr-11 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)] focus:border-[color:var(--border-brand)] focus:bg-[color:var(--surface-card)] focus:shadow-none"
                 />
                 <button
                   type="button"
@@ -1951,7 +1951,7 @@ export function DesktopChatWorkspace({
                 <button
                   type="button"
                   onClick={() => setIsQuickMenuOpen((current) => !current)}
-                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                   aria-label={
                     isQuickMenuOpen ? t(msg`关闭快捷菜单`) : t(msg`打开快捷菜单`)
                   }
@@ -1970,7 +1970,7 @@ export function DesktopChatWorkspace({
                   <div
                     role="menu"
                     aria-label={t(msg`快捷操作菜单`)}
-                    className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white p-1.5 shadow-[var(--shadow-overlay)]"
+                    className="absolute right-0 top-[calc(100%+0.4rem)] z-20 w-44 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-1.5 shadow-[var(--shadow-overlay)]"
                   >
                     {desktopQuickActionItems.map((item) => {
                       const Icon = item.icon;
@@ -2007,7 +2007,7 @@ export function DesktopChatWorkspace({
               <InlineNotice
                 role="status"
                 aria-live="polite"
-                className="mt-3 border-[color:var(--border-faint)] bg-white text-xs"
+                className="mt-3 border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-xs"
                 tone="info"
               >
                 {notice}
@@ -2093,7 +2093,7 @@ export function DesktopChatWorkspace({
                         return (
                           <section
                             key={group.status}
-                            className="rounded-[var(--radius-sm)] border border-white/80 bg-white/90"
+                            className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/90"
                           >
                             {collapsible ? (
                               <div className="flex items-center justify-between px-3 py-1.5">
@@ -2468,7 +2468,7 @@ export function DesktopChatWorkspace({
           )
         ) : standaloneWindow ? (
           <div className="flex h-full items-center justify-center px-10">
-            <div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-faint)] bg-white px-8 py-10 shadow-[var(--shadow-section)]">
+            <div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-8 py-10 shadow-[var(--shadow-section)]">
               <EmptyState
                 title={t(msg`这段聊天已经不存在`)}
                 description={t(msg`它可能已被隐藏、删除，或者当前上下文已经失效。`)}
@@ -2477,7 +2477,7 @@ export function DesktopChatWorkspace({
           </div>
         ) : (
           <div className="flex h-full items-center justify-center px-10">
-            <div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-faint)] bg-white/86 px-8 py-10 shadow-[var(--shadow-soft)]">
+            <div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/86 px-8 py-10 shadow-[var(--shadow-soft)]">
               <EmptyState
                 title={t(msg`选择一段聊天开始工作`)}
                 description={t(
@@ -3006,8 +3006,8 @@ function DesktopReminderCard({
       className={cn(
         "flex items-center gap-2.5 rounded-[14px] border px-2.5 py-2 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
-          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-white shadow-[0_8px_18px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
-          : "border-white/70 bg-white/88 hover:bg-white",
+          ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color:var(--surface-card)] shadow-[0_8px_18px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
+          : "border-[color:var(--border-faint)]/70 bg-[color:var(--surface-card)]/88 hover:bg-[color:var(--surface-card)]",
       )}
     >
       <button
@@ -3106,12 +3106,12 @@ const ConversationCardLink = memo(function ConversationCardLink({
   const queryClient = useQueryClient();
   const baseUrl = useAppRuntimeConfig().apiBaseUrl;
   const className = active
-    ? "flex items-center gap-3 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-white px-3 py-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
+    ? "flex items-center gap-3 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color:var(--surface-card)] px-3 py-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
     : contextMenuOpen
-      ? "flex items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-white/88 px-3 py-2.5"
+      ? "flex items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/88 px-3 py-2.5"
       : conversation.isPinned
         ? "flex items-center gap-3 rounded-[10px] border border-transparent bg-[color:var(--state-success-bg)] px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--state-success-bg)]"
-        : "flex items-center gap-3 rounded-[10px] border border-transparent bg-transparent px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-white/80";
+        : "flex items-center gap-3 rounded-[10px] border border-transparent bg-transparent px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]/80";
   const preview = getConversationPreviewParts(
     conversation,
     localMessageActionState,
@@ -3245,7 +3245,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
                 // 名称之外又复读一遍。
                 <div
                   role="img"
-                  className="min-w-5 rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-center text-[10px] text-white"
+                  className="min-w-5 rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-center text-[10px] text-[color:var(--text-on-brand)]"
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 >
                   <span aria-hidden="true">

@@ -594,7 +594,7 @@ function MobileGroupAnnouncementPage({ groupId }: { groupId: string }) {
                   (groupQuery.data.announcement?.trim() ?? "")
               }
               onClick={triggerSave}
-              className="h-10 w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-white hover:opacity-95 disabled:opacity-50"
+              className="h-10 w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95 disabled:opacity-50"
             >
               {saveMutation.isPending ? t(msg`正在保存...`) : t(msg`保存群公告`)}
             </Button>

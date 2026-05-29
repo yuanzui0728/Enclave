@@ -157,7 +157,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`分身相遇`,
     badge: msg`分身`,
     icon: UsersRound,
-    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[color:var(--text-on-brand)]",
     to: "/discover/avatar-encounter",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -184,7 +184,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`场景相遇`,
     badge: msg`场景`,
     icon: MapPin,
-    iconClassName: "bg-[linear-gradient(135deg,var(--brand-secondary),var(--brand-secondary))] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-secondary),var(--brand-secondary))] text-[color:var(--text-on-brand)]",
     to: "/discover/scene",
     buildHash: ({ hash, pathname }) =>
       buildMobileDiscoverToolRouteHash({
@@ -197,7 +197,7 @@ const socialDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`广场动态`,
     badge: msg`公开`,
     icon: Newspaper,
-    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[color:var(--text-on-brand)]",
     to: "/discover/feed",
     buildHash: ({ hash, pathname }) =>
       buildFeedRouteHash({
@@ -213,7 +213,7 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`视频号`,
     badge: msg`内容`,
     icon: PlaySquare,
-    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[color:var(--text-on-brand)]",
     to: "/discover/channels",
     buildHash: ({ hash, pathname }) =>
       buildDesktopChannelsRouteHash({
@@ -240,7 +240,7 @@ const contentDiscoverEntries: MobileDiscoverEntry[] = [
     label: msg`小程序`,
     badge: msg`工具`,
     icon: Blocks,
-    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-white",
+    iconClassName: "bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-primary))] text-[color:var(--text-on-brand)]",
     to: "/discover/mini-programs",
     buildSearch: ({ hash, pathname }) =>
       buildMobileMiniProgramsRouteSearch({
@@ -741,7 +741,7 @@ function DesktopDiscoverWorkspace() {
                     )}
                   </div>
                 </div>
-                <div className="rounded-full bg-white/84 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
+                <div className="rounded-full bg-[color:var(--surface-card)]/84 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
                   Discover
                 </div>
               </div>
@@ -780,7 +780,7 @@ function DesktopDiscoverWorkspace() {
               <div className="rounded-[var(--radius-xl)] border border-[color:var(--brand-primary)]/14 bg-[linear-gradient(180deg,rgba(255,250,240,0.98),rgba(255,255,255,0.94))] p-4 shadow-[var(--shadow-soft)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-emerald-600">
+                    <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--state-success-text)]">
                       Encounter Desk
                     </div>
                     <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
@@ -790,7 +790,7 @@ function DesktopDiscoverWorkspace() {
                       {t(msg`轻轻试一次，就可能遇到一段新的关系线索。`)}
                     </div>
                   </div>
-                  <div className="rounded-full bg-white/90 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-emerald-600 shadow-[var(--shadow-soft)]">
+                  <div className="rounded-full bg-[color:var(--surface-card)]/90 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-success-text)] shadow-[var(--shadow-soft)]">
                     {t(msg`探索区`)}
                   </div>
                 </div>
@@ -991,7 +991,7 @@ function DesktopDiscoverWorkspace() {
                     {t(msg`这里不只看朋友，也能看到世界里的居民正在说什么。`)}
                   </div>
                 </div>
-                <div className="rounded-full bg-white/90 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-info-text)] shadow-[var(--shadow-soft)]">
+                <div className="rounded-full bg-[color:var(--surface-card)]/90 px-3 py-1 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--state-info-text)] shadow-[var(--shadow-soft)]">
                   {t(msg`公开流`)}
                 </div>
               </div>
@@ -1316,7 +1316,7 @@ function DiscoverMobileEntryRow({
 
 function DiscoverMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-xl)] bg-white/82 px-3 py-3 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[var(--radius-xl)] bg-[color:var(--surface-card)]/82 px-3 py-3 shadow-[var(--shadow-soft)]">
       <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.14em] text-[color:var(--text-muted)]">
         {label}
       </div>

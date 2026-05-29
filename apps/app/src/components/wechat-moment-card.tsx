@@ -720,7 +720,7 @@ function FloatingHeart({ liked }: { liked: boolean }) {
           "drop-shadow-[0_4px_12px_rgba(0,0,0,0.18)]",
           liked
             ? "fill-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]"
-            : "fill-white/0 text-white/90",
+            : "fill-[color:var(--surface-card)]/0 text-[color:var(--text-on-brand)]/90",
         )}
         style={style}
       />

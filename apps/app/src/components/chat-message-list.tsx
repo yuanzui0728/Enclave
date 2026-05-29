@@ -344,7 +344,7 @@ function SelectionModeActionButton({
         danger ? "text-[color:var(--state-danger-text)]" : "text-[color:var(--text-primary)]"
       }`}
     >
-      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-current shadow-[0_1px_2px_rgba(60, 40, 110, 0.04)]">
+      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[color:var(--surface-card)]/92 text-current shadow-[0_1px_2px_rgba(60, 40, 110, 0.04)]">
         {icon}
       </span>
       <span>{label}</span>
@@ -3590,7 +3590,7 @@ export function ChatMessageList({
             className={
               isDesktop
                 ? "inline-flex min-h-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)] px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-card)] disabled:cursor-not-allowed disabled:opacity-60"
-                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-white/92 px-3.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
+                : "inline-flex min-h-8 items-center justify-center rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]/92 px-3.5 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] shadow-[0_4px_12px_rgba(60, 40, 110, 0.08)] transition active:bg-[color:var(--surface-card-hover)] disabled:opacity-60"
             }
           >
             {loadingOlderMessages ? t(msg`正在加载更早消息...`) : t(msg`查看更多消息`)}
@@ -3683,7 +3683,7 @@ export function ChatMessageList({
             <button
               type="button"
               onClick={resetSelectionMode}
-              className="flex h-9 min-w-14 items-center justify-start rounded-[var(--radius-sm)] px-2.5 text-[length:var(--text-base)] text-[color:var(--text-secondary)] transition active:bg-white/80"
+              className="flex h-9 min-w-14 items-center justify-start rounded-[var(--radius-sm)] px-2.5 text-[length:var(--text-base)] text-[color:var(--text-secondary)] transition active:bg-[color:var(--surface-card)]/80"
             >
               {t(msg`取消`)}
             </button>
@@ -3696,7 +3696,7 @@ export function ChatMessageList({
                 !visibleMessages.length || selectionActionPending !== null
               }
               onClick={handleToggleSelectAllMessages}
-              className="flex h-9 min-w-16 items-center justify-end rounded-[var(--radius-sm)] px-2.5 text-[length:var(--text-base)] font-medium text-[color:var(--brand-primary)] transition active:bg-white/80 disabled:text-[color:var(--text-dim)]"
+              className="flex h-9 min-w-16 items-center justify-end rounded-[var(--radius-sm)] px-2.5 text-[length:var(--text-base)] font-medium text-[color:var(--brand-primary)] transition active:bg-[color:var(--surface-card)]/80 disabled:text-[color:var(--text-dim)]"
             >
               {allVisibleSelected ? t(msg`全不选`) : t(msg`全选`)}
             </button>
@@ -6080,7 +6080,7 @@ function ImageMessage({
       <div
         className={`flex items-center justify-center px-3 text-center text-xs text-[color:var(--text-secondary)] ${
           isDesktop
-            ? "h-28 w-28 rounded-[var(--radius-xl)] border border-white/80 bg-white/90 shadow-[var(--shadow-soft)]"
+            ? "h-28 w-28 rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/90 shadow-[var(--shadow-soft)]"
             : "h-24 w-24 rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]"
         }`}
       >
@@ -6151,7 +6151,7 @@ function SelectionToggle({
       className={`mt-0.5 flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full border text-[10px] font-medium transition ${
         checked
           ? "border-[color:var(--brand-primary)]/24 bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-[0_4px_10px_color-mix(in_srgb,var(--brand-primary)_20%,transparent)]"
-          : "border-[color:var(--border-subtle)] bg-white/92 text-transparent hover:border-[color:var(--brand-primary)]/30"
+          : "border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]/92 text-transparent hover:border-[color:var(--brand-primary)]/30"
       }`}
       aria-label={checked ? translateRuntimeMessage(msg`取消选择消息`) : translateRuntimeMessage(msg`选择消息`)}
       // 走查电脑端群聊 R17：和姊妹 R32 时间戳 divider toggle / R13 群通话面板
@@ -6385,7 +6385,7 @@ function NoteCardMessage({
           }`}
         >
           <div
-            className={`rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-white/88 text-[color:var(--text-muted)] shadow-[var(--shadow-soft)] ${
+            className={`rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]/88 text-[color:var(--text-muted)] shadow-[var(--shadow-soft)] ${
               isDesktop
                 ? "px-3 py-2 text-[length:var(--text-eyebrow)] tracking-[0.16em]"
                 : "px-2.5 py-1.5 text-[10px] tracking-[0.14em]"
@@ -6547,7 +6547,7 @@ function FeedPostCardMessage({
         </div>
       ) : (
         <div
-          className={`flex items-center justify-center bg-[linear-gradient(140deg,#1a1a1a_0%,#3b3b3b_100%)] text-white ${
+          className={`flex items-center justify-center bg-[linear-gradient(140deg,#1a1a1a_0%,#3b3b3b_100%)] text-[color:var(--text-on-brand)] ${
             isDesktop ? "h-[140px]" : "h-[124px]"
           }`}
         >
@@ -6763,7 +6763,7 @@ function GiftMessage({
         )}
         <div className="min-w-0 flex-1">
           <div
-            className={`truncate font-medium text-white ${
+            className={`truncate font-medium text-[color:var(--text-on-brand)] ${
               isDesktop ? "text-sm" : "text-[length:var(--text-caption)]"
             }`}
           >
@@ -6831,7 +6831,7 @@ function RedPacketMessage({
         <span className="text-[length:var(--text-section)] leading-none">🧧</span>
         <div className="min-w-0 flex-1">
           <div
-            className={`truncate font-medium text-white ${
+            className={`truncate font-medium text-[color:var(--text-on-brand)] ${
               isDesktop ? "text-sm" : "text-[length:var(--text-caption)]"
             }`}
           >
@@ -6958,7 +6958,7 @@ function VoiceMessage({
         onClick={togglePlayback}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
           own
-            ? "bg-white/55"
+            ? "bg-[color:var(--surface-card)]/55"
             : isDesktop
               ? "bg-[color:var(--surface-secondary)]"
               : "bg-[color:var(--surface-console)]"
@@ -7185,7 +7185,7 @@ function GroupRelaySummaryMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[var(--radius-md)] bg-white/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
+                ? "rounded-[var(--radius-md)] bg-[color:var(--surface-card)]/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
                 : "rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
@@ -7545,7 +7545,7 @@ function GroupCallInviteMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[var(--radius-md)] bg-white/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
+                ? "rounded-[var(--radius-md)] bg-[color:var(--surface-card)]/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
                 : "rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
@@ -7608,7 +7608,7 @@ function ResultCardMetric({
     <div
       className={
         isDesktop
-          ? "rounded-[var(--radius-md)] bg-white/72 px-3 py-2"
+          ? "rounded-[var(--radius-md)] bg-[color:var(--surface-card)]/72 px-3 py-2"
           : "rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas)] px-2.5 py-1.5"
       }
     >
@@ -7701,7 +7701,7 @@ function DirectCallInviteMessage({
             key={line}
             className={
               isDesktop
-                ? "rounded-[var(--radius-md)] bg-white/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
+                ? "rounded-[var(--radius-md)] bg-[color:var(--surface-card)]/72 px-3 py-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-secondary)]"
                 : "rounded-[var(--radius-sm)] bg-[color:var(--bg-canvas)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-[18px] text-[color:var(--text-secondary)]"
             }
           >
@@ -7785,7 +7785,7 @@ function StickerMessage({
 
   if (loadFailed) {
     return (
-      <div className="flex h-24 w-24 items-center justify-center rounded-[var(--radius-xl)] border border-white/80 bg-white/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
+      <div className="flex h-24 w-24 items-center justify-center rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/90 px-3 text-center text-xs text-[color:var(--text-secondary)] shadow-[var(--shadow-soft)]">
         {label || translateRuntimeMessage(msg`[表情包]`)}
       </div>
     );
@@ -7813,7 +7813,7 @@ function StickerMessage({
       // 图片链接当文字；drop 到桌面则触发"保存这张表情到桌面"。和兄弟
       // sticker 同款 draggable={false} 防御。
       draggable={false}
-      className="rounded-[var(--radius-lg)] bg-white/70 object-contain shadow-none"
+      className="rounded-[var(--radius-lg)] bg-[color:var(--surface-card)]/70 object-contain shadow-none"
       style={stickerStyle}
     />
   );
@@ -7996,12 +7996,12 @@ function ImageViewerOverlay({
 
       {isDesktop ? (
         <>
-          <div className="absolute inset-x-0 top-5 z-10 flex items-start justify-between gap-4 px-8 text-white">
+          <div className="absolute inset-x-0 top-5 z-10 flex items-start justify-between gap-4 px-8 text-[color:var(--text-on-brand)]">
             <div className="min-w-0">
               <div className="truncate text-sm font-medium">
                 {activeImage.fileName || activeImage.label}
               </div>
-              <div className="mt-1 text-xs text-white/70">
+              <div className="mt-1 text-xs text-[color:var(--text-on-brand)]/70">
                 {activeIndex + 1} / {total}
               </div>
             </div>
@@ -8045,7 +8045,7 @@ function ImageViewerOverlay({
         </>
       ) : (
         <>
-          <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.5rem)] z-10 flex items-start justify-between gap-3 px-3 text-white">
+          <div className="absolute inset-x-0 top-[calc(env(safe-area-inset-top,0px)+0.5rem)] z-10 flex items-start justify-between gap-3 px-3 text-[color:var(--text-on-brand)]">
             <ViewerActionButton
               compact
               label={translateRuntimeMessage(msg`关闭图片查看器`)}
@@ -8057,7 +8057,7 @@ function ImageViewerOverlay({
               <div className="truncate text-sm font-medium">
                 {activeImage.fileName || activeImage.label}
               </div>
-              <div className="mt-1 text-xs text-white/70">
+              <div className="mt-1 text-xs text-[color:var(--text-on-brand)]/70">
                 {activeIndex + 1} / {total}
               </div>
             </div>
@@ -8067,12 +8067,12 @@ function ImageViewerOverlay({
           </div>
 
           {total > 1 ? (
-            <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] z-10 px-6 text-center text-xs text-white/70">
+            <div className="absolute inset-x-0 bottom-[calc(env(safe-area-inset-bottom,0px)+5.5rem)] z-10 px-6 text-center text-xs text-[color:var(--text-on-brand)]/70">
               {translateRuntimeMessage(msg`左右滑动切换图片`)}
             </div>
           ) : null}
 
-          <div className="absolute inset-x-0 bottom-0 z-10 border-t border-white/10 bg-[color:var(--state-info-bg)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
+          <div className="absolute inset-x-0 bottom-0 z-10 border-t border-[color:var(--border-faint)]/10 bg-[color:var(--state-info-bg)] px-3 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] pt-3 backdrop-blur-xl">
             <div className="flex items-center justify-center gap-3">
               <ViewerActionButton
                 compact
@@ -8230,9 +8230,9 @@ function LocationViewerOverlay({
       />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(74,222,128,0.22),transparent_34%),linear-gradient(180deg,rgba(60, 40, 110, 0.12),rgba(15,23,42,0.72))]" />
       <div className="relative flex h-full flex-col">
-        <div className="flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-white">
+        <div className="flex items-center justify-between px-4 pb-3 pt-[max(env(safe-area-inset-top,0px),1rem)] text-[color:var(--text-on-brand)]">
           <div>
-            <div className="text-[length:var(--text-caption)] uppercase tracking-[0.18em] text-white/60">
+            <div className="text-[length:var(--text-caption)] uppercase tracking-[0.18em] text-[color:var(--text-on-brand)]/60">
               {translateRuntimeMessage(msg`聊天位置`)}
             </div>
             <div className="mt-1 text-[18px] font-medium">
@@ -8259,7 +8259,7 @@ function LocationViewerOverlay({
           }}
         >
           <div
-            className={`relative h-full overflow-hidden rounded-[var(--radius-xl)] border border-white/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
+            className={`relative h-full overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/10 shadow-[0_32px_80px_rgba(0,0,0,0.28)] ${
               isDesktop ? "mx-auto max-w-4xl" : ""
             }`}
           >
@@ -8269,18 +8269,18 @@ function LocationViewerOverlay({
             <div className="absolute right-[18%] top-[30%] h-20 w-20 rounded-full bg-[color:var(--state-info-bg)] blur-3xl" />
 
             <div className="relative flex h-full flex-col justify-between p-5">
-              <div className="self-start rounded-full border border-white/12 bg-white/10 px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-white/72">
+              <div className="self-start rounded-full border border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/10 px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-on-brand)]/72">
                 {translateRuntimeMessage(msg`来自聊天中的位置卡片`)}
               </div>
 
               <div className="flex flex-1 items-center justify-center">
-                <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-white/16 bg-white/12 shadow-[0_18px_48px_rgba(60, 40, 110, 0.32)]">
-                  <div className="absolute inset-3 rounded-full border border-white/12" />
-                  <MapPin size={34} className="text-white" />
+                <div className="relative flex h-28 w-28 items-center justify-center rounded-full border border-[color:var(--border-faint)]/16 bg-[color:var(--surface-card)]/12 shadow-[0_18px_48px_rgba(60, 40, 110, 0.32)]">
+                  <div className="absolute inset-3 rounded-full border border-[color:var(--border-faint)]/12" />
+                  <MapPin size={34} className="text-[color:var(--text-on-brand)]" />
                 </div>
               </div>
 
-              <div className="rounded-[var(--radius-xl)] border border-white/12 bg-[color:var(--state-info-bg)] p-4 text-white shadow-[0_18px_48px_rgba(0,0,0,0.2)]">
+              <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/12 bg-[color:var(--state-info-bg)] p-4 text-[color:var(--text-on-brand)] shadow-[0_18px_48px_rgba(0,0,0,0.2)]">
                 <div className="flex items-start gap-3">
                   <div className="mt-0.5 rounded-full bg-[color:var(--state-success-bg)] p-2 text-[color:var(--state-success-text)]">
                     <LocateFixed size={16} />
@@ -8289,7 +8289,7 @@ function LocationViewerOverlay({
                     <div className="text-[18px] font-medium leading-7">
                       {attachment.title}
                     </div>
-                    <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-white/72">
+                    <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/72">
                       {attachment.subtitle?.trim() ||
                         translateRuntimeMessage(msg`这条位置消息来自当前聊天场景，可继续回到消息定位。`)}
                     </div>
@@ -8901,7 +8901,7 @@ function ViewerActionButton({
       type="button"
       onClick={onClick}
       onPointerDown={(event) => event.stopPropagation()}
-      className={`flex items-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/16 ${
+      className={`flex items-center rounded-full border border-[color:var(--border-faint)]/15 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/16 ${
         compact ? "h-10 w-10 justify-center" : "h-10 gap-2 px-4 text-sm"
       }`}
       aria-label={label}
@@ -8930,7 +8930,7 @@ function ViewerNavButton({
     <button
       type="button"
       onClick={onClick}
-      className={`absolute top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/16 ${
+      className={`absolute top-1/2 z-10 flex -translate-y-1/2 items-center justify-center rounded-full border border-[color:var(--border-faint)]/15 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/16 ${
         compact ? "h-10 w-10" : "h-12 w-12"
       } ${
         side === "left"

@@ -2732,9 +2732,9 @@ export function ContactsPage() {
                           type="button"
                           role="menuitem"
                           onClick={() => handleMobileQuickActionNavigate(to)}
-                          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-white/10 active:bg-white/12"
+                          className="flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:bg-[color:var(--surface-card)]/10 active:bg-[color:var(--surface-card)]/12"
                         >
-                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-white/10 text-white">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)]">
                             <Icon aria-hidden="true" size={14} />
                           </div>
                           <span>{t(item.label)}</span>
@@ -2762,16 +2762,16 @@ export function ContactsPage() {
                         aria-label={disabledItemLabel}
                         tabIndex={item.disabled ? -1 : undefined}
                         className={cn(
-                          "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-white transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
+                          "flex w-full items-center gap-2 rounded-[8px] px-2.5 py-2 text-left text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
                           item.disabled
                             ? "cursor-not-allowed opacity-55"
-                            : "hover:bg-white/10 active:bg-white/12",
+                            : "hover:bg-[color:var(--surface-card)]/10 active:bg-[color:var(--surface-card)]/12",
                         )}
                       >
                         <div
                           className={cn(
-                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-white",
-                            item.disabled ? "bg-white/6" : "bg-white/10",
+                            "flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] text-[color:var(--text-on-brand)]",
+                            item.disabled ? "bg-[color:var(--surface-card)]/6" : "bg-[color:var(--surface-card)]/10",
                           )}
                         >
                           <Icon aria-hidden="true" size={14} />
@@ -2779,7 +2779,7 @@ export function ContactsPage() {
                         <div className="min-w-0 flex-1">
                           <div>{t(item.label)}</div>
                           {item.disabledLabel ? (
-                            <div className="mt-0.5 text-[10px] text-white/62">
+                            <div className="mt-0.5 text-[10px] text-[color:var(--text-on-brand)]/62">
                               {t(item.disabledLabel)}
                             </div>
                           ) : null}
@@ -3174,7 +3174,7 @@ function SectionHeader({
       className={cn(
         "z-10 flex items-center gap-1.5 px-4 py-1.25 font-medium tracking-[0.08em] text-[color:var(--text-muted)]",
         desktop
-          ? "sticky top-0 border-b border-[color:var(--border-faint)] bg-white/78 backdrop-blur-xl"
+          ? "sticky top-0 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 backdrop-blur-xl"
           : "text-[length:var(--text-eyebrow)] bg-[color:var(--surface-overlay)]",
       )}
     >

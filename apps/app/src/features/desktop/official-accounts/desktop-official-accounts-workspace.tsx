@@ -675,8 +675,8 @@ export function DesktopOfficialAccountsWorkspace({
               className={cn(
                 "h-8 rounded-full px-3 text-[length:var(--text-caption)] shadow-none",
                 displayMode === "feed"
-                  ? "bg-white text-[color:var(--text-primary)]"
-                  : "text-[color:var(--text-secondary)] hover:bg-white/80",
+                  ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+                  : "text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card)]/80",
               )}
             >
               <BookOpenText size={14} />
@@ -690,8 +690,8 @@ export function DesktopOfficialAccountsWorkspace({
               className={cn(
                 "h-8 rounded-full px-3 text-[length:var(--text-caption)] shadow-none",
                 displayMode === "accounts"
-                  ? "bg-white text-[color:var(--text-primary)]"
-                  : "text-[color:var(--text-secondary)] hover:bg-white/80",
+                  ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
+                  : "text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-card)]/80",
               )}
             >
               <MessageSquareText size={14} />
@@ -709,7 +709,7 @@ export function DesktopOfficialAccountsWorkspace({
                 ? t(msg`搜索常看公众号或文章`)
                 : t(msg`搜索公众号`)
             }
-            className="rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-4 py-2.5 text-[length:var(--text-caption)] shadow-none hover:bg-white focus:translate-y-0 focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:bg-white focus:shadow-none"
+            className="rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-4 py-2.5 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)] focus:translate-y-0 focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:bg-[color:var(--surface-card)] focus:shadow-none"
           />
           {displayMode === "accounts" ? (
             <div className="flex gap-2">
@@ -721,7 +721,7 @@ export function DesktopOfficialAccountsWorkspace({
                 className={
                   accountFilter === "all"
                     ? "rounded-full border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)] shadow-none hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
-                    : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                    : "rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                 }
               >
                 {t(msg`全部`)}
@@ -734,7 +734,7 @@ export function DesktopOfficialAccountsWorkspace({
                 className={
                   accountFilter === "following"
                     ? "rounded-full border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)] shadow-none hover:bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
-                    : "rounded-full border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                    : "rounded-full border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                 }
               >
                 {t(msg`已关注`)}
@@ -772,7 +772,7 @@ export function DesktopOfficialAccountsWorkspace({
         />
       ) : (
         <div className="flex min-h-0 flex-1 bg-[color:var(--bg-app)]">
-          <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
+          <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
             <div className="border-b border-[color:var(--border-faint)] px-4 py-3">
               <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
                 {accountFilter === "following"
@@ -801,7 +801,7 @@ export function DesktopOfficialAccountsWorkspace({
                 />
               ) : null}
 
-              <div className="bg-white">
+              <div className="bg-[color:var(--surface-card)]">
                 {filteredAccounts.map((entry) => (
                   <OfficialAccountListItem
                     key={entry.id}
@@ -827,7 +827,7 @@ export function DesktopOfficialAccountsWorkspace({
             </div>
           </section>
 
-          <section className="min-h-0 min-w-0 flex-1 overflow-auto bg-white">
+          <section className="min-h-0 min-w-0 flex-1 overflow-auto bg-[color:var(--surface-card)]">
             {accountDetailQuery.isLoading ? (
               <OfficialWorkspaceStatusPane
                 title={t(msg`正在读取公众号主页`)}
@@ -872,7 +872,7 @@ export function DesktopOfficialAccountsWorkspace({
                             ? t(msg`服务号`)
                             : t(msg`订阅号`)}
                         </span>
-                        <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-2.5 py-1 text-[color:var(--text-muted)]">
+                        <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2.5 py-1 text-[color:var(--text-muted)]">
                           @{account.handle}
                         </span>
                         {account.isVerified ? (
@@ -904,7 +904,7 @@ export function DesktopOfficialAccountsWorkspace({
                       <Button
                         type="button"
                         variant="primary"
-                        className="rounded-xl bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                        className="rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
                         onClick={() =>
                           openServiceWorkspace(
                             account.id,
@@ -921,7 +921,7 @@ export function DesktopOfficialAccountsWorkspace({
                       <Button
                         type="button"
                         variant="secondary"
-                        className="rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                        className="rounded-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                         onClick={() =>
                           openSubscriptionWorkspace(activeAccountArticleId)
                         }
@@ -937,8 +937,8 @@ export function DesktopOfficialAccountsWorkspace({
                       disabled={followMutation.isPending}
                       className={
                         account.isFollowing
-                          ? "rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
-                          : "rounded-xl bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                          ? "rounded-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                          : "rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
                       }
                     >
                       {followMutation.isPending
@@ -951,7 +951,7 @@ export function DesktopOfficialAccountsWorkspace({
                       type="button"
                       variant="secondary"
                       onClick={toggleAccountFavorite}
-                      className="rounded-xl border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                      className="rounded-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                     >
                       {accountFavoriteSourceId &&
                       favoriteSourceIds.includes(accountFavoriteSourceId)
@@ -961,7 +961,7 @@ export function DesktopOfficialAccountsWorkspace({
                   </div>
                 </section>
 
-                <div className="bg-white">
+                <div className="bg-[color:var(--surface-card)]">
                   <div className="border-b border-[color:var(--border-faint)] px-7 py-3">
                     <div className="flex gap-2">
                       <button
@@ -970,7 +970,7 @@ export function DesktopOfficialAccountsWorkspace({
                         className={
                           detailTab === "updates"
                             ? "rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1.5 text-sm font-medium text-[color:var(--brand-primary)]"
-                            : "rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+                            : "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1.5 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         }
                       >
                         {t(msg`消息`)}
@@ -981,7 +981,7 @@ export function DesktopOfficialAccountsWorkspace({
                         className={
                           detailTab === "profile"
                             ? "rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1.5 text-sm font-medium text-[color:var(--brand-primary)]"
-                            : "rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1.5 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+                            : "rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1.5 text-sm text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
                         }
                       >
                         {t(msg`资料`)}
@@ -989,7 +989,7 @@ export function DesktopOfficialAccountsWorkspace({
                     </div>
                   </div>
 
-                  <div className="bg-white px-7 py-5">
+                  <div className="bg-[color:var(--surface-card)] px-7 py-5">
                     {detailTab === "updates" ? (
                       <div className="space-y-4">
                         <DesktopOfficialEntryCard
@@ -1034,7 +1034,7 @@ export function DesktopOfficialAccountsWorkspace({
                           }}
                         />
 
-                        <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white">
+                        <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
                           <div className="border-b border-[color:var(--border-faint)] px-4 py-3 text-sm font-medium text-[color:var(--text-primary)]">
                             {t(msg`最近文章`)}
                           </div>
@@ -1073,7 +1073,7 @@ export function DesktopOfficialAccountsWorkspace({
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white">
+                        <div className="overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
                           <DesktopOfficialProfileRow
                             label={t(msg`账号类型`)}
                             value={
@@ -1145,7 +1145,7 @@ export function DesktopOfficialAccountsWorkspace({
         </div>
       )}
       <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]">
-        <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
+        <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
           <div className="text-lg font-semibold text-[color:var(--text-primary)]">
             {t(msg`功能开发中`)}
           </div>
@@ -1181,7 +1181,7 @@ function DesktopOfficialFeedMode({
 }) {
   const t = useRuntimeTranslator();
   return (
-    <div className="min-h-0 flex-1 overflow-auto bg-white">
+    <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-card)]">
       <div className="mx-auto max-w-[820px]">
         <section className="border-b border-[color:var(--border-faint)] px-7 py-5">
           <div className="flex items-center justify-between gap-3">
@@ -1235,7 +1235,7 @@ function DesktopOfficialFeedMode({
                       key={account.id}
                       type="button"
                       onClick={() => onOpenAccount(account.id)}
-                      className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-4 py-3 text-left transition hover:bg-white"
+                      className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] px-4 py-3 text-left transition hover:bg-[color:var(--surface-card)]"
                     >
                       <AvatarChip
                         name={account.name}
@@ -1325,7 +1325,7 @@ function DesktopOfficialFeedArticleRow({
     <div
       className={cn(
         "border-b border-[color:var(--border-faint)] px-7 py-4 transition",
-        active ? "bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]" : "bg-white hover:bg-[color:var(--state-info-bg)]",
+        active ? "bg-[color-mix(in_srgb,var(--brand-primary)_4%,transparent)]" : "bg-[color:var(--surface-card)] hover:bg-[color:var(--state-info-bg)]",
       )}
     >
       <div className="flex items-start justify-between gap-3">
@@ -1373,7 +1373,7 @@ function DesktopOfficialFeedArticleRow({
               "inline-flex h-8 w-8 items-center justify-center rounded-full border transition",
               favorite
                 ? "border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
-                : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)] hover:bg-[color:var(--surface-shell)] hover:text-[color:var(--text-primary)]",
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-muted)] hover:bg-[color:var(--surface-shell)] hover:text-[color:var(--text-primary)]",
             )}
             aria-label={favorite ? t(msg`取消收藏文章`) : t(msg`收藏文章`)}
           >
@@ -1389,7 +1389,7 @@ function DesktopOfficialFeedArticleRow({
           "mt-3 flex w-full items-start gap-3 rounded-[18px] border px-4 py-4 text-left transition",
           active
             ? "border-[color-mix(in_srgb,var(--brand-primary)_16%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
-            : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] hover:bg-white",
+            : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] hover:bg-[color:var(--surface-card)]",
         )}
       >
         <div className="min-w-0 flex-1">
@@ -1417,7 +1417,7 @@ function DesktopOfficialFeedArticleRow({
             className="h-[5.5rem] w-[5.5rem] shrink-0 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] object-cover"
           />
         ) : (
-          <div className="flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
+          <div className="flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[length:var(--text-eyebrow)] text-[color:var(--text-dim)]">
             {t(msg`文章`)}
           </div>
         )}
@@ -1440,7 +1440,7 @@ function DesktopOfficialEntryCard({
   onAction: () => void;
 }) {
   return (
-    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-white px-4 py-4">
+    <section className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -1455,7 +1455,7 @@ function DesktopOfficialEntryCard({
           variant="secondary"
           size="sm"
           disabled={actionDisabled}
-          className="shrink-0 rounded-full border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.82)] text-[color:var(--text-secondary)] shadow-none hover:bg-white"
+          className="shrink-0 rounded-full border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.82)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-card)]"
           onClick={onAction}
         >
           {actionLabel}
@@ -1477,7 +1477,7 @@ function DesktopOfficialProfileRow({
   return (
     <section
       className={cn(
-        "flex items-center justify-between gap-3 bg-white px-4 py-3",
+        "flex items-center justify-between gap-3 bg-[color:var(--surface-card)] px-4 py-3",
         last ? undefined : "border-b border-[color:var(--border-faint)]",
       )}
     >

@@ -198,7 +198,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                     {badgeCount > 0 ? (
                       <span
                         className={cn(
-                          "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[length:var(--text-eyebrow)] leading-none text-white",
+                          "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[length:var(--text-eyebrow)] leading-none text-[color:var(--text-on-brand)]",
                           showReminderBadge
                             ? "bg-[color:var(--brand-primary)]"
                             : "bg-[color:var(--state-danger-bg)]",

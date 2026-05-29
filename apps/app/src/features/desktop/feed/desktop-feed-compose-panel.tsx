@@ -117,7 +117,7 @@ export function DesktopFeedComposePanel({
       }}
     >
       <div className="flex h-full w-full max-w-[380px] flex-col border-l border-[color:var(--border-faint)] bg-[rgba(247,250,250,0.96)] shadow-[-24px_0_48px_rgba(15,23,42,0.08)]">
-        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-white/82 px-5 py-4 backdrop-blur-xl">
+        <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/82 px-5 py-4 backdrop-blur-xl">
           <div>
             <div className="text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--text-muted)]">
               {t(msg`发广场动态`)}
@@ -129,7 +129,7 @@ export function DesktopFeedComposePanel({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
             aria-label={t(msg`关闭发帖面板`)}
           >
             <X size={16} />
@@ -137,7 +137,7 @@ export function DesktopFeedComposePanel({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto bg-[color:var(--surface-shell)] px-5 py-5">
-          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-card)]">
+          <div className="rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-card)]">
             <div className="flex items-center gap-3">
               <AvatarChip name={ownerUsername} src={ownerAvatar} />
               <div className="min-w-0">
@@ -158,7 +158,7 @@ export function DesktopFeedComposePanel({
               value={text}
               onChange={(event) => onTextChange(event.target.value)}
               placeholder={t(msg`写点想让世界居民都能看到的内容...`)}
-              className="mt-5 min-h-[220px] resize-none rounded-[18px] border-[color:var(--border-faint)] bg-white px-4 py-4 leading-7 shadow-none hover:bg-[color:var(--surface-console)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:bg-white focus:shadow-none"
+              className="mt-5 min-h-[220px] resize-none rounded-[18px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 leading-7 shadow-none hover:bg-[color:var(--surface-console)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:bg-[color:var(--surface-card)] focus:shadow-none"
               maxLength={FEED_TEXT_MAX_LENGTH}
               autoFocus
             />
@@ -179,7 +179,7 @@ export function DesktopFeedComposePanel({
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={!canAddImages || createPending}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <ImagePlus size={15} />
                 {t(msg`添加图片`)}
@@ -188,7 +188,7 @@ export function DesktopFeedComposePanel({
                 type="button"
                 onClick={() => videoInputRef.current?.click()}
                 disabled={!canAddVideo || createPending}
-                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-white px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Video size={15} />
                 {videoDraft ? t(msg`更换视频`) : t(msg`添加视频`)}
@@ -220,7 +220,7 @@ export function DesktopFeedComposePanel({
                 <Button
                   variant="secondary"
                   onClick={onClose}
-                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                  className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                 >
                   {t(msg`取消`)}
                 </Button>
@@ -232,7 +232,7 @@ export function DesktopFeedComposePanel({
                     createPending
                   }
                   onClick={onCreate}
-                  className="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                  className="bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
                 >
                   {createPending ? t(msg`发布中...`) : t(msg`发布到广场`)}
                 </Button>

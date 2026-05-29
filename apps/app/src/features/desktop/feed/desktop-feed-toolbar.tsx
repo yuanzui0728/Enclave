@@ -40,7 +40,7 @@ export function DesktopFeedToolbar({
 }: DesktopFeedToolbarProps) {
   const t = useRuntimeTranslator();
   return (
-    <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-6 py-4 backdrop-blur-xl">
+    <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/74 px-6 py-4 backdrop-blur-xl">
       <div className="mx-auto w-full max-w-[720px]">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="min-w-0">
@@ -89,7 +89,7 @@ export function DesktopFeedToolbar({
           <div className="mt-4">
             <InlineNotice
               tone="success"
-              className="border-[color:var(--border-faint)] bg-white"
+              className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
             >
               {successNotice}
             </InlineNotice>
@@ -120,7 +120,7 @@ export function DesktopFeedToolbar({
                   <button
                     type="button"
                     onClick={onRetryLike}
-                    className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-white px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]"
+                    className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]"
                   >
                     {t(msg`重试点赞`)}
                   </button>
@@ -148,7 +148,7 @@ export function DesktopFeedToolbar({
                   <button
                     type="button"
                     onClick={onRetryComment}
-                    className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-white px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]"
+                    className="shrink-0 rounded-full border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] px-2.5 py-0.5 text-[length:var(--text-eyebrow)] font-medium text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)]"
                   >
                     {t(msg`重试发送`)}
                   </button>

@@ -55,14 +55,14 @@ export function MobileChatAttachmentPreview({
                   // textarea 里。
                   decoding="async"
                   draggable={false}
-                  className="h-12 w-12 rounded-[var(--radius-sm)] border border-white/75 bg-[color:var(--surface-soft)] object-cover"
+                  className="h-12 w-12 rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/75 bg-[color:var(--surface-soft)] object-cover"
                 />
                 {onRemoveImage ? (
                   <button
                     type="button"
                     onClick={() => onRemoveImage(index)}
                     disabled={pending}
-                    className="absolute right-0.5 top-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70 disabled:opacity-45"
+                    className="absolute right-0.5 top-0.5 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-black/55 text-[color:var(--text-on-brand)] transition hover:bg-black/70 disabled:opacity-45"
                     aria-label={t(msg`移除 ${item.fileName}`)}
                   >
                     <X size={11} />

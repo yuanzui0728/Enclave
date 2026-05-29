@@ -401,7 +401,7 @@ export function DesktopGroupCallPanel({
 
   return (
     <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] p-5 shadow-[var(--shadow-card)]">
-      <div className="flex min-w-0 flex-[1.08] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+      <div className="flex min-w-0 flex-[1.08] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
@@ -429,7 +429,7 @@ export function DesktopGroupCallPanel({
             type="button"
             variant="secondary"
             onClick={onClose}
-            className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
           >
             {t(msg`返回聊天`)}
           </Button>
@@ -514,7 +514,7 @@ export function DesktopGroupCallPanel({
             // 禁用让按钮真正表达"已完成"语义；handleManualSync 内也加同款守
             // 防键盘 Enter / 程序化点击绕过。
             disabled={inviteNoticePending || hasSyncedStatus}
-            className="rounded-[10px] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+            className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
           >
             <UserPlus size={16} />
             {inviteNoticePending
@@ -527,7 +527,7 @@ export function DesktopGroupCallPanel({
             type="button"
             variant="secondary"
             onClick={handleOpenMobileHandoff}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
           >
             <Smartphone size={16} />
             {t(msg`到手机继续`)}
@@ -545,7 +545,7 @@ export function DesktopGroupCallPanel({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-[0.92] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+      <div className="flex min-w-0 flex-[0.92] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -595,7 +595,7 @@ export function DesktopGroupCallPanel({
                   "rounded-[var(--radius-sm)] border px-4 py-4 text-left transition",
                   joined
                     ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[var(--shadow-soft)]"
-                    : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-white",
+                    : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)] hover:bg-[color:var(--surface-card)]",
                   member.memberType === "user"
                     ? "cursor-default"
                     : "",
@@ -612,7 +612,7 @@ export function DesktopGroupCallPanel({
                       <div className="truncate text-sm font-medium text-[color:var(--text-primary)]">
                         {member.memberName || member.memberId}
                       </div>
-                      <span className="rounded-full border border-[color:var(--border-faint)] bg-white px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
+                      <span className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] text-[color:var(--text-muted)]">
                         {roleLabel}
                       </span>
                     </div>
@@ -673,7 +673,7 @@ function CallMetricCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-soft)]">
       <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
@@ -714,7 +714,7 @@ function CallControlButton({
         "inline-flex h-10 items-center gap-2 rounded-[10px] border px-4 text-sm transition",
         active
           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
-          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
       )}
     >
       {icon}

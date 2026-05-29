@@ -39,7 +39,7 @@ export function BootstrapScreen({ message }: BootstrapScreenProps) {
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[color:var(--brand-primary)]/16 bg-[color:var(--brand-primary)]/8 px-3 py-1 text-[length:var(--text-eyebrow)] uppercase tracking-[0.34em] text-[color:var(--brand-primary)]">
           Beyond Reality
         </div>
-        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[var(--radius-xl)] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-secondary))] text-2xl font-semibold text-white shadow-none">
+        <div className="mx-auto mt-6 flex h-20 w-20 animate-pulse items-center justify-center rounded-[var(--radius-xl)] bg-[linear-gradient(135deg,var(--brand-primary),var(--brand-secondary))] text-2xl font-semibold text-[color:var(--text-on-brand)] shadow-none">
           {t(msg`隐界`)}
         </div>
         <h1 className="mt-6 text-4xl font-semibold tracking-[0.08em] text-[color:var(--text-primary)]">

@@ -364,7 +364,7 @@ export function LiveCompanionPage() {
       sidebarClassName="w-[300px]"
       sidebar={
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[color:var(--border-faint)] bg-white/74 px-4 py-4 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/74 px-4 py-4 backdrop-blur-xl">
             <div className="text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
               {t(msg`直播伴侣`)}
             </div>
@@ -972,7 +972,7 @@ export function LiveCompanionPage() {
           aria-labelledby="live-companion-dev-block-title"
           className="absolute inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-[3px]"
         >
-          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-white/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
+          <div className="rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/95 px-8 py-6 text-center shadow-[var(--shadow-card)]">
             <h2
               id="live-companion-dev-block-title"
               className="text-lg font-semibold text-[color:var(--text-primary)]"

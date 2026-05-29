@@ -233,7 +233,7 @@ export function MobileSpeechInputSheet({
           <div className="mt-5 flex items-center justify-center">
             <div
               className={cn(
-                "flex h-[76px] w-[76px] items-center justify-center rounded-full border text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.32)] transition",
+                "flex h-[76px] w-[76px] items-center justify-center rounded-full border text-[color:var(--text-on-brand)] shadow-[inset_0_1px_0_rgba(255,255,255,0.32)] transition",
                 holding && cancelIntent
                   ? "border-[#ff7875]/36 bg-[color:var(--state-danger-bg)]"
                   : listening || holding

@@ -245,8 +245,8 @@ export function DesktopSubscriptionWorkspace({
 
   return (
     <div className="flex h-full min-h-0 bg-[color:var(--bg-app)]">
-      <section className="flex w-[332px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-white">
-        <div className="border-b border-[color:var(--border-faint)] bg-white px-4 py-3">
+      <section className="flex w-[332px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="truncate text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">
@@ -269,7 +269,7 @@ export function DesktopSubscriptionWorkspace({
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-auto bg-white">
+        <div className="min-h-0 flex-1 overflow-auto bg-[color:var(--surface-card)]">
           {inboxQuery.isLoading ? (
             <SidebarStatusPane
               title={t(msg`正在读取订阅号消息`)}
@@ -296,7 +296,7 @@ export function DesktopSubscriptionWorkspace({
           ) : null}
 
           {feedItems.length ? (
-            <div className="bg-white">
+            <div className="bg-[color:var(--surface-card)]">
               {feedItems.map((delivery, index) => (
                 <button
                   key={delivery.id}
@@ -307,7 +307,7 @@ export function DesktopSubscriptionWorkspace({
                     index > 0 ? "border-t border-[color:var(--border-faint)]" : undefined,
                     activeArticleId === delivery.articleId
                       ? "bg-[color-mix(in_srgb,var(--brand-primary)_5%,transparent)]"
-                      : "bg-white hover:bg-[color:var(--state-info-bg)]",
+                      : "bg-[color:var(--surface-card)] hover:bg-[color:var(--state-info-bg)]",
                   )}
                 >
                   <div className="min-w-0 flex-1">
@@ -365,7 +365,7 @@ export function DesktopSubscriptionWorkspace({
       </section>
 
       <section
-        className="min-w-0 flex-1 overflow-auto bg-white"
+        className="min-w-0 flex-1 overflow-auto bg-[color:var(--surface-card)]"
       >
         {articleQuery.data ? (
           <>

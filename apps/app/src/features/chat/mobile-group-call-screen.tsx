@@ -842,7 +842,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       <AppPage
         className={cn(
           "min-h-full px-4 py-6",
-          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-white",
+          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-[color:var(--text-on-brand)]",
         )}
       >
         {isDesktopLayout ? (
@@ -862,7 +862,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       <AppPage
         className={cn(
           "min-h-full px-4 py-6",
-          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-white",
+          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-[color:var(--text-on-brand)]",
         )}
       >
         {isDesktopLayout ? (
@@ -901,7 +901,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       <AppPage
         className={cn(
           "min-h-full px-4 py-6",
-          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-white",
+          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-[color:var(--text-on-brand)]",
         )}
       >
         {isDesktopLayout ? (
@@ -940,7 +940,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
       <AppPage
         className={cn(
           "min-h-full space-y-4 px-4 py-6",
-          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-white",
+          isDesktopLayout ? "bg-[color:var(--surface-card)]" : "bg-[#111827] text-[color:var(--text-on-brand)]",
         )}
       >
         {isDesktopLayout ? (
@@ -951,7 +951,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               onClick={handleBack}
               className={cn(
                 isDesktopLayout
-                  ? "rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
+                  ? "rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-card)]"
                   : "rounded-full",
               )}
             >
@@ -996,7 +996,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-card)]"
+                className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-card)]"
                 aria-label={t(msg`返回群聊`)}
               >
                 <ArrowLeft size={18} />
@@ -1018,14 +1018,14 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
               type="button"
               variant="secondary"
               onClick={handleBack}
-              className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
+              className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-card)]"
             >
               {t(msg`返回群聊`)}
             </Button>
           </header>
 
           <div className="flex min-h-0 flex-1 items-center justify-center p-6">
-            <div className="w-full max-w-[760px] rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[0_18px_48px_rgba(180,130,20,0.08)]">
+            <div className="w-full max-w-[760px] rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[0_18px_48px_rgba(180,130,20,0.08)]">
               <div className="rounded-full bg-[color:var(--state-warning-bg)] px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)] inline-flex">
                 {t(msg`桌面通话工作区`)}
               </div>
@@ -1101,7 +1101,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
                         : {}),
                     });
                   }}
-                  className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-card)]"
+                  className="rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-card)]"
                 >
                   {t(msg`查看群聊信息`)}
                 </Button>
@@ -1297,7 +1297,7 @@ export function MobileGroupCallScreen({ mode }: MobileGroupCallScreenProps) {
             ))}
           </WeChatGroupCallGrid>
           {members.length > visibleMembers.length ? (
-            <div className="mt-5 text-center text-[length:var(--text-caption)] text-white/50">
+            <div className="mt-5 text-center text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/50">
               {t(msg`其余 ${members.length - visibleMembers.length} 位成员请到群聊详情管理`)}
             </div>
           ) : null}
@@ -1386,8 +1386,8 @@ function MobileCallStatusCard({
       className={cn(
         "mx-auto flex max-w-[26rem] flex-col items-center rounded-[var(--radius-xl)] border px-5 py-6 text-center shadow-[0_24px_64px_rgba(2,6,23,0.28)]",
         tone === "danger"
-          ? "border-[#f87171]/24 bg-[linear-gradient(180deg,rgba(127,29,29,0.34),rgba(69,10,10,0.3))] text-white"
-          : "border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(2,6,23,0.88))] text-white",
+          ? "border-[#f87171]/24 bg-[linear-gradient(180deg,rgba(127,29,29,0.34),rgba(69,10,10,0.3))] text-[color:var(--text-on-brand)]"
+          : "border-[color:var(--border-faint)]/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.72),rgba(2,6,23,0.88))] text-[color:var(--text-on-brand)]",
       )}
     >
       {badge ? (
@@ -1404,14 +1404,14 @@ function MobileCallStatusCard({
       ) : null}
       {tone === "loading" ? (
         <div className="mt-3 flex items-center justify-center gap-1.5">
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/24" />
-          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-white/36 [animation-delay:120ms]" />
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[color:var(--surface-card)]/24" />
+          <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[color:var(--surface-card)]/36 [animation-delay:120ms]" />
           <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-[color:var(--state-success-bg)] [animation-delay:240ms]" />
         </div>
       ) : null}
       <div className="mt-3 text-[18px] font-medium leading-7">{title}</div>
       {description ? (
-        <p className="mt-2 max-w-[18rem] text-[length:var(--text-caption)] leading-6 text-white/68">
+        <p className="mt-2 max-w-[18rem] text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/68">
           {description}
         </p>
       ) : null}
@@ -1432,7 +1432,7 @@ function MobileCallActionButton({
         "flex h-11 min-w-[148px] items-center justify-center gap-2 rounded-full border px-4 text-sm font-medium transition active:translate-y-[0.5px] disabled:opacity-45",
         tone === "danger"
           ? "border-[#fca5a5]/26 bg-[#ef4444]/14 text-[color:var(--state-danger-text)] active:bg-[#ef4444]/20"
-          : "border-white/12 bg-white/10 text-white active:bg-white/14",
+          : "border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)] active:bg-[color:var(--surface-card)]/14",
         className,
       )}
       {...props}

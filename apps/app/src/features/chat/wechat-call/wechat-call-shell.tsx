@@ -38,7 +38,7 @@ export function WeChatCallShell({
 
   if (fullBleed) {
     return (
-      <AppPage className="relative min-h-[100dvh] space-y-0 overflow-hidden bg-black px-0 py-0 text-white">
+      <AppPage className="relative min-h-[100dvh] space-y-0 overflow-hidden bg-black px-0 py-0 text-[color:var(--text-on-brand)]">
         <div className="absolute inset-0">{stage}</div>
         {children}
         {topBar ? (
@@ -56,7 +56,7 @@ export function WeChatCallShell({
   }
 
   return (
-    <AppPage className="relative flex min-h-[100dvh] flex-col space-y-0 overflow-hidden bg-[#0b0b0c] px-0 py-0 text-white">
+    <AppPage className="relative flex min-h-[100dvh] flex-col space-y-0 overflow-hidden bg-[#0b0b0c] px-0 py-0 text-[color:var(--text-on-brand)]">
       {backdrop}
       {children}
       <div className="relative z-10 flex min-h-[100dvh] flex-col">

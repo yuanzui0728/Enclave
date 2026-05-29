@@ -70,7 +70,7 @@ export const WeChatMomentsCover = memo(function WeChatMomentsCover({
         ) : null}
 
         {showCoverEditHint ? (
-          <div className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-1 text-[length:var(--text-eyebrow)] text-white/85 backdrop-blur-sm">
+          <div className="pointer-events-none absolute right-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/30 px-2.5 py-1 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/85 backdrop-blur-sm">
             <Camera size={13} />
           </div>
         ) : null}
@@ -84,7 +84,7 @@ export const WeChatMomentsCover = memo(function WeChatMomentsCover({
       {/* i18n-ignore-end */}
       <div className="absolute bottom-7 right-4 flex items-end gap-3">
         <div
-          className="max-w-[60vw] truncate text-right text-[length:var(--text-title)] font-semibold leading-[22px] text-white [text-shadow:0_1px_2px_rgba(0,0,0,0.32)]"
+          className="max-w-[60vw] truncate text-right text-[length:var(--text-title)] font-semibold leading-[22px] text-[color:var(--text-on-brand)] [text-shadow:0_1px_2px_rgba(0,0,0,0.32)]"
           aria-label={safeNickname}
         >
           {safeNickname}
@@ -94,7 +94,7 @@ export const WeChatMomentsCover = memo(function WeChatMomentsCover({
             type="button"
             onClick={onAvatarTap}
             aria-label={safeNickname}
-            className="translate-y-7 rounded-[6px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            className="translate-y-7 rounded-[6px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--border-faint)]/80"
           >
             <CoverAvatar src={avatarUrl} alt={safeNickname} initial={initial} />
           </button>
@@ -138,7 +138,7 @@ function CoverAvatar({
           decoding="async"
           draggable={false}
           onError={() => setLoadFailed(true)}
-          className="h-16 w-16 rounded-[6px] border border-white/85 bg-[linear-gradient(135deg,#cbd6e2,#9aaec4)] object-cover shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
+          className="h-16 w-16 rounded-[6px] border border-[color:var(--border-faint)]/85 bg-[linear-gradient(135deg,#cbd6e2,#9aaec4)] object-cover shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
         />
       );
     }
@@ -146,7 +146,7 @@ function CoverAvatar({
     if (isEmojiAvatar(trimmed)) {
       return (
         <div
-          className="flex h-16 w-16 items-center justify-center rounded-[6px] border border-white/85 bg-[linear-gradient(135deg,#cbd6e2,#9aaec4)] text-[34px] leading-none shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
+          className="flex h-16 w-16 items-center justify-center rounded-[6px] border border-[color:var(--border-faint)]/85 bg-[linear-gradient(135deg,#cbd6e2,#9aaec4)] text-[34px] leading-none shadow-[0_2px_10px_rgba(0,0,0,0.18)]"
           aria-label={alt}
         >
           <span aria-hidden="true">{trimmed}</span>
@@ -156,7 +156,7 @@ function CoverAvatar({
   }
 
   return (
-    <div className="flex h-16 w-16 items-center justify-center rounded-[6px] border border-white/85 bg-[linear-gradient(135deg,#cbd6e2,#9aaec4)] text-[20px] font-semibold text-white shadow-[0_2px_10px_rgba(0,0,0,0.18)]">
+    <div className="flex h-16 w-16 items-center justify-center rounded-[6px] border border-[color:var(--border-faint)]/85 bg-[linear-gradient(135deg,#cbd6e2,#9aaec4)] text-[20px] font-semibold text-[color:var(--text-on-brand)] shadow-[0_2px_10px_rgba(0,0,0,0.18)]">
       {initial}
     </div>
   );

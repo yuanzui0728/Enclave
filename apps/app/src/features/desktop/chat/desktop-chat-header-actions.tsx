@@ -100,7 +100,7 @@ export function DesktopChatHeaderActions({
           <div
             role="menu"
             aria-label={t(msg`通话操作菜单`)}
-            className="absolute right-0 top-[calc(100%+0.45rem)] z-30 w-40 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 p-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
+            className="absolute right-0 top-[calc(100%+0.45rem)] z-30 w-40 overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 p-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
           >
             <CallMenuButton
               label={t(msg`语音通话`)}
@@ -180,7 +180,7 @@ function DesktopChatHeaderButton({
           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] text-[color:var(--brand-primary)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--brand-primary)_4%,transparent)]"
           : null,
         active && tone === "neutral"
-          ? "border-[rgba(0,0,0,0.04)] bg-white text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
+          ? "border-[rgba(0,0,0,0.04)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(15,23,42,0.06)]"
           : null,
         !active
           ? "hover:bg-[rgba(0,0,0,0.045)] hover:text-[color:var(--text-primary)]"

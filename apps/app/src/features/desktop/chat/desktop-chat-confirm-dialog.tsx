@@ -203,9 +203,9 @@ export function DesktopChatConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative w-full max-w-[520px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[520px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
           <div className="min-w-0">
             <div
               id={titleId}
@@ -224,21 +224,21 @@ export function DesktopChatConfirmDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label={t(msg`关闭`)}
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
+        <div className="flex items-center justify-end gap-3 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
           <Button
             ref={cancelButtonRef}
             type="button"
             variant="secondary"
             onClick={onClose}
             disabled={pending}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`取消`)}
           </Button>
@@ -255,8 +255,8 @@ export function DesktopChatConfirmDialog({
             disabled={pending}
             className={
               danger
-                ? "rounded-[10px] bg-[color:var(--state-danger-bg)] px-6 text-white hover:bg-[color:var(--state-danger-bg)]"
-                : "rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
+                ? "rounded-[10px] bg-[color:var(--state-danger-bg)] px-6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-bg)]"
+                : "rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-[color:var(--text-on-brand)] hover:opacity-95"
             }
           >
             {pending ? resolvedPendingLabel : resolvedConfirmLabel}

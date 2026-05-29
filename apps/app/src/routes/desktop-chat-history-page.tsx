@@ -329,7 +329,7 @@ export function DesktopChatHistoryPage() {
                 void messagesQuery.refetch();
                 setNotice(t(msg`已刷新当前会话最近的记录。`));
               }}
-              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
+              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
             >
               {t(msg`刷新记录`)}
             </Button>
@@ -345,7 +345,7 @@ export function DesktopChatHistoryPage() {
                 setHistoryLimit((current) => current + HISTORY_LOAD_STEP);
               }}
               disabled={!historyRows.length || messagesQuery.isFetching}
-              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
+              className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
             >
               {messagesQuery.isFetching
                 ? t(msg`正在加载...`)
@@ -417,7 +417,7 @@ export function DesktopChatHistoryPage() {
                     "flex w-full items-center gap-3 rounded-[var(--radius-sm)] border px-3 py-2.5 text-left transition",
                     conversation.id === selectedConversationId
                       ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)]"
-                      : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white/80",
+                      : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]/80",
                   )}
                 >
                   {isPersistedGroupConversation(conversation) ? (
@@ -522,7 +522,7 @@ export function DesktopChatHistoryPage() {
           ) : null}
 
           {!selectedConversation ? (
-            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/80 p-6">
               <EmptyState
                 title={t(msg`先从左侧选择一个会话`)}
                 description={t(msg`聊天记录管理会优先按会话承接查看和清理操作。`)}
@@ -534,7 +534,7 @@ export function DesktopChatHistoryPage() {
             ? historyRows.map((item) => (
                 <div
                   key={item.id}
-                  className="rounded-[14px] border border-[color:var(--border-faint)] bg-white p-4"
+                  className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
@@ -566,7 +566,7 @@ export function DesktopChatHistoryPage() {
                       onClick={() =>
                         navigateToHistoryMessage(selectedConversation, item.id)
                       }
-                      className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-white"
+                      className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
                     >
                       {t(msg`定位到原消息`)}
                     </Button>
@@ -578,7 +578,7 @@ export function DesktopChatHistoryPage() {
           {selectedConversation &&
           !messagesQuery.isLoading &&
           !historyRows.length ? (
-            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/80 p-6">
+            <div className="rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/80 p-6">
               <EmptyState
                 title={t(msg`当前会话还没有可管理的记录`)}
                 description={t(msg`可能刚刚清空过，或者这个会话目前还没有任何消息。`)}
@@ -598,7 +598,7 @@ export function DesktopChatHistoryPage() {
                   setHistoryLimit((current) => current + HISTORY_LOAD_STEP)
                 }
                 disabled={messagesQuery.isFetching}
-                className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-white px-4 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
+                className="h-8 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)]"
               >
                 {messagesQuery.isFetching
                   ? t(msg`正在加载更早消息...`)
@@ -714,7 +714,7 @@ function resolveMessageTypeLabel(
 
 function InfoCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white p-4">
+    <div className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4">
       <div className="text-xs text-[color:var(--text-muted)]">{label}</div>
       <div className="mt-2 text-sm font-medium text-[color:var(--text-primary)]">
         {value}

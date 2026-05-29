@@ -518,7 +518,7 @@ function MobileGroupChatEditPage({
               size="lg"
               disabled={submitDisabled}
               onClick={handleSave}
-              className="h-10 w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+              className="h-10 w-full rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {saveMutation.isPending ? t(msg`正在保存...`) : t(msg`保存`)}
             </Button>

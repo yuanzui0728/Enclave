@@ -148,7 +148,7 @@ export function ChatReminderMetaPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/85 px-2 py-1 text-inherit",
+        "inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/85 px-2 py-1 text-inherit",
         className,
       )}
     >
@@ -167,7 +167,7 @@ export function ChatReminderControlButton({
     <button
       type={type}
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/85 px-2 py-1 text-inherit transition-[background-color,border-color,color] hover:border-white hover:bg-[color:var(--surface-card)]",
+        "inline-flex items-center gap-1.5 rounded-full border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/85 px-2 py-1 text-inherit transition-[background-color,border-color,color] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]",
         className,
       )}
       {...props}

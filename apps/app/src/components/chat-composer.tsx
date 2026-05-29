@@ -3830,7 +3830,7 @@ export function ChatComposer({
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition disabled:opacity-45",
                     mobileComposerMode === "speech"
                       ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.08)]"
-                      : "bg-transparent active:bg-white/90",
+                      : "bg-transparent active:bg-[color:var(--surface-card)]/90",
                   )}
                   aria-label={
                     mobileComposerMode === "speech"
@@ -3928,7 +3928,7 @@ export function ChatComposer({
                   "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition",
                   mobileComposerMode === "sticker"
                     ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.08)]"
-                    : "bg-transparent active:bg-white/90",
+                    : "bg-transparent active:bg-[color:var(--surface-card)]/90",
                 )}
                 aria-label={
                   mobileComposerMode === "sticker"
@@ -3961,7 +3961,7 @@ export function ChatComposer({
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--text-secondary)] transition disabled:opacity-45",
                     mobileComposerMode === "plus"
                       ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[0_1px_2px_rgba(60, 40, 110, 0.08)]"
-                      : "bg-transparent active:bg-white/90",
+                      : "bg-transparent active:bg-[color:var(--surface-card)]/90",
                   )}
                   aria-label={t(msg`更多功能`)}
                 >
@@ -4410,7 +4410,7 @@ function DesktopAttachmentDraftBar({
                   <button
                     type="button"
                     onClick={() => onRemoveImage(index)}
-                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-white transition hover:bg-black/70"
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/55 text-[color:var(--text-on-brand)] transition hover:bg-black/70"
                     aria-label={t(msg`移除 ${item.fileName}`)}
                   >
                     <X size={12} />
@@ -4483,7 +4483,7 @@ function DesktopScreenshotToolButton({
         "rounded-full px-3 py-1.5 text-[length:var(--text-caption)] transition",
         active
           ? "bg-[color:var(--surface-card)] text-[color:var(--text-primary)]"
-          : "bg-white/8 text-white/78 hover:bg-white/12 hover:text-white",
+          : "bg-[color:var(--surface-card)]/8 text-[color:var(--text-on-brand)]/78 hover:bg-[color:var(--surface-card)]/12 hover:text-[color:var(--text-on-brand)]",
       )}
     >
       <span>{label}</span>
@@ -4493,7 +4493,7 @@ function DesktopScreenshotToolButton({
             "ml-1 rounded-full px-1.5 py-0.5 text-[10px]",
             active
               ? "bg-[color:var(--surface-secondary)] text-[color:var(--text-secondary)]"
-              : "bg-white/10 text-white/46",
+              : "bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)]/46",
           )}
         >
           {shortcut}
@@ -5189,14 +5189,14 @@ function DesktopScreenshotEditor({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="flex h-[min(86vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[var(--radius-xl)] border border-white/12 bg-[#1f1f1f] text-white shadow-[0_32px_80px_rgba(0,0,0,0.32)]"
+        className="flex h-[min(86vh,960px)] w-full max-w-6xl flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/12 bg-[#1f1f1f] text-[color:var(--text-on-brand)] shadow-[0_32px_80px_rgba(0,0,0,0.32)]"
       >
-        <div className="flex items-start justify-between gap-4 border-b border-white/8 px-5 py-4">
+        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)]/8 px-5 py-4">
           <div className="min-w-0">
             <div id={titleId} className="text-[length:var(--text-title)] font-medium">
               {t(msg`截图预览`)}
             </div>
-            <div id={descId} className="mt-1 text-[length:var(--text-caption)] text-white/58">
+            <div id={descId} className="mt-1 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/58">
               {t(msg`拖拽框选裁剪范围，不框选时会按原图发送。`)}
             </div>
           </div>
@@ -5205,7 +5205,7 @@ function DesktopScreenshotEditor({
             onClick={onCancel}
             disabled={pending}
             aria-label={t(msg`关闭截图预览`)}
-            className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-white/12 bg-white/6 text-white transition hover:bg-white/10 disabled:opacity-45"
+            className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] transition hover:bg-[color:var(--surface-card)]/10 disabled:opacity-45"
           >
             <X size={16} />
           </button>
@@ -5213,8 +5213,8 @@ function DesktopScreenshotEditor({
 
         <div className="min-h-0 flex-1 px-5 py-4">
           <div className="flex h-full min-h-0 flex-col gap-4">
-            <div className="flex flex-wrap items-center gap-2 text-[length:var(--text-caption)] text-white/62">
-              <span className="rounded-full bg-white/8 px-2.5 py-1">
+            <div className="flex flex-wrap items-center gap-2 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/62">
+              <span className="rounded-full bg-[color:var(--surface-card)]/8 px-2.5 py-1">
                 {draft.width && draft.height
                   ? `${draft.width} × ${draft.height}`
                   : t(msg`截图`)}
@@ -5226,16 +5226,16 @@ function DesktopScreenshotEditor({
                   )}
                 </span>
               ) : (
-                <span className="rounded-full bg-white/8 px-2.5 py-1">
+                <span className="rounded-full bg-[color:var(--surface-card)]/8 px-2.5 py-1">
                   {t(msg`暂未裁剪`)}
                 </span>
               )}
-              <span className="rounded-full bg-white/8 px-2.5 py-1">
+              <span className="rounded-full bg-[color:var(--surface-card)]/8 px-2.5 py-1">
                 {t(msg`标注 ${annotations.length} 条`)}
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-white/8 bg-white/6 px-4 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius-md)] border border-[color:var(--border-faint)]/8 bg-[color:var(--surface-card)]/6 px-4 py-3">
               <div
                 className={cn(
                   "flex flex-wrap items-center gap-2 rounded-[var(--radius-sm)] border px-2 py-1 transition",
@@ -5267,7 +5267,7 @@ function DesktopScreenshotEditor({
                   onClick={() => onToolChange("text")}
                 />
                 {tool !== "crop" ? (
-                  <div className="ml-1 flex items-center gap-2 rounded-full bg-white/6 px-2 py-1">
+                  <div className="ml-1 flex items-center gap-2 rounded-full bg-[color:var(--surface-card)]/6 px-2 py-1">
                     {SCREENSHOT_ANNOTATION_PALETTE.map((palette, index) => {
                       const paletteLabel =
                         palette.id === "amber"
@@ -5289,13 +5289,13 @@ function DesktopScreenshotEditor({
                           className={cn(
                             "relative h-5 w-5 rounded-full border transition",
                             palette.id === annotationColor
-                              ? "scale-110 border-white shadow-[0_0_0_2px_rgba(255,255,255,0.16)]"
-                              : "border-white/20 hover:border-white/60",
+                              ? "scale-110 border-[color:var(--border-faint)] shadow-[0_0_0_2px_rgba(255,255,255,0.16)]"
+                              : "border-[color:var(--border-faint)]/20 hover:border-[color:var(--border-faint)]/60",
                           )}
                           style={{ backgroundColor: palette.stroke }}
                           aria-label={t(msg`切换为${paletteLabel}标注`)}
                         >
-                          <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#111827] px-1 text-[9px] font-medium text-white/85 shadow-[0_4px_10px_rgba(0,0,0,0.28)]">
+                          <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-[#111827] px-1 text-[9px] font-medium text-[color:var(--text-on-brand)]/85 shadow-[0_4px_10px_rgba(0,0,0,0.28)]">
                             {index + 1}
                           </span>
                         </button>
@@ -5318,7 +5318,7 @@ function DesktopScreenshotEditor({
                     // 标注文字 空」（部分实现读 placeholder、部分不读）。补
                     // aria-label 跟选中的工具上下文（"文字" tool）对齐。
                     aria-label={t(msg`输入标注文字`)}
-                    className="ml-2 h-9 min-w-[180px] rounded-[var(--radius-sm)] border border-white/12 bg-white/8 px-3 text-[length:var(--text-caption)] text-white outline-none placeholder:text-white/28 focus:border-white/30"
+                    className="ml-2 h-9 min-w-[180px] rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/8 px-3 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] outline-none placeholder:text-[color:var(--text-on-brand)]/28 focus:border-[color:var(--border-faint)]/30"
                   />
                 ) : null}
               </div>
@@ -5334,11 +5334,11 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={() => updatePreviewZoom(previewZoom - 0.25)}
                   disabled={pending || previewZoom <= 1}
-                  className="rounded-[8px] border-white/12 bg-white/6 px-3 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 px-3 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
                 >
                   -
                 </Button>
-                <span className="rounded-full bg-white/8 px-2.5 py-1 text-[length:var(--text-caption)] text-white/72">
+                <span className="rounded-full bg-[color:var(--surface-card)]/8 px-2.5 py-1 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/72">
                   {previewZoomLabel}
                 </span>
                 <Button
@@ -5346,7 +5346,7 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={() => updatePreviewZoom(previewZoom + 0.25)}
                   disabled={pending || previewZoom >= 3}
-                  className="rounded-[8px] border-white/12 bg-white/6 px-3 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 px-3 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
                 >
                   +
                 </Button>
@@ -5355,7 +5355,7 @@ function DesktopScreenshotEditor({
                   variant="ghost"
                   onClick={() => updatePreviewZoom(1)}
                   disabled={pending || previewZoom === 1}
-                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
                 >
                   {t(msg`适应`)}
                 </Button>
@@ -5372,10 +5372,10 @@ function DesktopScreenshotEditor({
                   onClick={onUndoAnnotation}
                   disabled={pending || !annotations.length}
                   title={t(msg`撤销标注 (Cmd/Ctrl+Z)`)}
-                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
                 >
                   {t(msg`撤销标注`)}
-                  <span className="text-[10px] text-white/50">⌘/Ctrl+Z</span>
+                  <span className="text-[10px] text-[color:var(--text-on-brand)]/50">⌘/Ctrl+Z</span>
                 </Button>
                 <Button
                   type="button"
@@ -5383,10 +5383,10 @@ function DesktopScreenshotEditor({
                   onClick={onRedoAnnotation}
                   disabled={pending || !canRedoAnnotations}
                   title={t(msg`重做标注 (Cmd/Ctrl+Shift+Z / Cmd/Ctrl+Y)`)}
-                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
                 >
                   {t(msg`重做标注`)}
-                  <span className="text-[10px] text-white/50">
+                  <span className="text-[10px] text-[color:var(--text-on-brand)]/50">
                     ⌘/Ctrl+Shift+Z
                   </span>
                 </Button>
@@ -5396,17 +5396,17 @@ function DesktopScreenshotEditor({
                   onClick={onDeleteSelectedAnnotation}
                   disabled={pending || !selectedAnnotationId}
                   title={t(msg`删除标注 (Delete / Backspace)`)}
-                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
                 >
                   {t(msg`删除标注`)}
-                  <span className="text-[10px] text-white/50">Del</span>
+                  <span className="text-[10px] text-[color:var(--text-on-brand)]/50">Del</span>
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   onClick={onClearAnnotations}
                   disabled={pending || !annotations.length}
-                  className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                  className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
                 >
                   {t(msg`清空标注`)}
                 </Button>
@@ -5418,12 +5418,12 @@ function DesktopScreenshotEditor({
                   className={cn(
                     "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] transition",
                     shortcutHelpOpen
-                      ? "border-white/18 bg-white/8 text-white/88"
-                      : "border-white/8 bg-transparent text-white/46 hover:border-white/14 hover:bg-white/6 hover:text-white/72",
+                      ? "border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/8 text-[color:var(--text-on-brand)]/88"
+                      : "border-[color:var(--border-faint)]/8 bg-transparent text-[color:var(--text-on-brand)]/46 hover:border-[color:var(--border-faint)]/14 hover:bg-[color:var(--surface-card)]/6 hover:text-[color:var(--text-on-brand)]/72",
                   )}
                   title={t(msg`查看截图快捷键 (?)`)}
                 >
-                  <span className="rounded-full border border-white/12 bg-white/6 px-1.5 py-0.5 text-[10px] leading-none text-white/72">
+                  <span className="rounded-full border border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 px-1.5 py-0.5 text-[10px] leading-none text-[color:var(--text-on-brand)]/72">
                     ?
                   </span>
                   <span>{t(msg`快捷键`)}</span>
@@ -5431,14 +5431,14 @@ function DesktopScreenshotEditor({
                 {shortcutHelpVisible ? (
                   <div
                     className={cn(
-                      "absolute -right-1 top-full z-30 mt-1.5 w-[288px] origin-top-right rounded-[var(--radius-md)] border border-white/12 bg-[#181818] p-2.5 text-[length:var(--text-eyebrow)] text-white/72 shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-150 ease-out",
+                      "absolute -right-1 top-full z-30 mt-1.5 w-[288px] origin-top-right rounded-[var(--radius-md)] border border-[color:var(--border-faint)]/12 bg-[#181818] p-2.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/72 shadow-[0_18px_40px_rgba(0,0,0,0.28)] transition duration-150 ease-out",
                       shortcutHelpEntered
                         ? "translate-y-0 opacity-100"
                         : "-translate-y-0.5 opacity-0",
                     )}
                   >
-                    <div className="mb-1.5 flex items-center gap-2 text-[10px] text-white/44">
-                      <span className="rounded-full border border-white/10 bg-white/6 px-1.5 py-0.5 leading-none text-white/62">
+                    <div className="mb-1.5 flex items-center gap-2 text-[10px] text-[color:var(--text-on-brand)]/44">
+                      <span className="rounded-full border border-[color:var(--border-faint)]/10 bg-[color:var(--surface-card)]/6 px-1.5 py-0.5 leading-none text-[color:var(--text-on-brand)]/62">
                         ?
                       </span>
                       <span>
@@ -5454,18 +5454,18 @@ function DesktopScreenshotEditor({
                           className={cn(
                             "flex items-start justify-between gap-2.5 rounded-[8px] border px-2.5 py-1.5 text-left transition",
                             shortcutDemoGroup === item.id
-                              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/14 text-white"
-                              : "border-transparent bg-white/[0.045] hover:border-white/8 hover:bg-white/[0.065]",
+                              ? "border-[color:var(--brand-primary)] bg-[color:var(--brand-primary)]/14 text-[color:var(--text-on-brand)]"
+                              : "border-transparent bg-[color:var(--surface-card)]/[0.045] hover:border-[color:var(--border-faint)]/8 hover:bg-[color:var(--surface-card)]/[0.065]",
                           )}
                         >
-                          <span className="min-w-[56px] pt-0.5 text-[10px] font-medium text-white/38">
+                          <span className="min-w-[56px] pt-0.5 text-[10px] font-medium text-[color:var(--text-on-brand)]/38">
                             {item.label}
                           </span>
                           <span className="text-right">
-                            <span className="inline-flex rounded-[8px] border border-white/10 bg-white/8 px-2 py-1 text-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                            <span className="inline-flex rounded-[8px] border border-[color:var(--border-faint)]/10 bg-[color:var(--surface-card)]/8 px-2 py-1 text-[color:var(--text-on-brand)]/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
                               {item.primary}
                             </span>
-                            <span className="mt-0.5 block text-[10px] text-white/50">
+                            <span className="mt-0.5 block text-[10px] text-[color:var(--text-on-brand)]/50">
                               {item.secondary}
                             </span>
                           </span>
@@ -5481,7 +5481,7 @@ function DesktopScreenshotEditor({
               ref={previewViewportRef}
               onWheel={handlePreviewWheel}
               onDoubleClick={handlePreviewDoubleClick}
-              className="relative min-h-0 flex-1 overflow-auto rounded-[var(--radius-lg)] border border-white/8 bg-[#111]"
+              className="relative min-h-0 flex-1 overflow-auto rounded-[var(--radius-lg)] border border-[color:var(--border-faint)]/8 bg-[#111]"
             >
               <div className="flex min-h-full min-w-full items-center justify-center p-5">
                 <div
@@ -5562,7 +5562,7 @@ function DesktopScreenshotEditor({
                           onPointerMove={onCropMove}
                           onPointerUp={onCropMoveEnd}
                           onPointerCancel={onCropMoveEnd}
-                          className="absolute inset-2 cursor-move rounded-[var(--radius-sm)] border border-white/14 bg-white/0 text-transparent"
+                          className="absolute inset-2 cursor-move rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/14 bg-[color:var(--surface-card)]/0 text-transparent"
                           aria-label={t(msg`移动裁剪区域`)}
                         />
                         {(
@@ -5578,7 +5578,7 @@ function DesktopScreenshotEditor({
                             onPointerUp={onCropResizeEnd}
                             onPointerCancel={onCropResizeEnd}
                             className={cn(
-                              "absolute border-2 border-white bg-[color:var(--brand-primary)] shadow-[0_6px_14px_color-mix(in_srgb,var(--brand-primary)_28%,transparent)]",
+                              "absolute border-2 border-[color:var(--border-faint)] bg-[color:var(--brand-primary)] shadow-[0_6px_14px_color-mix(in_srgb,var(--brand-primary)_28%,transparent)]",
                               handle === "nw"
                                 ? "-left-2 -top-2 h-3.5 w-3.5 rounded-full cursor-nwse-resize"
                                 : "",
@@ -5636,7 +5636,7 @@ function DesktopScreenshotEditor({
                     ) : null}
                     {selectedTextAnnotation ? (
                       <div
-                        className="absolute border border-white/85"
+                        className="absolute border border-[color:var(--border-faint)]/85"
                         style={{
                           left: `${Math.min(selectedTextAnnotation.x1, selectedTextAnnotation.x2) * 100}%`,
                           top: `${Math.min(selectedTextAnnotation.y1, selectedTextAnnotation.y2) * 100}%`,
@@ -5651,7 +5651,7 @@ function DesktopScreenshotEditor({
                           onPointerMove={onSelectedTextMove}
                           onPointerUp={onSelectedTextMoveEnd}
                           onPointerCancel={onSelectedTextMoveEnd}
-                          className="absolute inset-2 cursor-move rounded-[8px] border border-white/14 bg-white/0 text-transparent"
+                          className="absolute inset-2 cursor-move rounded-[8px] border border-[color:var(--border-faint)]/14 bg-[color:var(--surface-card)]/0 text-transparent"
                           aria-label={t(msg`移动文字标注`)}
                         />
                         {(["nw", "ne", "sw", "se"] as const).map((handle) => (
@@ -5665,7 +5665,7 @@ function DesktopScreenshotEditor({
                             onPointerUp={onSelectedTextResizeEnd}
                             onPointerCancel={onSelectedTextResizeEnd}
                             className={cn(
-                              "absolute h-3.5 w-3.5 rounded-full border-2 border-white bg-[#111] shadow-[0_6px_14px_rgba(0,0,0,0.24)]",
+                              "absolute h-3.5 w-3.5 rounded-full border-2 border-[color:var(--border-faint)] bg-[#111] shadow-[0_6px_14px_rgba(0,0,0,0.24)]",
                               handle === "nw"
                                 ? "-left-2 -top-2 cursor-nwse-resize"
                                 : "",
@@ -5924,7 +5924,7 @@ function DesktopScreenshotEditor({
               <InlineNotice
                 role="status"
                 aria-live="polite"
-                className="flex items-center justify-between gap-3 border-white/10 bg-white/8 text-xs text-white"
+                className="flex items-center justify-between gap-3 border-[color:var(--border-faint)]/10 bg-[color:var(--surface-card)]/8 text-xs text-[color:var(--text-on-brand)]"
                 tone="info"
               >
                 <span>{notice.message}</span>
@@ -5932,7 +5932,7 @@ function DesktopScreenshotEditor({
                   <InlineNoticeActionButton
                     label={notice.actionLabel}
                     onClick={notice.onAction}
-                    className="border-white/14 bg-white/10 text-white"
+                    className="border-[color:var(--border-faint)]/14 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)]"
                   />
                 ) : null}
               </InlineNotice>
@@ -5943,7 +5943,7 @@ function DesktopScreenshotEditor({
               <InlineNotice
                 role="alert"
                 aria-live="assertive"
-                className="border-white/10 bg-white/8 text-xs text-white"
+                className="border-[color:var(--border-faint)]/10 bg-[color:var(--surface-card)]/8 text-xs text-[color:var(--text-on-brand)]"
                 tone="danger"
               >
                 {error}
@@ -5952,8 +5952,8 @@ function DesktopScreenshotEditor({
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-3 border-t border-white/8 px-5 py-4">
-          <div className="text-[length:var(--text-caption)] text-white/54">
+        <div className="flex items-center justify-between gap-3 border-t border-[color:var(--border-faint)]/8 px-5 py-4">
+          <div className="text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]/54">
             {tool === "crop"
               ? crop
                 ? t(msg`重新拖拽可修改裁剪区域。`)
@@ -5972,7 +5972,7 @@ function DesktopScreenshotEditor({
                 variant="ghost"
                 onClick={onClearCrop}
                 disabled={pending}
-                className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
               >
                 {t(msg`还原`)}
               </Button>
@@ -5982,7 +5982,7 @@ function DesktopScreenshotEditor({
               variant="ghost"
               onClick={onSaveOriginal}
               disabled={pending}
-              className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+              className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
             >
               <Download size={14} />
               {t(msg`保存原图`)}
@@ -5993,7 +5993,7 @@ function DesktopScreenshotEditor({
                 variant="ghost"
                 onClick={onSaveCropped}
                 disabled={pending}
-                className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
               >
                 <Download size={14} />
                 {t(msg`保存裁剪图`)}
@@ -6004,7 +6004,7 @@ function DesktopScreenshotEditor({
               variant="ghost"
               onClick={onCopyOriginal}
               disabled={pending}
-              className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+              className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
             >
               {t(msg`复制原图`)}
             </Button>
@@ -6014,7 +6014,7 @@ function DesktopScreenshotEditor({
                 variant="ghost"
                 onClick={onCopyCropped}
                 disabled={pending}
-                className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
               >
                 {t(msg`复制裁剪图`)}
               </Button>
@@ -6031,10 +6031,10 @@ function DesktopScreenshotEditor({
                 onClick={onCancel}
                 disabled={pending}
                 title={t(msg`关闭截图预览 (Esc)`)}
-                className="rounded-[8px] border-white/12 bg-white/6 text-white hover:bg-white/10"
+                className="rounded-[8px] border-[color:var(--border-faint)]/12 bg-[color:var(--surface-card)]/6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--surface-card)]/10"
               >
                 {t(msg`取消`)}
-                <span className="text-[10px] text-white/50">Esc</span>
+                <span className="text-[10px] text-[color:var(--text-on-brand)]/50">Esc</span>
               </Button>
               <Button
                 type="button"
@@ -6042,11 +6042,11 @@ function DesktopScreenshotEditor({
                 onClick={onSendOriginal}
                 disabled={pending}
                 title={t(msg`按原图发送 (Cmd/Ctrl+Enter)`)}
-                className="rounded-[8px] bg-[color:var(--state-success-bg)] text-white hover:bg-[color:var(--state-success-bg)]"
+                className="rounded-[8px] bg-[color:var(--state-success-bg)] text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-success-bg)]"
               >
                 {pending ? t(msg`发送中...`) : t(msg`按原图发送`)}
                 {pending ? null : (
-                  <span className="text-[10px] text-white/70">
+                  <span className="text-[10px] text-[color:var(--text-on-brand)]/70">
                     ⌘/Ctrl+Enter
                   </span>
                 )}
@@ -6062,7 +6062,7 @@ function DesktopScreenshotEditor({
                 <Scissors size={14} />
                 {pending ? t(msg`发送中...`) : t(msg`裁剪后发送`)}
                 {pending ? null : (
-                  <span className="text-[10px] text-white/70">Enter</span>
+                  <span className="text-[10px] text-[color:var(--text-on-brand)]/70">Enter</span>
                 )}
               </Button>
             </div>

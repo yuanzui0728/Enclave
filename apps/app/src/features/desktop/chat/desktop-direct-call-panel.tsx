@@ -481,7 +481,7 @@ export function DesktopDirectCallPanel({
     <section className="flex h-full min-h-0 gap-4 rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-shell)] p-5 shadow-[var(--shadow-card)]">
       <audio ref={activeCall.audioRef} preload="auto" />
 
-      <div className="flex min-w-0 flex-[1.06] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+      <div className="flex min-w-0 flex-[1.06] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0">
             <div className="inline-flex items-center gap-2 rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] font-medium tracking-[0.12em] text-[color:var(--brand-primary)]">
@@ -509,7 +509,7 @@ export function DesktopDirectCallPanel({
             type="button"
             variant="secondary"
             onClick={handleClose}
-            className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="shrink-0 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
           >
             {t(msg`返回聊天`)}
           </Button>
@@ -715,7 +715,7 @@ export function DesktopDirectCallPanel({
                 }
               }}
               disabled={micMuted || activeCall.busy || !speech.supported}
-              className="rounded-[10px] bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95 disabled:bg-[color:var(--brand-primary)] disabled:text-white"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95 disabled:bg-[color:var(--brand-primary)] disabled:text-[color:var(--text-on-brand)]"
             >
               <Mic size={16} />
               {recordButtonLabel}
@@ -728,7 +728,7 @@ export function DesktopDirectCallPanel({
               void activeCall.replayLastTurn();
             }}
             disabled={!latestTurn}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
           >
             <RotateCcw size={16} />
             {t(msg`重播上一句`)}
@@ -737,7 +737,7 @@ export function DesktopDirectCallPanel({
             type="button"
             variant="secondary"
             onClick={handleClose}
-            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-white hover:text-[color:var(--text-primary)]"
+            className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-console)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-card)] hover:text-[color:var(--text-primary)]"
           >
             {t(msg`切回聊天`)}
           </Button>
@@ -754,7 +754,7 @@ export function DesktopDirectCallPanel({
         </div>
       </div>
 
-      <div className="flex min-w-0 flex-[0.94] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-5 shadow-[var(--shadow-section)]">
+      <div className="flex min-w-0 flex-[0.94] flex-col rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-5 shadow-[var(--shadow-section)]">
         <div className="flex items-center justify-between gap-3">
           <div>
             <div className="text-sm font-medium text-[color:var(--text-primary)]">
@@ -771,7 +771,7 @@ export function DesktopDirectCallPanel({
               "rounded-full border px-3 py-1 text-[length:var(--text-eyebrow)] font-medium",
               activeCall.playbackState === "playing"
                 ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
-                : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-muted)]",
+                : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-muted)]",
             )}
           >
             {activeCall.playbackState === "playing"
@@ -855,7 +855,7 @@ function RecordButton({
         }
       }}
       disabled={disabled}
-      className="flex h-[184px] w-[184px] items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[radial-gradient(circle_at_top,rgba(236,251,241,0.98),rgba(115,208,153,0.9)_58%,rgba(48,163,106,0.92))] text-white shadow-[0_16px_34px_rgba(15,23,42,0.08),0_8px_18px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)] transition active:scale-[0.985] active:shadow-[0_10px_22px_rgba(15,23,42,0.08),0_6px_14px_color-mix(in_srgb,var(--brand-primary)_8%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex h-[184px] w-[184px] items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[radial-gradient(circle_at_top,rgba(236,251,241,0.98),rgba(115,208,153,0.9)_58%,rgba(48,163,106,0.92))] text-[color:var(--text-on-brand)] shadow-[0_16px_34px_rgba(15,23,42,0.08),0_8px_18px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)] transition active:scale-[0.985] active:shadow-[0_10px_22px_rgba(15,23,42,0.08),0_6px_14px_color-mix(in_srgb,var(--brand-primary)_8%,transparent)] disabled:cursor-not-allowed disabled:opacity-50"
     >
       <span className="flex flex-col items-center gap-3">
         {turnPending ? (
@@ -870,7 +870,7 @@ function RecordButton({
           <Play size={34} className="ml-1" />
         )}
         <span className="text-[18px] font-medium">{label}</span>
-        <span className="text-xs text-white/75">{hint}</span>
+        <span className="text-xs text-[color:var(--text-on-brand)]/75">{hint}</span>
       </span>
     </button>
   );
@@ -886,7 +886,7 @@ function CallMetricCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]">
+    <div className="rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-soft)]">
       <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
         {label}
       </div>
@@ -929,7 +929,7 @@ function CallControlButton({
         "inline-flex items-center gap-2 rounded-[10px] border px-3.5 py-2 text-sm transition",
         active
           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] text-[color:var(--brand-primary)]"
-          : "border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)]",
+          : "border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)]",
         disabled
           ? "cursor-not-allowed opacity-45"
           : "hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
@@ -954,7 +954,7 @@ function CameraPreviewCard({
 }) {
   return (
     <section className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-console)] shadow-[var(--shadow-soft)]">
-      <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-white/82 px-4 py-3 backdrop-blur-xl">
+      <div className="flex items-center justify-between border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/82 px-4 py-3 backdrop-blur-xl">
         <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
           {translateRuntimeMessage(msg`我的摄像头预览`)}
         </div>
@@ -987,8 +987,8 @@ function CameraPreviewCard({
             className="h-full w-full scale-x-[-1] object-cover"
           />
         ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-5 text-center text-white/72">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/12">
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-5 text-center text-[color:var(--text-on-brand)]/72">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[color:var(--surface-card)]/12">
               {cameraEnabled ? (
                 status === "requesting-permission" ? (
                   <LoaderCircle size={18} className="animate-spin" />

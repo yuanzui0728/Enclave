@@ -247,7 +247,7 @@ export function ContactsBulkActionBar({
     <>
       <div
         className={cn(
-          "z-40 border-t border-[color:var(--border-faint)] bg-white/96 backdrop-blur-md",
+          "z-40 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 backdrop-blur-md",
           // 手机端用 sticky 而不是 fixed，否则会盖到 MobileShell 底部 4 tab 上半
           // （tab 栏比 bulk bar 高 ~10px，会露出半截 tab icon 在 bulk bar 下方）。
           // 改成 sticky bottom-0 后会粘在 MobileViewportPane 滚动容器底部，正好在 tab 栏之上。

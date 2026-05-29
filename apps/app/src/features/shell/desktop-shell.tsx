@@ -519,7 +519,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
           {showDesktopNavigation ? (
             <aside
               className={cn(
-                "hidden shrink-0 rounded-[var(--radius-lg)] border border-white/8 bg-[rgba(41,47,50,0.96)] text-white shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col",
+                "hidden shrink-0 rounded-[var(--radius-lg)] border border-[color:var(--border-faint)]/8 bg-[rgba(41,47,50,0.96)] text-[color:var(--text-on-brand)] shadow-[0_18px_32px_rgba(15,23,42,0.18)] lg:flex lg:flex-col",
                 compactDesktopNav ? "w-[88px] p-1.5" : "w-[92px] p-2",
               )}
             >
@@ -535,7 +535,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     "group flex justify-center rounded-[14px] border-0 bg-transparent appearance-none",
                     compactDesktopNav ? "px-1 py-0.5" : "px-1.5 py-1",
                     isOwnerCardOpen || profileRouteActive
-                      ? "bg-white/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
+                      ? "bg-[color:var(--surface-card)]/9 shadow-[0_8px_18px_rgba(15,23,42,0.14)]"
                       : undefined,
                   )}
                   aria-label={t(msg`打开世界主人快捷卡片`)}
@@ -552,7 +552,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                       compactDesktopNav ? "p-1" : "p-1.5",
                       isOwnerCardOpen || profileRouteActive
                         ? "border-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] shadow-[0_8px_20px_color-mix(in_srgb,var(--brand-primary)_10%,transparent)]"
-                        : "border-transparent bg-white/5 group-hover:border-white/10 group-hover:bg-white/9",
+                        : "border-transparent bg-[color:var(--surface-card)]/5 group-hover:border-[color:var(--border-faint)]/10 group-hover:bg-[color:var(--surface-card)]/9",
                     )}
                   >
                     <AvatarChip
@@ -599,7 +599,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
               <div
                 className={cn(
-                  "relative border-t border-white/10",
+                  "relative border-t border-[color:var(--border-faint)]/10",
                   compactDesktopNav ? "mt-0.5 pt-0.5" : "mt-1.5 pt-1.5",
                 )}
               >
@@ -679,7 +679,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
 
         {isLocked ? (
           <div className="absolute inset-0 z-40 flex items-center justify-center bg-[color:var(--state-info-bg)] p-6 backdrop-blur-md">
-            <div className="w-full max-w-md rounded-[var(--radius-xl)] border border-white/30 bg-[rgba(255,255,255,0.94)] p-8 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
+            <div className="w-full max-w-md rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/30 bg-[rgba(255,255,255,0.94)] p-8 shadow-[0_28px_80px_rgba(15,23,42,0.22)]">
               <div className="flex items-center gap-4">
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--brand-primary)_10%,transparent)]">
                   <AvatarChip
@@ -768,7 +768,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     type="password"
                     inputMode="numeric"
                     placeholder={t(msg`设置 4 到 6 位数字口令`)}
-                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
+                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 shadow-none"
                   />
                   <TextField
                     value={setupPasscodeConfirm}
@@ -787,7 +787,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     type="password"
                     inputMode="numeric"
                     placeholder={t(msg`再次输入口令确认`)}
-                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
+                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 shadow-none"
                   />
                   <div className="flex flex-wrap gap-3">
                     <Button
@@ -826,7 +826,7 @@ export function DesktopShell({ children }: PropsWithChildren) {
                     type="password"
                     inputMode="numeric"
                     placeholder={t(msg`输入桌面锁定口令`)}
-                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-white px-4 shadow-none"
+                    className="h-12 rounded-[14px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 shadow-none"
                   />
                   <div className="flex flex-wrap gap-3">
                     <Button
@@ -1085,8 +1085,8 @@ function DesktopNavLink({
           ? "gap-0 rounded-[10px] px-0.5 py-1 text-[8px]"
           : "gap-0.5 rounded-[11px] px-1 py-1.5 text-[9px]",
         active
-          ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
-          : "text-white/68 hover:bg-white/8 hover:text-white",
+          ? "bg-[color:var(--surface-card)]/9 text-[color:var(--text-on-brand)] shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
+          : "text-[color:var(--text-on-brand)]/68 hover:bg-[color:var(--surface-card)]/8 hover:text-[color:var(--text-on-brand)]",
       )}
     >
       <div
@@ -1095,7 +1095,7 @@ function DesktopNavLink({
           compact ? "h-6 w-6 rounded-[8px]" : "h-7 w-7 rounded-[9px]",
           active
             ? "border-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] text-[color:var(--brand-secondary)]"
-            : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
+            : "border-transparent bg-[color:var(--surface-card)]/5 text-[color:var(--text-on-brand)]/80 group-hover:border-[color:var(--border-faint)]/10 group-hover:bg-[color:var(--surface-card)]/9",
         )}
       >
         <Icon size={compact ? 14 : 15} />
@@ -1139,8 +1139,8 @@ function DesktopActionButton({
           ? "h-9 justify-center rounded-[10px] px-0 py-0 text-[8px]"
           : "gap-0.5 rounded-[11px] px-1 py-1.5 text-[9px]",
         active
-          ? "bg-white/9 text-white shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
-          : "text-white/68 hover:bg-white/8 hover:text-white",
+          ? "bg-[color:var(--surface-card)]/9 text-[color:var(--text-on-brand)] shadow-[0_8px_20px_rgba(15,23,42,0.14)]"
+          : "text-[color:var(--text-on-brand)]/68 hover:bg-[color:var(--surface-card)]/8 hover:text-[color:var(--text-on-brand)]",
       )}
     >
       <div
@@ -1149,7 +1149,7 @@ function DesktopActionButton({
           compact ? "h-6 w-6 rounded-[8px]" : "h-7 w-7 rounded-[9px]",
           active
             ? "border-[color-mix(in_srgb,var(--brand-primary)_28%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] text-[color:var(--brand-secondary)]"
-            : "border-transparent bg-white/5 text-white/80 group-hover:border-white/10 group-hover:bg-white/9",
+            : "border-transparent bg-[color:var(--surface-card)]/5 text-[color:var(--text-on-brand)]/80 group-hover:border-[color:var(--border-faint)]/10 group-hover:bg-[color:var(--surface-card)]/9",
         )}
       >
         <Icon size={compact ? 14 : 15} />

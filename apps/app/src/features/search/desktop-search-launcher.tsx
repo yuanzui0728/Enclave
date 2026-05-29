@@ -1068,7 +1068,7 @@ export function DesktopSearchDropdownPanel({
   return (
     <div
       className={cn(
-        "absolute left-0 right-0 top-[calc(100%+0.45rem)] z-30 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white/98 p-2.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl",
+        "absolute left-0 right-0 top-[calc(100%+0.45rem)] z-30 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/98 p-2.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl",
         className,
       )}
     >
@@ -1298,12 +1298,12 @@ function SearchLauncherStatusCard({
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]";
   const badgeClassName =
     status === "error"
-      ? "bg-white text-[color:var(--state-danger-text)]"
+      ? "bg-[color:var(--surface-card)] text-[color:var(--state-danger-text)]"
       : status === "empty"
-        ? "bg-white text-[color:var(--text-muted)]"
+        ? "bg-[color:var(--surface-card)] text-[color:var(--text-muted)]"
         : status === "recording"
-          ? "bg-white text-[color:var(--brand-primary)]"
-          : "bg-white text-[color:var(--text-muted)]";
+          ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
+          : "bg-[color:var(--surface-card)] text-[color:var(--text-muted)]";
   const statusLabel =
     status === "error"
       ? t(msg`异常`)
@@ -1329,7 +1329,7 @@ function SearchLauncherStatusCard({
       </div>
       <div
         className={cn(
-          "mt-2 rounded-[var(--radius-sm)] bg-white px-3 py-2.5 text-xs leading-6",
+          "mt-2 rounded-[var(--radius-sm)] bg-[color:var(--surface-card)] px-3 py-2.5 text-xs leading-6",
           status === "error"
             ? "text-[color:var(--state-danger-text)]"
             : "text-[color:var(--text-secondary)]",

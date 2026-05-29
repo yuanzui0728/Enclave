@@ -127,7 +127,7 @@ export function DesktopContactsStarredFriendsPane({
   return (
     <div className="flex h-full min-h-0">
       <section className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
-        <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-4 py-4 backdrop-blur-xl">
+        <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-4 py-4 backdrop-blur-xl">
           <div className="text-base font-medium text-[color:var(--text-primary)]">
             {t(msg`星标朋友`)}
           </div>
@@ -137,7 +137,7 @@ export function DesktopContactsStarredFriendsPane({
               : t(msg`${friends.length} 位星标朋友`)}
           </div>
 
-          <label className="mt-3 flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
+          <label className="mt-3 flex items-center gap-2 rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-2.5 text-sm text-[color:var(--text-dim)] shadow-none">
             <Search size={15} className="shrink-0" />
             <input
               type="search"
@@ -223,7 +223,7 @@ export function DesktopContactsStarredFriendsPane({
               />
             </div>
           ) : (
-            <section className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-section)]">
+            <section className="mx-3 mt-3 overflow-hidden rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-section)]">
               {filteredFriends.map((item, index) => (
                 <button
                   key={item.character.id}
@@ -231,7 +231,7 @@ export function DesktopContactsStarredFriendsPane({
                   onClick={() => onSelectCharacter(item.character.id)}
                   onDoubleClick={() => onStartChat(item.character.id)}
                   className={cn(
-                    "flex w-full items-center gap-3 bg-white px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--surface-console)]",
+                    "flex w-full items-center gap-3 bg-[color:var(--surface-card)] px-4 py-3.5 text-left transition-colors hover:bg-[color:var(--surface-console)]",
                     index > 0
                       ? "border-t border-[color:var(--border-faint)]"
                       : undefined,

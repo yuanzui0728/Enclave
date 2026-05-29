@@ -19,7 +19,7 @@ export function DesktopLayoutRequiredState({
 
   return (
     <AppPage className="flex h-full items-center justify-center bg-[color:var(--bg-app)] px-5">
-      <div className="w-full max-w-md rounded-[22px] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+      <div className="w-full max-w-md rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
         <div className="text-xl font-semibold text-[color:var(--text-primary)]">
           {title}
         </div>
@@ -32,7 +32,7 @@ export function DesktopLayoutRequiredState({
           onClick={() => {
             void navigate({ to: fallbackTo as never });
           }}
-          className="mt-6 w-full rounded-xl bg-[color:var(--brand-primary)] text-white hover:opacity-95"
+          className="mt-6 w-full rounded-xl bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] hover:opacity-95"
         >
           {actionLabel}
         </Button>

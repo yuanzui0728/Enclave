@@ -2794,7 +2794,7 @@ function MobileMomentsView({
               // 模拟 WeChat 的"挖一圈底色"，没了底色红点会粘住下面 icon 边缘。
               <span
                 aria-hidden
-                className="pointer-events-none absolute right-1 top-1 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--state-danger-bg)] ring-2 ring-white"
+                className="pointer-events-none absolute right-1 top-1 inline-block h-1.5 w-1.5 rounded-full bg-[color:var(--state-danger-bg)] ring-2 ring-[color:var(--border-faint)]"
               />
             ) : null}
           </span>

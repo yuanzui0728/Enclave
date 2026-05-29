@@ -238,7 +238,7 @@ export function DesktopFriendMomentsWorkspace({
       return (
         <LoadingBlock
           label={t(msg`正在读取这位角色的朋友圈...`)}
-          className="rounded-[var(--radius-lg)] border-[color:var(--border-faint)] bg-white py-10 shadow-[var(--shadow-section)]"
+          className="rounded-[var(--radius-lg)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] py-10 shadow-[var(--shadow-section)]"
         />
       );
     }
@@ -351,14 +351,14 @@ export function DesktopFriendMomentsWorkspace({
     <div className="relative flex h-full min-h-0 bg-[color:var(--surface-section)]">
       <section className="min-w-0 flex-1 bg-[color:var(--surface-section)]">
         <div className="flex h-full min-h-0 flex-col">
-          <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-5 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-5 backdrop-blur-xl">
             <div className="mx-auto flex w-full max-w-[760px] items-start justify-between gap-5">
               <div className="flex min-w-0 flex-1 items-start gap-4">
                 <button
                   type="button"
                   onClick={onBack}
                   aria-label={t(msg`返回上一页`)}
-                  className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+                  className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
                 >
                   <ArrowLeft size={17} />
                 </button>
@@ -394,15 +394,15 @@ export function DesktopFriendMomentsWorkspace({
                     </button>
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1">
                       <Newspaper size={13} />
                       {t(msg`${sortedMoments.length} 条动态`)}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1">
                       <MessageCircle size={13} />
                       {t(msg`${totalCommentCount} 条评论`)}
                     </span>
-                    <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1">
                       <Clock3 size={13} />
                       {latestMoment
                         ? t(
@@ -439,12 +439,12 @@ export function DesktopFriendMomentsWorkspace({
           errors.length > 0 ||
           (likeErrorMessage && !(notice && noticeTone === "danger")) ||
           (commentErrorMessage && !(notice && noticeTone === "danger")) ? (
-            <div className="border-b border-[color:var(--border-faint)] bg-white/82 px-6 py-3 backdrop-blur-xl">
+            <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/82 px-6 py-3 backdrop-blur-xl">
               <div className="mx-auto w-full max-w-[760px] space-y-3">
                 {notice ? (
                   <InlineNotice
                     tone={noticeTone}
-                    className="border-[color:var(--border-faint)] bg-white"
+                    className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)]"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <span className="min-w-0 flex-1">{notice}</span>
@@ -454,7 +454,7 @@ export function DesktopFriendMomentsWorkspace({
                           variant="secondary"
                           size="sm"
                           onClick={onNoticeAction}
-                          className="shrink-0 border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                          className="shrink-0 border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                         >
                           {noticeActionLabel}
                         </Button>

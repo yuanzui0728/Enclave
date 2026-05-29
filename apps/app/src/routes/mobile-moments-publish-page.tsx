@@ -850,7 +850,7 @@ export function MobileMomentsPublishPage() {
                     disabled={createMutation.isPending}
                     aria-label={t(msg`移除图片`)}
                     className={cn(
-                      "absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-white",
+                      "absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[color:var(--text-on-brand)]",
                       createMutation.isPending
                         ? "bg-black/20"
                         : "bg-black/45",
@@ -884,7 +884,7 @@ export function MobileMomentsPublishPage() {
                     />
                   )}
                   <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-white">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-black/55 text-[color:var(--text-on-brand)]">
                       <Play size={16} aria-hidden="true" className="translate-x-[1px] fill-current" />
                     </span>
                   </div>
@@ -894,7 +894,7 @@ export function MobileMomentsPublishPage() {
                     disabled={createMutation.isPending}
                     aria-label={t(msg`移除视频`)}
                     className={cn(
-                      "absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-white",
+                      "absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-[color:var(--text-on-brand)]",
                       createMutation.isPending
                         ? "bg-black/20"
                         : "bg-black/45",
@@ -999,7 +999,7 @@ export function MobileMomentsPublishPage() {
           <div
             role="status"
             aria-live="polite"
-            className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[length:var(--text-caption)] text-white"
+            className="rounded-[6px] bg-black/72 px-3 py-1.5 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)]"
           >
             {toast.message}
           </div>

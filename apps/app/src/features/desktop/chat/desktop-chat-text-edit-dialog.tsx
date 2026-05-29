@@ -195,13 +195,13 @@ export function DesktopChatTextEditDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className="relative w-full max-w-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative w-full max-w-[560px] overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
         onSubmit={(event) => {
           event.preventDefault();
           handleConfirm();
         }}
       >
-        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
           <div className="min-w-0">
             <div
               id={titleId}
@@ -222,7 +222,7 @@ export function DesktopChatTextEditDialog({
             type="button"
             onClick={onClose}
             disabled={pending}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             aria-label={t(msg`关闭`)}
           >
             <X size={16} />
@@ -246,7 +246,7 @@ export function DesktopChatTextEditDialog({
               aria-labelledby={titleId}
               rows={6}
               disabled={pending}
-              className="min-h-[180px] resize-none rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-white shadow-none"
+              className="min-h-[180px] resize-none rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
             />
           ) : (
             <TextField
@@ -256,7 +256,7 @@ export function DesktopChatTextEditDialog({
               placeholder={placeholder}
               aria-labelledby={titleId}
               disabled={pending}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none"
             />
           )}
 
@@ -273,7 +273,7 @@ export function DesktopChatTextEditDialog({
               variant="secondary"
               onClick={onClose}
               disabled={pending}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`取消`)}
             </Button>
@@ -281,7 +281,7 @@ export function DesktopChatTextEditDialog({
               type="submit"
               variant="primary"
               disabled={confirmDisabled}
-              className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-white hover:opacity-95"
+              className="rounded-[10px] bg-[color:var(--brand-primary)] px-6 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {pending ? t(msg`正在保存...`) : effectiveSubmitLabel}
             </Button>

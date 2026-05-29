@@ -231,7 +231,7 @@ function DesktopFeedRowInner({
   return (
     <article
       id={`desktop-feed-post-${post.id}`}
-      className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)]"
+      className="rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-section)]"
     >
       <div className="flex items-start gap-3">
         {handleSelectAuthor ? (
@@ -368,7 +368,7 @@ function DesktopFeedRowInner({
                 className={cn(
                   "inline-flex h-8 items-center gap-1.5 rounded-xl border px-2.5 text-[length:var(--text-caption)] transition-[background-color,color,border-color]",
                   favorite
-                    ? "border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-amber-700"
+                    ? "border-[color:var(--state-warning-bg)] bg-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]"
                     : "border-[color:var(--border-faint)] text-[color:var(--text-secondary)] hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)]",
                 )}
               >
@@ -486,7 +486,7 @@ function DesktopFeedRowInner({
                         "block w-full cursor-pointer rounded-[10px] px-2 py-1.5 text-left text-[length:var(--text-caption)] leading-6 transition-colors",
                         isActiveReply
                           ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
-                          : "hover:bg-white",
+                          : "hover:bg-[color:var(--surface-card)]",
                       )}
                       title={t(msg`回复这条评论`)}
                     >
@@ -552,7 +552,7 @@ function DesktopFeedRowInner({
                     type="button"
                     onClick={onCancelCommentReply}
                     aria-label={t(msg`取消回复`)}
-                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--text-muted)] hover:bg-white"
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card)]"
                   >
                     <X size={12} />
                   </button>
@@ -572,8 +572,8 @@ function DesktopFeedRowInner({
                     ? t(msg`回复 ${activeReply.authorName}...`)
                     : t(msg`写评论...`)
                 }
-                inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[length:var(--text-caption)] shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
-                buttonClassName="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                inputClassName="rounded-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
+                buttonClassName="bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
               />
             </div>
           </div>

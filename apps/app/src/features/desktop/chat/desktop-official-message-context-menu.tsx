@@ -88,7 +88,7 @@ export function DesktopOfficialMessageContextMenu({
         role="menu"
         aria-label={t(msg`公众号消息操作菜单`)}
         style={{ left, top }}
-        className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-white/96 py-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
+        className="absolute w-[196px] overflow-hidden rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 py-1.5 shadow-[var(--shadow-overlay)] backdrop-blur-xl"
         onPointerDown={(event) => event.stopPropagation()}
       >
         {visibleItems.map((item) => (

@@ -452,7 +452,7 @@ export function DesktopAddFriendWorkspace() {
               hash: newFriendsRouteHash,
             });
           }}
-          className="rounded-[8px] border-[color:var(--border-faint)] bg-white px-3 shadow-none hover:bg-[color:var(--surface-console)]"
+          className="rounded-[8px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 shadow-none hover:bg-[color:var(--surface-console)]"
         >
           {t(msg`新的朋友`)}
           {pendingRequestCount > 0
@@ -530,7 +530,7 @@ export function DesktopAddFriendWorkspace() {
           }}
         >
           <div className="flex items-center gap-3">
-            <label className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-[8px] border border-[color:var(--border-strong)] bg-white px-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+            <label className="flex h-10 min-w-0 flex-1 items-center gap-3 rounded-[8px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
               <Search
                 size={18}
                 className="shrink-0 text-[color:var(--text-dim)]"
@@ -546,7 +546,7 @@ export function DesktopAddFriendWorkspace() {
             <Button
               type="submit"
               variant="primary"
-              className="h-10 rounded-[8px] bg-[color:var(--brand-primary)] px-5 text-white shadow-none hover:bg-[color:var(--brand-secondary)]"
+              className="h-10 rounded-[8px] bg-[color:var(--brand-primary)] px-5 text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-secondary)]"
             >
               {t(msg`搜索`)}
             </Button>
@@ -554,7 +554,7 @@ export function DesktopAddFriendWorkspace() {
               <button
                 type="button"
                 onClick={clearSearch}
-                className="h-10 rounded-[8px] border border-[color:var(--border-strong)] bg-white px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
+                className="h-10 rounded-[8px] border border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-4 text-[length:var(--text-caption)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)]"
               >
                 {t(msg`清空`)}
               </button>
@@ -583,7 +583,7 @@ export function DesktopAddFriendWorkspace() {
         ) : null}
 
         <div className="min-h-0 flex-1 px-6 py-6">
-          <div className="flex h-full min-h-[420px] overflow-hidden rounded-[10px] border border-[color:var(--border-subtle)] bg-white shadow-none">
+          <div className="flex h-full min-h-[420px] overflow-hidden rounded-[10px] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)] shadow-none">
             {loading ? (
               <div className="flex h-full w-full items-center justify-center px-6">
                 <LoadingBlock label={t(msg`正在准备好友搜索目录...`)} />
@@ -754,7 +754,7 @@ function DesktopAddFriendWelcomeState({
             type="button"
             variant="secondary"
             onClick={onFocusSearch}
-            className="rounded-[8px] border-[color:var(--border-strong)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`开始搜索`)}
           </Button>
@@ -797,7 +797,7 @@ function DesktopAddFriendNoResultsState({
             type="button"
             variant="secondary"
             onClick={onRetry}
-            className="rounded-[8px] border-[color:var(--border-strong)] bg-white px-5 shadow-none hover:bg-[color:var(--surface-console)]"
+            className="rounded-[8px] border-[color:var(--border-strong)] bg-[color:var(--surface-card)] px-5 shadow-none hover:bg-[color:var(--surface-console)]"
           >
             {t(msg`重新输入`)}
           </Button>
@@ -837,8 +837,8 @@ function DesktopAddFriendSidebarEntry({
         className={cn(
           "flex h-9 w-9 shrink-0 items-center justify-center rounded-[8px]",
           active
-            ? "bg-white text-[color:var(--brand-primary)]"
-            : "bg-white/70 text-[color:var(--text-secondary)]",
+            ? "bg-[color:var(--surface-card)] text-[color:var(--brand-primary)]"
+            : "bg-[color:var(--surface-card)]/70 text-[color:var(--text-secondary)]",
         )}
       >
         <Icon size={16} />
@@ -850,7 +850,7 @@ function DesktopAddFriendSidebarEntry({
         </div>
       </div>
       {badge ? (
-        <span className="rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-[10px] text-white">
+        <span className="rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-[10px] text-[color:var(--text-on-brand)]">
           {badge}
         </span>
       ) : null}
@@ -901,7 +901,7 @@ function DesktopAddFriendResultRow({
         "flex w-full items-center gap-3 rounded-[8px] border px-3 py-3 text-left transition",
         selected
           ? "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_8%,transparent)]"
-          : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white",
+          : "border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]",
       )}
     >
       <AvatarChip

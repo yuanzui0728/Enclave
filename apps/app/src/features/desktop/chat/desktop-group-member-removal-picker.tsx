@@ -192,10 +192,10 @@ export function DesktopGroupMemberRemovalPicker({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative flex h-[min(760px,78vh)] w-full max-w-[1040px] overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
       >
         <section className="flex w-[380px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
-          <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-5 py-4 backdrop-blur-xl">
             <div
               id={titleId}
               className="text-[18px] font-medium text-[color:var(--text-primary)]"
@@ -220,7 +220,7 @@ export function DesktopGroupMemberRemovalPicker({
                 // SR 进来只听到「编辑栏 搜索群成员 空」分裂行为。和姊妹
                 // chat-history R24 / 移动端 group-member-picker R3 同款 a11y。
                 aria-label={t(msg`搜索群成员`)}
-                className="h-10 w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
+                className="h-10 w-full rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] pl-10 pr-4 text-sm text-[color:var(--text-primary)] outline-none transition placeholder:text-[color:var(--text-dim)] focus:border-[color:var(--border-brand)]"
               />
             </label>
           </div>
@@ -258,7 +258,7 @@ export function DesktopGroupMemberRemovalPicker({
         </section>
 
         <section className="flex min-w-0 flex-1 flex-col bg-[rgba(255,255,255,0.62)]">
-          <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
+          <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
             <div>
               <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`已选成员`)}
@@ -274,7 +274,7 @@ export function DesktopGroupMemberRemovalPicker({
                   onClose();
                 }
               }}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
               disabled={pending}
               aria-label={t(msg`关闭`)}
             >
@@ -288,7 +288,7 @@ export function DesktopGroupMemberRemovalPicker({
                 {selectedMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-soft)]"
+                    className="flex items-center gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-soft)]"
                   >
                     <AvatarChip name={member.name} src={member.avatar} />
                     <div className="min-w-0 flex-1">
@@ -313,7 +313,7 @@ export function DesktopGroupMemberRemovalPicker({
               </div>
             ) : (
               <div className="flex h-full items-center justify-center px-8">
-                <div className="max-w-[320px] rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-6 py-8 text-center">
+                <div className="max-w-[320px] rounded-[18px] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/84 px-6 py-8 text-center">
                   <div className="text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
                     {t(msg`右侧会显示待移除成员`)}
                   </div>
@@ -325,7 +325,7 @@ export function DesktopGroupMemberRemovalPicker({
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
             <div className="text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
               {t(msg`世界主人不会出现在移除列表里。`)}
             </div>
@@ -335,7 +335,7 @@ export function DesktopGroupMemberRemovalPicker({
                 variant="secondary"
                 onClick={onClose}
                 disabled={pending}
-                className="rounded-[10px] border-[color:var(--border-faint)] bg-white shadow-none hover:bg-[color:var(--surface-console)]"
+                className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-none hover:bg-[color:var(--surface-console)]"
               >
                 {t(msg`取消`)}
               </Button>
@@ -344,7 +344,7 @@ export function DesktopGroupMemberRemovalPicker({
                 variant="primary"
                 onClick={handleConfirm}
                 disabled={!selectedIds.length || pending}
-                className="rounded-[10px] bg-[color:var(--state-danger-bg)] px-6 text-white hover:bg-[color:var(--state-danger-bg)]"
+                className="rounded-[10px] bg-[color:var(--state-danger-bg)] px-6 text-[color:var(--text-on-brand)] hover:bg-[color:var(--state-danger-bg)]"
               >
                 {pending ? t(msg`正在移除...`) : t(msg`移出群聊`)}
               </Button>
@@ -386,7 +386,7 @@ function CandidateRow({
         "flex w-full items-center gap-3 rounded-[10px] px-4 py-3 text-left transition disabled:opacity-60",
         checked
           ? "border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] shadow-[var(--shadow-soft)]"
-          : "border border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-white",
+          : "border border-transparent bg-transparent hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]",
       )}
     >
       <AvatarChip name={name} src={avatar} />

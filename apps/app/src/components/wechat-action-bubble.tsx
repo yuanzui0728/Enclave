@@ -157,7 +157,7 @@ export function WeChatActionBubble({
         left: position.left,
         zIndex: 1000,
       }}
-      className="flex h-9 items-stretch overflow-hidden rounded-[6px] bg-[#4C4C4C] text-[length:var(--text-body)] text-white shadow-[0_4px_18px_rgba(0,0,0,0.25)]"
+      className="flex h-9 items-stretch overflow-hidden rounded-[6px] bg-[#4C4C4C] text-[length:var(--text-body)] text-[color:var(--text-on-brand)] shadow-[0_4px_18px_rgba(0,0,0,0.25)]"
     >
       <button
         type="button"
@@ -171,11 +171,11 @@ export function WeChatActionBubble({
       >
         <Heart
           size={14}
-          className={liked ? "fill-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]" : "text-white"}
+          className={liked ? "fill-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]" : "text-[color:var(--text-on-brand)]"}
         />
         <span>{liked ? t(msg`取消`) : t(msg`赞`)}</span>
       </button>
-      <span className="my-1.5 w-px bg-white/25" aria-hidden="true" />
+      <span className="my-1.5 w-px bg-[color:var(--surface-card)]/25" aria-hidden="true" />
       <button
         type="button"
         role="menuitem"
@@ -191,7 +191,7 @@ export function WeChatActionBubble({
       </button>
       {onFavorite ? (
         <>
-          <span className="my-1.5 w-px bg-white/25" aria-hidden="true" />
+          <span className="my-1.5 w-px bg-[color:var(--surface-card)]/25" aria-hidden="true" />
           <button
             type="button"
             role="menuitem"
@@ -205,7 +205,7 @@ export function WeChatActionBubble({
             <Star
               size={14}
               className={
-                favorited ? "fill-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]" : "text-white"
+                favorited ? "fill-[color:var(--state-warning-bg)] text-[color:var(--state-warning-text)]" : "text-[color:var(--text-on-brand)]"
               }
             />
             <span>{favorited ? t(msg`取消收藏`) : t(msg`收藏`)}</span>
@@ -214,7 +214,7 @@ export function WeChatActionBubble({
       ) : null}
       {onShare ? (
         <>
-          <span className="my-1.5 w-px bg-white/25" aria-hidden="true" />
+          <span className="my-1.5 w-px bg-[color:var(--surface-card)]/25" aria-hidden="true" />
           <button
             type="button"
             role="menuitem"
@@ -232,7 +232,7 @@ export function WeChatActionBubble({
       ) : null}
       {onReport ? (
         <>
-          <span className="my-1.5 w-px bg-white/25" aria-hidden="true" />
+          <span className="my-1.5 w-px bg-[color:var(--surface-card)]/25" aria-hidden="true" />
           <button
             type="button"
             role="menuitem"

@@ -96,7 +96,7 @@ export function DesktopNoteWindowPage() {
   if (!routeState) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--bg-app)] p-6">
-        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white p-8 shadow-[var(--shadow-card)]">
+        <div className="w-full max-w-lg rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-8 shadow-[var(--shadow-card)]">
           <div className="mb-5 inline-flex rounded-full border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color-mix(in_srgb,var(--brand-primary)_7%,transparent)] px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--brand-primary)]">
             {t(msg`独立笔记窗口`)}
           </div>
@@ -108,7 +108,7 @@ export function DesktopNoteWindowPage() {
             <Button
               type="button"
               onClick={() => closeStandaloneWindow("/tabs/favorites")}
-              className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
+              className="h-9 rounded-[10px] bg-[color:var(--brand-primary)] px-4 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {t(msg`回到收藏`)}
             </Button>

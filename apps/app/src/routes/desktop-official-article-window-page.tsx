@@ -302,7 +302,7 @@ export function DesktopOfficialArticleWindowPage() {
 
   if (!routeState) {
     return (
-      <div className="flex h-full min-h-0 items-center justify-center bg-white p-6">
+      <div className="flex h-full min-h-0 items-center justify-center bg-[color:var(--surface-card)] p-6">
         <DesktopArticleWindowStatusPane
           title={t(msg`文章窗口已失效`)}
           description={t(msg`这篇公众号文章的窗口参数已经失效，请回到公众号页重新打开。`)}
@@ -312,7 +312,7 @@ export function DesktopOfficialArticleWindowPage() {
               onClick={() => {
                 void focusMainDesktopWindow("/tabs/chat");
               }}
-              className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-white hover:opacity-95"
+              className="h-9 rounded-full bg-[color:var(--brand-primary)] px-4 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               {t(msg`回到消息页`)}
             </Button>
@@ -323,7 +323,7 @@ export function DesktopOfficialArticleWindowPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col bg-white">
+    <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-card)]">
       <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-4 py-2.5 backdrop-blur-xl">
         <div className="flex min-w-0 items-center gap-3">
           <StandaloneActionButton
@@ -360,7 +360,7 @@ export function DesktopOfficialArticleWindowPage() {
         </div>
       </header>
 
-      <div className={cn("min-h-0 flex-1 overflow-auto bg-white")}>
+      <div className={cn("min-h-0 flex-1 overflow-auto bg-[color:var(--surface-card)]")}>
         {notice ? (
           <DesktopArticleWindowInlineStatus message={notice} />
         ) : null}
@@ -415,7 +415,7 @@ function StandaloneActionButton({
       onClick={onClick}
       aria-label={label}
       title={label}
-      className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-white text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
+      className="flex h-9 w-9 items-center justify-center rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] transition hover:bg-[color:var(--surface-console)]"
     >
       {children}
     </button>

@@ -35,9 +35,9 @@ export function DigitalHumanStage({
   return (
     <section
       className={cn(
-        "relative overflow-hidden border text-white",
+        "relative overflow-hidden border text-[color:var(--text-on-brand)]",
         mobile
-          ? "rounded-[var(--radius-xl)] border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
+          ? "rounded-[var(--radius-xl)] border-[color:var(--border-faint)]/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.88),rgba(2,6,23,0.96))] shadow-[0_26px_80px_rgba(60, 40, 110, 0.34)]"
           : "flex min-h-0 flex-1 rounded-[var(--radius-xl)] border-[color:var(--border-faint)] bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.18),transparent_30%),linear-gradient(180deg,#111827_0%,#0f172a_46%,#020617_100%)] shadow-[0_22px_60px_rgba(60, 40, 110, 0.22)]",
       )}
     >
@@ -72,11 +72,11 @@ export function DigitalHumanStage({
           </div>
           <div
             className={cn(
-              "rounded-[var(--radius-lg)] border border-white/10 bg-white/8 px-3 py-2 text-right",
+              "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)]/10 bg-[color:var(--surface-card)]/8 px-3 py-2 text-right",
               mobile ? "max-w-[136px]" : "max-w-[156px]",
             )}
           >
-            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/38">
+            <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-on-brand)]/38">
               {t(msg`状态`)}
             </div>
             <div className="mt-1 text-sm font-medium text-[color:var(--state-success-text)]">
@@ -94,11 +94,11 @@ export function DigitalHumanStage({
                   ? "animate-ping border-[#34d399]/28"
                   : thinking
                     ? "animate-pulse border-[#60a5fa]/24"
-                    : "border-white/6",
+                    : "border-[color:var(--border-faint)]/6",
               )}
             />
             <div className="absolute inset-[-34px] rounded-full bg-[radial-gradient(circle,rgba(52,211,153,0.24),transparent_66%)] blur-3xl" />
-            <div className="relative flex h-[224px] w-[224px] items-center justify-center overflow-hidden rounded-full border border-white/12 bg-[linear-gradient(180deg,rgba(30,41,59,0.96),rgba(15,23,42,0.98))] shadow-[0_26px_80px_rgba(2,6,23,0.46)]">
+            <div className="relative flex h-[224px] w-[224px] items-center justify-center overflow-hidden rounded-full border border-[color:var(--border-faint)]/12 bg-[linear-gradient(180deg,rgba(30,41,59,0.96),rgba(15,23,42,0.98))] shadow-[0_26px_80px_rgba(2,6,23,0.46)]">
               {src ? (
                 // 走查电脑端单聊 R100：和姊妹 R88/R92/R93 一批 viewer img 已挂的同款。
                 // src 通常是 minimax 生成的角色头像（1024×1024 原图、200-600KB），
@@ -119,12 +119,12 @@ export function DigitalHumanStage({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="text-[64px] font-semibold text-white/86">
+                <span className="text-[64px] font-semibold text-[color:var(--text-on-brand)]/86">
                   {initial}
                 </span>
               )}
             </div>
-            <div className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full border border-white/10 bg-white/8 px-4">
+            <div className="mt-5 inline-flex min-h-10 items-center gap-2 rounded-full border border-[color:var(--border-faint)]/10 bg-[color:var(--surface-card)]/8 px-4">
               <div className="flex items-end gap-1">
                 {[0, 1, 2].map((item) => (
                   <span
@@ -135,7 +135,7 @@ export function DigitalHumanStage({
                         ? "h-5 animate-pulse bg-[color:var(--state-success-bg)]"
                         : thinking
                           ? "h-4 animate-pulse bg-[color:var(--state-info-bg)]"
-                          : "h-2 bg-white/28",
+                          : "h-2 bg-[color:var(--surface-card)]/28",
                     )}
                     style={
                       talking || thinking
@@ -145,7 +145,7 @@ export function DigitalHumanStage({
                   />
                 ))}
               </div>
-              <span className="text-sm text-white/76">
+              <span className="text-sm text-[color:var(--text-on-brand)]/76">
                 {talking
                   ? t(msg`对方正在说话`)
                   : thinking
@@ -153,7 +153,7 @@ export function DigitalHumanStage({
                     : t(msg`在线`)}
               </span>
               {providerLabel ? (
-                <span className="rounded-full border border-white/10 bg-white/6 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-white/56">
+                <span className="rounded-full border border-[color:var(--border-faint)]/10 bg-[color:var(--surface-card)]/6 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/56">
                   {providerLabel}
                 </span>
               ) : null}
@@ -161,11 +161,11 @@ export function DigitalHumanStage({
           </div>
         </div>
 
-        <div className="rounded-[var(--radius-xl)] border border-white/8 bg-white/6 px-4 py-3">
-          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-white/38">
+        <div className="rounded-[var(--radius-xl)] border border-[color:var(--border-faint)]/8 bg-[color:var(--surface-card)]/6 px-4 py-3">
+          <div className="text-[length:var(--text-eyebrow)] uppercase tracking-[0.18em] text-[color:var(--text-on-brand)]/38">
             {t(msg`通话提示`)}
           </div>
-          <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-white/72">
+          <div className="mt-1 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/72">
             {statusHint}
           </div>
           {footerAction ? <div className="mt-3">{footerAction}</div> : null}

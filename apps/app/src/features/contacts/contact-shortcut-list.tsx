@@ -53,7 +53,7 @@ export function ContactShortcutList({
               variant === "desktop-flat"
                 ? item.disabled
                   ? "cursor-not-allowed bg-transparent px-3 py-2.5"
-                  : "bg-transparent px-3 py-2.5 hover:bg-white/80"
+                  : "bg-transparent px-3 py-2.5 hover:bg-[color:var(--surface-card)]/80"
                 : compact
                   ? item.disabled
                     ? mobileDense
@@ -78,7 +78,7 @@ export function ContactShortcutList({
           >
             <div
               className={cn(
-                "flex shrink-0 items-center justify-center text-white",
+                "flex shrink-0 items-center justify-center text-[color:var(--text-on-brand)]",
                 variant === "desktop-flat"
                   ? "h-8 w-8 rounded-[var(--radius-sm)]"
                   : "rounded-[var(--radius-sm)] shadow-[inset_0_0_0_1px_rgba(255,255,255,0.72)]",
@@ -164,7 +164,7 @@ export function ContactShortcutList({
               <div
                 aria-hidden="true"
                 className={cn(
-                  "flex items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] font-medium leading-none text-white",
+                  "flex items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] font-medium leading-none text-[color:var(--text-on-brand)]",
                   variant === "desktop-flat"
                     ? "min-w-4.5 px-1.5 py-0.5 text-[10px]"
                     : mobileDense

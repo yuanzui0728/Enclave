@@ -33,7 +33,7 @@ export function MiniProgramGlyph({
   return (
     <div
       className={cn(
-        "flex items-center justify-center border border-white/35 font-semibold tracking-[0.08em] shadow-[var(--shadow-soft)]",
+        "flex items-center justify-center border border-[color:var(--border-faint)]/35 font-semibold tracking-[0.08em] shadow-[var(--shadow-soft)]",
         tone.heroCardClassName,
         sizeClassName[size],
         className,

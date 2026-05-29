@@ -63,9 +63,9 @@ export function DesktopChatSidePanel({
         className={cn(
           "border-b border-[rgba(0,0,0,0.06)] transition-[background-color,padding] duration-150",
           historyMode
-            ? "bg-white px-4 pb-2 pt-3"
+            ? "bg-[color:var(--surface-card)] px-4 pb-2 pt-3"
             : wechatDetails
-              ? "bg-white px-4 py-3"
+              ? "bg-[color:var(--surface-card)] px-4 py-3"
               : "bg-[color:var(--surface-card)] px-4 py-3",
         )}
       >
@@ -173,7 +173,7 @@ export function DesktopChatSidePanelPlaceholder({
 
   return (
     <div className="flex h-full flex-col items-center justify-center px-8 text-center">
-      <div className="rounded-full border border-[color:var(--border-faint)] bg-white px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)] shadow-[var(--shadow-soft)]">
+      <div className="rounded-full border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 py-1 text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)] shadow-[var(--shadow-soft)]">
         {t(msg`侧栏面板`)}
       </div>
       <div className="mt-4 text-[length:var(--text-base)] font-medium text-[color:var(--text-primary)]">

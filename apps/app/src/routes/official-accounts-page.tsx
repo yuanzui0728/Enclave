@@ -391,11 +391,11 @@ function MobileOfficialAccountsPage() {
           variant="ghost"
           size="icon"
           aria-label={t(msg`返回`)}
-          className="absolute left-3 top-3 h-10 w-10 rounded-full bg-white/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-[color:var(--surface-card)]"
+          className="absolute left-3 top-3 h-10 w-10 rounded-full bg-[color:var(--surface-card)]/90 text-[color:var(--text-primary)] shadow-[var(--shadow-card)] active:bg-[color:var(--surface-card)]"
         >
           <ArrowLeft aria-hidden="true" size={18} />
         </Button>
-        <div className="mx-6 max-w-[280px] rounded-2xl border border-[color:var(--border-faint)] bg-white/98 px-6 py-6 text-center shadow-[var(--shadow-card)]">
+        <div className="mx-6 max-w-[280px] rounded-2xl border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/98 px-6 py-6 text-center shadow-[var(--shadow-card)]">
           <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-primary)]">
             {t(msg`功能开发中`)}
           </div>
@@ -418,7 +418,7 @@ function MobileOfficialAccountsPage() {
             }
             variant="primary"
             size="md"
-            className="mt-5 h-10 w-full rounded-full bg-[color:var(--brand-primary)] text-white"
+            className="mt-5 h-10 w-full rounded-full bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]"
           >
             {t(msg`返回`)}
           </Button>

@@ -724,7 +724,7 @@ export function GroupChatBackgroundPage() {
     return (
       <AppPage className="min-h-full bg-[color:var(--bg-app)] px-4 py-4">
         <div className="mx-auto flex max-w-6xl flex-col gap-5">
-          <div className="flex items-center justify-between rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white/78 px-5 py-4 backdrop-blur-xl">
+          <div className="flex items-center justify-between rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-5 py-4 backdrop-blur-xl">
             <div>
               <div className="text-xs tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`群聊背景`)}
@@ -935,7 +935,7 @@ function EmptyPanel({
   description: string;
 }) {
   return (
-    <div className="rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-5 py-8 text-center">
+    <div className="rounded-[var(--radius-md)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/84 px-5 py-8 text-center">
       <div className="text-lg font-semibold text-[color:var(--text-primary)]">
         {title}
       </div>

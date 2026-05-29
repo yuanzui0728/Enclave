@@ -20,7 +20,7 @@ export function DesktopContactPaneEmptyState({
   return (
     <div className="flex h-full items-center justify-center bg-[color:var(--surface-card)] px-10">
       <div className="flex max-w-sm flex-col items-center text-center">
-        <div className="flex h-18 w-18 items-center justify-center rounded-[var(--radius-lg)] border border-[rgba(0,0,0,0.06)] bg-white text-xl text-[color:var(--text-dim)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+        <div className="flex h-18 w-18 items-center justify-center rounded-[var(--radius-lg)] border border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] text-xl text-[color:var(--text-dim)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
           ···
         </div>
         <div className="mt-4 text-[length:var(--text-title)] font-medium text-[color:var(--text-primary)]">
@@ -91,7 +91,7 @@ export function DesktopContactProfileHeader({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
+        "overflow-hidden rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] shadow-[0_1px_2px_rgba(15,23,42,0.04)]",
         compact ? "px-4 py-5" : "px-8 py-8",
       )}
     >
@@ -153,7 +153,7 @@ export function DesktopContactProfileSection({
   action?: ReactNode;
 }) {
   return (
-    <section className="mt-3 overflow-hidden rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.04)] first:mt-0">
+    <section className="mt-3 overflow-hidden rounded-[18px] border border-[rgba(0,0,0,0.06)] bg-[color:var(--surface-card)] shadow-[0_1px_2px_rgba(15,23,42,0.04)] first:mt-0">
       <div className="flex items-center justify-between gap-3 px-5 pb-1.5 pt-4">
         <div className="text-[length:var(--text-caption)] font-medium text-[color:var(--text-muted)]">
           {title}
@@ -230,7 +230,7 @@ export function DesktopContactProfileToggleRow({
         >
           <span
             className={cn(
-              "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-[0_1px_2px_rgba(15,23,42,0.12)] transition-transform",
+              "absolute top-0.5 h-5 w-5 rounded-full bg-[color:var(--surface-card)] shadow-[0_1px_2px_rgba(15,23,42,0.12)] transition-transform",
               checked ? "left-[18px]" : "left-0.5",
             )}
           />

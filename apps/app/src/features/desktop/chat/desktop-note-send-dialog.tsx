@@ -187,10 +187,10 @@ export function DesktopNoteSendDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={descId}
-        className="relative flex h-[min(760px,84vh)] w-full max-w-[1040px] min-w-0 overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-white/96 shadow-[var(--shadow-overlay)]"
+        className="relative flex h-[min(760px,84vh)] w-full max-w-[1040px] min-w-0 overflow-hidden rounded-[22px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/96 shadow-[var(--shadow-overlay)]"
       >
         <section className="flex w-[344px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]">
-          <div className="border-b border-[color:var(--border-faint)] bg-white/78 px-5 py-5 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-5 py-5 backdrop-blur-xl">
             <div
               id={titleId}
               className="text-[18px] font-medium text-[color:var(--text-primary)]"
@@ -211,7 +211,7 @@ export function DesktopNoteSendDialog({
         </section>
 
         <section className="flex min-w-0 flex-1 flex-col bg-[rgba(255,255,255,0.62)]">
-          <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-white/78 px-6 py-4 backdrop-blur-xl">
+          <div className="flex items-start justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 backdrop-blur-xl">
             <div className="min-w-0">
               <div className="text-[length:var(--text-eyebrow)] tracking-[0.12em] text-[color:var(--text-dim)]">
                 {t(msg`最近会话`)}
@@ -224,14 +224,14 @@ export function DesktopNoteSendDialog({
               type="button"
               onClick={onClose}
               disabled={pending}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] transition hover:bg-[color:var(--surface-console)] hover:text-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
               aria-label={t(msg`关闭`)}
             >
               <X size={16} />
             </button>
           </div>
 
-          <div className="border-b border-[color:var(--border-faint)] bg-white/72 px-6 py-4">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/72 px-6 py-4">
             <label className="relative block">
               <Search
                 size={16}
@@ -250,7 +250,7 @@ export function DesktopNoteSendDialog({
                 // 标题猜 scope，与 R23/R24 修法一致补 aria-label。
                 aria-label={t(msg`搜索最近会话`)}
                 disabled={pending}
-                className="h-10 rounded-[10px] border-[color:var(--border-faint)] bg-white pl-10 shadow-none"
+                className="h-10 rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] pl-10 shadow-none"
               />
             </label>
           </div>
@@ -270,7 +270,7 @@ export function DesktopNoteSendDialog({
             !error &&
             conversations.length > 0 &&
             !filteredConversations.length ? (
-              <div className="rounded-[var(--radius-sm)] border border-dashed border-[color:var(--border-faint)] bg-white/84 px-4 py-5 text-sm text-[color:var(--text-secondary)]">
+              <div className="rounded-[var(--radius-sm)] border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/84 px-4 py-5 text-sm text-[color:var(--text-secondary)]">
                 {t(msg`没有匹配的最近会话。`)}
               </div>
             ) : null}
@@ -293,7 +293,7 @@ export function DesktopNoteSendDialog({
                       sendSubmittingRef.current = true;
                       onSend(conversation);
                     }}
-                    className="flex w-full items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-white px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)] hover:shadow-[var(--shadow-soft)] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-3 text-left transition hover:bg-[color:var(--surface-console)] hover:shadow-[var(--shadow-soft)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <div className="flex min-w-0 items-center gap-3">
                       {isGroup ? (
@@ -329,14 +329,14 @@ export function DesktopNoteSendDialog({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-white/78 px-6 py-4 text-[length:var(--text-caption)] text-[color:var(--text-muted)] backdrop-blur-xl">
+          <div className="flex items-center justify-between gap-4 border-t border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/78 px-6 py-4 text-[length:var(--text-caption)] text-[color:var(--text-muted)] backdrop-blur-xl">
             <div>{t(msg`发送后会在目标会话里显示成一张可打开的笔记卡片。`)}</div>
             <Button
               type="button"
               variant="secondary"
               onClick={onClose}
               disabled={pending}
-              className="rounded-[10px] border-[color:var(--border-faint)] bg-white px-6 shadow-none hover:bg-[color:var(--surface-console)]"
+              className="rounded-[10px] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-6 shadow-none hover:bg-[color:var(--surface-console)]"
             >
               {t(msg`取消`)}
             </Button>
@@ -356,7 +356,7 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
   ).length;
 
   return (
-    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-white shadow-[var(--shadow-soft)]">
+    <div className="overflow-hidden rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[var(--shadow-soft)]">
       {previewImage?.url ? (
         <div className="h-[184px] overflow-hidden bg-[color:var(--border-faint)]">
           {/* 走查 R131：和 R130 (NoteViewerOverlay 内嵌 <img>) 一脉。本 preview
@@ -380,7 +380,7 @@ function DesktopNotePreviewCard({ note }: { note: DesktopNoteSendDialogNote }) {
         </div>
       ) : (
         <div className="flex h-[184px] items-end bg-[linear-gradient(160deg,#f3f6f5_0%,#dde6e3_100%)] px-5 py-5">
-          <div className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-white/88 px-4 py-3 text-[length:var(--text-eyebrow)] tracking-[0.16em] text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
+          <div className="rounded-[var(--radius-md)] border border-[color:var(--border-subtle)] bg-[color:var(--surface-card)]/88 px-4 py-3 text-[length:var(--text-eyebrow)] tracking-[0.16em] text-[color:var(--text-muted)] shadow-[var(--shadow-soft)]">
             {t(msg`收藏笔记`)}
           </div>
         </div>

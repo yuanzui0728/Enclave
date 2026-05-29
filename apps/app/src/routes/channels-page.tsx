@@ -2985,14 +2985,14 @@ function MobileChannelMediaSurface({
     // 端口造的 owner post 也走这条；不是「只有调试用户撞」的稀有路径。
     return (
       <div className="relative flex h-full min-h-[calc(100dvh-12rem)] w-full items-center justify-center overflow-hidden bg-gradient-to-b from-[#1f2533] to-[#0a0c10] pb-8 pl-8 pr-[4.25rem] pt-8">
-        <div className="max-w-[22rem] text-center text-white">
+        <div className="max-w-[22rem] text-center text-[color:var(--text-on-brand)]">
           {post.title?.trim() ? (
             <div className="text-[length:var(--text-section)] font-semibold leading-[1.6]">
               {post.title}
             </div>
           ) : null}
           {textContent.trim() && textContent !== post.title ? (
-            <div className="mt-3 text-[length:var(--text-body)] leading-[1.7] text-white/82 line-clamp-[8]">
+            <div className="mt-3 text-[length:var(--text-body)] leading-[1.7] text-[color:var(--text-on-brand)]/82 line-clamp-[8]">
               {textContent}
             </div>
           ) : null}
@@ -3008,10 +3008,10 @@ function MobileChannelMediaSurface({
   return (
     <div className="flex min-h-[calc(100dvh-12rem)] w-full items-center justify-center bg-black pb-6 pl-6 pr-[4.25rem] pt-6 text-center">
       <div>
-        <div className="text-[length:var(--text-title)] font-semibold text-white">
+        <div className="text-[length:var(--text-title)] font-semibold text-[color:var(--text-on-brand)]">
           {t(msg`暂无可播放内容`)}
         </div>
-        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-white/72">
+        <div className="mt-2 text-[length:var(--text-caption)] leading-6 text-[color:var(--text-on-brand)]/72">
           {t(msg`稍后再来看看`)}
         </div>
       </div>
@@ -3126,7 +3126,7 @@ function MediaProgressBar({
       <div
         ref={trackRef}
         className={cn(
-          "relative w-full rounded-full bg-white/30 transition-[height]",
+          "relative w-full rounded-full bg-[color:var(--surface-card)]/30 transition-[height]",
           scrubbing ? "h-1.5" : "h-[3px]",
         )}
       >
@@ -3488,9 +3488,9 @@ function ChannelAudioPictorial({
         // 没音轨用 ImageIcon（lucide），保持图集语义。
         <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-[#1f2533] to-[#0a0c10]">
           {audioUrl ? (
-            <Music2 size={56} className="text-white/40" />
+            <Music2 size={56} className="text-[color:var(--text-on-brand)]/40" />
           ) : (
-            <ImageIcon size={56} className="text-white/40" />
+            <ImageIcon size={56} className="text-[color:var(--text-on-brand)]/40" />
           )}
         </div>
       )}
@@ -3505,7 +3505,7 @@ function ChannelAudioPictorial({
               event.stopPropagation();
               goPrev();
             }}
-            className="group absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 p-2 text-white/80 backdrop-blur-sm transition hover:bg-black/50 md:flex"
+            className="group absolute left-2 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 p-2 text-[color:var(--text-on-brand)]/80 backdrop-blur-sm transition hover:bg-black/50 md:flex"
           >
             <ArrowLeft size={20} />
           </button>
@@ -3516,7 +3516,7 @@ function ChannelAudioPictorial({
               event.stopPropagation();
               goNext();
             }}
-            className="group absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 p-2 text-white/80 backdrop-blur-sm transition hover:bg-black/50 md:flex"
+            className="group absolute right-2 top-1/2 z-20 hidden -translate-y-1/2 items-center justify-center rounded-full bg-black/30 p-2 text-[color:var(--text-on-brand)]/80 backdrop-blur-sm transition hover:bg-black/50 md:flex"
           >
             <ArrowLeft size={20} className="rotate-180" />
           </button>
@@ -3536,7 +3536,7 @@ function ChannelAudioPictorial({
       {audioUrl && mediaActive && userUnmuted && !isPlaying ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-black/45 backdrop-blur-sm">
-            <Play size={32} className="text-white" fill="white" />
+            <Play size={32} className="text-[color:var(--text-on-brand)]" fill="white" />
           </div>
         </div>
       ) : null}
@@ -3553,7 +3553,7 @@ function ChannelAudioPictorial({
                 "h-1.5 rounded-full transition-all",
                 idx === imageIndex
                   ? "w-5 bg-[color:var(--surface-card)]"
-                  : "w-1.5 bg-white/45",
+                  : "w-1.5 bg-[color:var(--surface-card)]/45",
               )}
             />
           ))}
@@ -3750,7 +3750,7 @@ function ChannelVideoSurface({
       {mediaActive && userUnmuted && !isPlaying ? (
         <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
           <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-black/45 backdrop-blur-sm">
-            <Play size={32} className="text-white" fill="white" />
+            <Play size={32} className="text-[color:var(--text-on-brand)]" fill="white" />
           </div>
         </div>
       ) : null}
@@ -4354,7 +4354,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-64 bg-[linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,0.88))]" />
 
         <div className="absolute left-3.5 top-3.5 flex items-center gap-1.5">
-          <div className="rounded-full bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-white">
+          <div className="rounded-full bg-[color:var(--state-info-bg)] px-2.5 py-1 text-[10px] font-medium tracking-[0.04em] text-[color:var(--text-on-brand)]">
             {getChannelsSectionBadge(activeSection, t)}
           </div>
         </div>
@@ -4442,11 +4442,11 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                   src={post.authorAvatar}
                   size="wechat"
                 />
-                <div className="min-w-0 flex-1 text-white">
+                <div className="min-w-0 flex-1 text-[color:var(--text-on-brand)]">
                   <div className="truncate text-[length:var(--text-caption)] font-medium">
                     {post.authorName}
                   </div>
-                  <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-white/70">
+                  <div className="mt-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/70">
                     {t(
                       msg`${formatTimestamp(post.createdAt)} · 视频号动态`,
                     )}
@@ -4489,7 +4489,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                   className={cn(
                     "rounded-full px-2.5 py-1 text-[10px] font-medium transition disabled:cursor-not-allowed disabled:opacity-70",
                     post.ownerState?.isFollowingAuthor
-                      ? "border border-white/20 bg-white/10 text-white/72"
+                      ? "border border-[color:var(--border-faint)]/20 bg-[color:var(--surface-card)]/10 text-[color:var(--text-on-brand)]/72"
                       : "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)]",
                   )}
                 >
@@ -4509,7 +4509,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
               出来当 caption。
             */}
             {hasUsableMedia && post.title ? (
-              <div className="mt-2 text-[length:var(--text-caption)] font-medium text-white">
+              <div className="mt-2 text-[length:var(--text-caption)] font-medium text-[color:var(--text-on-brand)]">
                 {post.title}
               </div>
             ) : null}
@@ -4525,14 +4525,14 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                     <ExpandableText
                       text={cleanText}
                       className="mt-1"
-                      textClassName="text-[length:var(--text-caption)] leading-[1.35rem] text-white"
-                      toggleClassName="text-[length:var(--text-eyebrow)] text-white/82"
+                      textClassName="text-[length:var(--text-caption)] leading-[1.35rem] text-[color:var(--text-on-brand)]"
+                      toggleClassName="text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/82"
                     />
                   );
                 })()
               : null}
             {post.topicTags?.length ? (
-              <div className="mt-2 flex flex-wrap gap-1.5 text-[9px] text-white/72">
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[9px] text-[color:var(--text-on-brand)]/72">
                 {post.topicTags.slice(0, 3).map((tag) => (
                   <span
                     key={tag}
@@ -4543,10 +4543,10 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                 ))}
               </div>
             ) : null}
-            <div className="mt-2 text-[9px] text-white/65">
+            <div className="mt-2 text-[9px] text-[color:var(--text-on-brand)]/65">
               {formatChannelMeta(post, t)}
             </div>
-            <div className="mt-2 rounded-[var(--radius-md)] bg-[color:var(--surface-card)] px-2.5 py-2 text-[10px] leading-4 text-white/86 backdrop-blur">
+            <div className="mt-2 rounded-[var(--radius-md)] bg-[color:var(--surface-card)] px-2.5 py-2 text-[10px] leading-4 text-[color:var(--text-on-brand)]/86 backdrop-blur">
               {(() => {
                 // 走查 2026-05-18 R2（本轮）：commentsPreview 里偶尔混入纯
                 // AI thinking-prose 评论（库里至少 eb9c88ce 等帖各有 1 条
@@ -4565,7 +4565,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                 if (renderableComments.length) {
                   return (
                     <>
-                      <div className="mb-1 text-[9px] uppercase tracking-[0.03em] text-white/60">
+                      <div className="mb-1 text-[9px] uppercase tracking-[0.03em] text-[color:var(--text-on-brand)]/60">
                         {t(msg`最近评论`)}
                       </div>
                       <div className="space-y-1">
@@ -4605,7 +4605,7 @@ const MobileChannelsCard = memo(function MobileChannelsCard({
                   // 评论"会和 action rail 上"143 评论"的小角标自相矛盾——给个
                   // 占位提示。
                   return (
-                    <span className="text-white/70">
+                    <span className="text-[color:var(--text-on-brand)]/70">
                       {t(msg`正在载入最近评论...`)}
                     </span>
                   );
@@ -4671,7 +4671,7 @@ function ActionRailButton({
       disabled={disabled}
       aria-label={ariaLabel ?? label}
       aria-pressed={ariaPressed}
-      className="flex flex-col items-center gap-1 text-white transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70"
+      className="flex flex-col items-center gap-1 text-[color:var(--text-on-brand)] transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-70"
     >
       <span
         className={cn(

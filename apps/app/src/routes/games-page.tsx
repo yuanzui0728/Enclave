@@ -905,23 +905,23 @@ function BannerCard({
       style={{ aspectRatio: "2 / 1" }}
     >
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-white/12 blur-3xl" />
+        <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-[color:var(--surface-card)]/12 blur-3xl" />
         <div className="absolute bottom-0 left-8 h-24 w-24 rounded-full bg-black/10 blur-3xl" />
       </div>
       <div className="relative flex h-full flex-col justify-between p-4">
         <div>
-          <div className="inline-flex rounded-full border border-white/18 bg-white/15 px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-white/85">
+          <div className="inline-flex rounded-full border border-[color:var(--border-faint)]/18 bg-[color:var(--surface-card)]/15 px-2 py-0.5 text-[10px] font-medium tracking-[0.08em] text-[color:var(--text-on-brand)]/85">
             {game.badge}
           </div>
-          <div className="mt-2 text-[18px] font-semibold leading-tight text-white">
+          <div className="mt-2 text-[18px] font-semibold leading-tight text-[color:var(--text-on-brand)]">
             {game.name}
           </div>
-          <div className="mt-1 line-clamp-1 text-[length:var(--text-caption)] leading-snug text-white/82">
+          <div className="mt-1 line-clamp-1 text-[length:var(--text-caption)] leading-snug text-[color:var(--text-on-brand)]/82">
             {game.slogan}
           </div>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-[length:var(--text-eyebrow)] text-white/72">{game.playersLabel}</span>
+          <span className="text-[length:var(--text-eyebrow)] text-[color:var(--text-on-brand)]/72">{game.playersLabel}</span>
           <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--surface-card)] px-3 py-1 text-[length:var(--text-caption)] font-medium text-[color:var(--text-primary)]">
             <Play size={13} />
             {t(msg`开始`)}

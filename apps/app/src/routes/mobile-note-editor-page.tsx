@@ -1350,7 +1350,7 @@ function MobileNoteEditor({
                 isExistingNoteNotReady ||
                 attachmentPending
               }
-              className="h-8 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-3 text-white hover:opacity-95"
+              className="h-8 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] px-3 text-[color:var(--text-on-brand)] hover:opacity-95"
             >
               <Save size={14} />
               <span className="ml-1 text-[length:var(--text-caption)]">
@@ -1378,7 +1378,7 @@ function MobileNoteEditor({
       ) : null}
 
       {tagEditorOpen || editorState.tags.length ? (
-        <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--border-faint)] bg-white/85 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/85 px-4 py-3">
           {editorState.tags.map((tag) => (
             <span
               key={tag}
@@ -1718,7 +1718,7 @@ function UnsavedSheet({
             variant="primary"
             onClick={onSave}
             disabled={pending || saveDisabled}
-            className="h-11 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-[length:var(--text-base)] text-white hover:opacity-95"
+            className="h-11 rounded-[var(--radius-sm)] bg-[color:var(--brand-primary)] text-[length:var(--text-base)] text-[color:var(--text-on-brand)] hover:opacity-95"
           >
             {pending ? t(msg`保存中...`) : t(msg`保存并关闭`)}
           </Button>

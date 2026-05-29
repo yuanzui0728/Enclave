@@ -501,7 +501,7 @@ export function MobileChatPlusPanel({
                       >
                         <div
                           className={cn(
-                            "flex h-13 w-13 items-center justify-center rounded-[var(--radius-sm)] border bg-[color:var(--surface-card)] text-white shadow-none",
+                            "flex h-13 w-13 items-center justify-center rounded-[var(--radius-sm)] border bg-[color:var(--surface-card)] text-[color:var(--text-on-brand)] shadow-none",
                             "border-[color:var(--border-subtle)]",
                             itemDisabled ? null : item.iconClassName,
                             itemDisabled ? "bg-[#cfcfcf]" : null,
@@ -557,7 +557,7 @@ export function MobileChatPlusPanel({
               <div className="flex items-start gap-3">
                 <div
                   className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-white",
+                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--radius-sm)] text-[color:var(--text-on-brand)]",
                     unavailableAction.iconClassName,
                   )}
                 >

@@ -158,7 +158,7 @@ function DesktopMomentRowInner({
       ? commentReplyTarget
       : null;
   const activeActionClassName =
-    "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-white text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_var(--brand-primary)]";
+    "border-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)] bg-[color:var(--surface-card)] text-[color:var(--text-primary)] shadow-[inset_0_-2px_0_0_var(--brand-primary)]";
 
   const commentsById = useMemo(
     () =>
@@ -219,7 +219,7 @@ function DesktopMomentRowInner({
   return (
     <article
       id={`desktop-moment-post-${moment.id}`}
-      className="relative rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-white px-4 py-4 shadow-[var(--shadow-section)]"
+      className="relative rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-4 shadow-[var(--shadow-section)]"
     >
       {onDelete || onShare ? (
         <div ref={menuRef} className="absolute right-3 top-3">
@@ -237,7 +237,7 @@ function DesktopMomentRowInner({
           {menuOpen ? (
             <div
               role="menu"
-              className="absolute right-0 top-9 z-10 min-w-[140px] overflow-hidden rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-white shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
+              className="absolute right-0 top-9 z-10 min-w-[140px] overflow-hidden rounded-[var(--radius-sm)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] shadow-[0_8px_24px_rgba(15,23,42,0.12)]"
             >
               {onShare ? (
                 <button
@@ -430,7 +430,7 @@ function DesktopMomentRowInner({
                   variant="secondary"
                   size="sm"
                   onClick={onAuthorAction}
-                  className="border-[color:var(--border-faint)] bg-white text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
+                  className="border-[color:var(--border-faint)] bg-[color:var(--surface-card)] text-[color:var(--text-secondary)] shadow-none hover:bg-[color:var(--surface-console)]"
                 >
                   {authorActionLabel ?? t(msg`打开 TA 的朋友圈`)}
                 </Button>
@@ -525,7 +525,7 @@ function DesktopMomentRowInner({
                         "block w-full rounded-[10px] px-2 py-1.5 text-left text-[length:var(--text-caption)] leading-6 transition-colors",
                         isActiveReply
                           ? "bg-[color-mix(in_srgb,var(--brand-primary)_12%,transparent)]"
-                          : "hover:bg-white",
+                          : "hover:bg-[color:var(--surface-card)]",
                       )}
                       title={t(msg`回复这条评论`)}
                     >
@@ -570,7 +570,7 @@ function DesktopMomentRowInner({
                         type="button"
                         onClick={onCancelCommentReply}
                         aria-label={t(msg`取消回复`)}
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--text-muted)] hover:bg-white"
+                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[color:var(--text-muted)] hover:bg-[color:var(--surface-card)]"
                       >
                         <X size={12} />
                       </button>
@@ -593,11 +593,11 @@ function DesktopMomentRowInner({
                       ? t(msg`回复 ${activeReply.authorName}...`)
                       : t(msg`写评论...`)
                   }
-                  inputClassName="rounded-xl border-[color:var(--border-faint)] bg-white px-4 py-2 text-[length:var(--text-caption)] shadow-none hover:bg-white focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
-                  buttonClassName="bg-[color:var(--brand-primary)] text-white shadow-none hover:opacity-95"
+                  inputClassName="rounded-xl border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card)] focus:border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] focus:shadow-none"
+                  buttonClassName="bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] shadow-none hover:opacity-95"
                 />
               ) : (
-                <div className="rounded-xl border border-dashed border-[color:var(--border-faint)] bg-white px-4 py-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
+                <div className="rounded-xl border border-dashed border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-4 py-2 text-[length:var(--text-caption)] text-[color:var(--text-muted)]">
                   {t(msg`加为好友后才能评论。`)}
                 </div>
               )}
