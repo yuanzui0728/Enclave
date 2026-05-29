@@ -573,7 +573,7 @@ msgstr "表情"
 #: apps/app/src/routes/desktop-chat-files-page.tsx:978
 #: apps/app/src/routes/favorites-page.tsx:563
 #: apps/app/src/routes/mobile-favorites-page.tsx:341
-#: apps/app/src/routes/profile-page.tsx:165
+#: apps/app/src/routes/profile-page.tsx:174
 msgid "收藏"
 msgstr "收藏"
 
@@ -619,6 +619,7 @@ msgstr "图片"
 #: apps/app/src/routes/desktop-chat-files-page.tsx:663
 #: apps/app/src/routes/desktop-chat-files-page.tsx:1159
 #: apps/app/src/routes/desktop-chat-history-page.tsx:681
+#: apps/app/src/routes/knowledge-base-page.tsx:56
 #: apps/app/src/runtime/file-runtime-i18n.ts:14
 #: apps/app/src/runtime/file-runtime-i18n.ts:20
 msgid "文件"
@@ -1699,6 +1700,7 @@ msgstr "删除中..."
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1385
 #: apps/app/src/features/search/mobile-search-workspace.tsx:418
 #: apps/app/src/routes/chat-list-page.tsx:2417
+#: apps/app/src/routes/knowledge-base-page.tsx:461
 #: apps/app/src/routes/mobile-add-friend-page.tsx:907
 #: apps/app/src/routes/mobile-note-editor-page.tsx:1524
 #: apps/app/src/routes/profile-feed-page.tsx:533
@@ -1821,7 +1823,7 @@ msgstr "我的"
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:353
 #: apps/app/src/routes/moments-page.tsx:760
 #: apps/app/src/routes/profile-moments-page.tsx:366
-#: apps/app/src/routes/profile-page.tsx:93
+#: apps/app/src/routes/profile-page.tsx:96
 msgid "我"
 msgstr "我"
 
@@ -2630,6 +2632,7 @@ msgstr "笔记查看器"
 #: apps/app/src/routes/games-page.tsx:629
 #: apps/app/src/routes/gift-cabinet-page.tsx:64
 #: apps/app/src/routes/group-member-picker-page.tsx:554
+#: apps/app/src/routes/knowledge-base-page.tsx:261
 #: apps/app/src/routes/mobile-add-friend-page.tsx:582
 #: apps/app/src/routes/mobile-favorites-page.tsx:352
 #: apps/app/src/routes/mobile-friend-moments-page.tsx:907
@@ -2881,9 +2884,9 @@ msgstr "保存图片到相册，发到 X / 小红书 / 微博 引发更多人来
 #: apps/app/src/routes/moments-page.tsx:2685
 #: apps/app/src/routes/profile-info-page.tsx:201
 #: apps/app/src/routes/profile-moments-page.tsx:928
-#: apps/app/src/routes/profile-page.tsx:116
-#: apps/app/src/routes/profile-page.tsx:123
-#: apps/app/src/routes/profile-page.tsx:135
+#: apps/app/src/routes/profile-page.tsx:119
+#: apps/app/src/routes/profile-page.tsx:126
+#: apps/app/src/routes/profile-page.tsx:138
 #: apps/app/src/routes/welcome-page.tsx:2411
 #: apps/app/src/routes/welcome-page.tsx:2429
 msgid "世界主人"
@@ -4358,6 +4361,7 @@ msgstr "全部类型"
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:1098
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:1294
 #: apps/app/src/routes/desktop-chat-history-page.tsx:712
+#: apps/app/src/routes/knowledge-base-page.tsx:65
 msgid "文本"
 msgstr "文本"
 
@@ -5766,14 +5770,14 @@ msgstr "切换到语音"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-#: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
-msgid "挂断"
-msgstr "挂断"
+msgid "挂断中..."
+msgstr "挂断中..."
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1012
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1046
-msgid "挂断中..."
-msgstr "挂断中..."
+#: apps/app/src/features/chat/mobile-group-call-screen.tsx:1242
+msgid "挂断"
+msgstr "挂断"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1024
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1267
@@ -5795,14 +5799,14 @@ msgstr "免提"
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1056
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1257
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:1899
-msgid "静音"
-msgstr "静音"
+msgid "取消静音"
+msgstr "取消静音"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1056
 #: apps/app/src/features/chat/mobile-group-call-screen.tsx:1257
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:1899
-msgid "取消静音"
-msgstr "取消静音"
+msgid "静音"
+msgstr "静音"
 
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:1125
 msgid "正在等待接听..."
@@ -7457,7 +7461,7 @@ msgstr "社交与内容"
 #: apps/app/src/routes/moments-page.tsx:1989
 #: apps/app/src/routes/moments-page.tsx:2758
 #: apps/app/src/routes/profile-moments-page.tsx:1139
-#: apps/app/src/routes/profile-page.tsx:174
+#: apps/app/src/routes/profile-page.tsx:183
 msgid "朋友圈"
 msgstr "朋友圈"
 
@@ -7700,13 +7704,14 @@ msgstr "关闭弹层"
 msgid "支持留空保存"
 msgstr "支持留空保存"
 
+#. placeholder {0}: doc.charCount
 #. placeholder {0}: draft.trim().length
 #. placeholder {0}: normalizedDraft.length
-#. placeholder {0}: trimmedDraft.length
 #: apps/app/src/features/contacts/desktop-contact-text-edit-dialog.tsx:217
 #: apps/app/src/features/desktop/chat/desktop-chat-text-edit-dialog.tsx:267
 #: apps/app/src/routes/group-announcement-page.tsx:576
 #: apps/app/src/routes/group-chat-edit-page.tsx:506
+#: apps/app/src/routes/knowledge-base-page.tsx:456
 msgid "{0} 字"
 msgstr "{0} 字"
 
@@ -10621,7 +10626,7 @@ msgid "正在读取资料..."
 msgstr "正在读取资料..."
 
 #: apps/app/src/features/desktop/chat/desktop-message-avatar-popover.tsx:611
-#: apps/app/src/routes/profile-page.tsx:99
+#: apps/app/src/routes/profile-page.tsx:102
 msgid "打开设置"
 msgstr "打开设置"
 
@@ -12348,18 +12353,18 @@ msgstr "打开"
 
 #: apps/app/src/features/desktop/mini-programs/desktop-mini-programs-workspace.tsx:740
 #: apps/app/src/features/desktop/mini-programs/desktop-mini-programs-workspace.tsx:831
+#: apps/app/src/features/mini-programs/mobile-mini-programs-workspace.tsx:713
+#: apps/app/src/i18n/static-dom-seed.ts:195
+msgid "移出常用"
+msgstr "移出常用"
+
+#: apps/app/src/features/desktop/mini-programs/desktop-mini-programs-workspace.tsx:740
+#: apps/app/src/features/desktop/mini-programs/desktop-mini-programs-workspace.tsx:831
 #: apps/app/src/features/mini-programs/mobile-mini-programs-workspace.tsx:280
 #: apps/app/src/features/mini-programs/mobile-mini-programs-workspace.tsx:713
 #: apps/app/src/i18n/static-dom-seed.ts:197
 msgid "加入常用"
 msgstr "加入常用"
-
-#: apps/app/src/features/desktop/mini-programs/desktop-mini-programs-workspace.tsx:740
-#: apps/app/src/features/desktop/mini-programs/desktop-mini-programs-workspace.tsx:831
-#: apps/app/src/features/mini-programs/mobile-mini-programs-workspace.tsx:713
-#: apps/app/src/i18n/static-dom-seed.ts:195
-msgid "移出常用"
-msgstr "移出常用"
 
 #. placeholder {0}: formatConversationTimestamp(lastOpenedAt)
 #: apps/app/src/features/desktop/mini-programs/desktop-mini-programs-workspace.tsx:802
@@ -13821,13 +13826,13 @@ msgid "忽略"
 msgstr "忽略"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
-msgid "给"
-msgstr "给"
-
-#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:141
 msgid "送礼"
 msgstr "送礼"
+
+#: apps/app/src/features/games/farm/components/gift-sheet.tsx:93
+msgid "给"
+msgstr "给"
 
 #: apps/app/src/features/games/farm/components/gift-sheet.tsx:116
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:17
@@ -15289,17 +15294,17 @@ msgid "守住基地，消灭 20 辆敌方坦克。"
 msgstr "守住基地，消灭 20 辆敌方坦克。"
 
 #: apps/app/src/features/games/game-center-data.ts:307
-#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
-msgid "双人"
-msgstr "双人"
-
-#: apps/app/src/features/games/game-center-data.ts:307
 msgid "像素"
 msgstr "像素"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "动作"
 msgstr "动作"
+
+#: apps/app/src/features/games/game-center-data.ts:307
+#: apps/app/src/features/games/tank-war/tank-war-game.tsx:269
+msgid "双人"
+msgstr "双人"
 
 #: apps/app/src/features/games/game-center-data.ts:307
 msgid "怀旧"
@@ -17783,18 +17788,18 @@ msgid "继续使用会优先展开上次浏览的区域和地点卡片。"
 msgstr "继续使用会优先展开上次浏览的区域和地点卡片。"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:183
+#: apps/app/src/features/mini-programs/mini-programs-data.ts:255
+#: apps/app/src/i18n/static-dom-seed.ts:202
+msgid "活动"
+msgstr "活动"
+
+#: apps/app/src/features/mini-programs/mini-programs-data.ts:183
 msgid "地图"
 msgstr "地图"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:183
 msgid "地点"
 msgstr "地点"
-
-#: apps/app/src/features/mini-programs/mini-programs-data.ts:183
-#: apps/app/src/features/mini-programs/mini-programs-data.ts:255
-#: apps/app/src/i18n/static-dom-seed.ts:202
-msgid "活动"
-msgstr "活动"
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:187
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:188
@@ -19356,7 +19361,7 @@ msgstr "意见反馈"
 
 #: apps/app/src/features/shell/desktop-nav-config.ts:117
 #: apps/app/src/routes/profile-feedback-page.tsx:246
-#: apps/app/src/routes/profile-page.tsx:212
+#: apps/app/src/routes/profile-page.tsx:233
 msgid "反馈"
 msgstr "反馈"
 
@@ -19364,7 +19369,7 @@ msgstr "反馈"
 #: apps/app/src/features/shell/desktop-nav-config.ts:124
 #: apps/app/src/features/shell/desktop-shell.tsx:649
 #: apps/app/src/routes/desktop-mobile-page.tsx:176
-#: apps/app/src/routes/profile-page.tsx:156
+#: apps/app/src/routes/profile-page.tsx:159
 #: apps/app/src/routes/profile-settings-desktop.tsx:941
 #: apps/app/src/routes/profile-settings-page.tsx:131
 msgid "设置"
@@ -19375,7 +19380,7 @@ msgstr "设置"
 #: apps/app/src/routes/discover-feed-page.tsx:2949
 #: apps/app/src/routes/discover-feed-page.tsx:2962
 #: apps/app/src/routes/discover-feed-page.tsx:2984
-#: apps/app/src/routes/profile-page.tsx:180
+#: apps/app/src/routes/profile-page.tsx:189
 msgid "广场"
 msgstr "广场"
 
@@ -19816,7 +19821,7 @@ msgid "订阅"
 msgstr "订阅"
 
 #: apps/app/src/features/subscription/subscription-panel.tsx:515
-#: apps/app/src/routes/profile-page.tsx:196
+#: apps/app/src/routes/profile-page.tsx:205
 #: apps/app/src/routes/profile-settings-desktop.tsx:109
 #: apps/app/src/routes/profile-settings-desktop.tsx:903
 #: apps/app/src/routes/profile-subscription-page.tsx:496
@@ -20050,6 +20055,7 @@ msgstr "世界角色日常"
 
 #: apps/app/src/features/world/world-page.tsx:145
 #: apps/app/src/routes/discover-page.tsx:253
+#: apps/app/src/routes/profile-page.tsx:211
 #: apps/app/src/routes/shop-page.tsx:165
 msgid "商城"
 msgstr "商城"
@@ -27456,6 +27462,7 @@ msgid "开始"
 msgstr "开始"
 
 #: apps/app/src/routes/gift-cabinet-page.tsx:56
+#: apps/app/src/routes/profile-page.tsx:217
 #: apps/app/src/routes/shop-page.tsx:185
 msgid "礼物柜"
 msgstr "礼物柜"
@@ -28002,24 +28009,175 @@ msgstr "正在返回群聊..."
 msgid "桌面端群语音通话入口已经收口到聊天，正在恢复当前群聊的语音通话动作。"
 msgstr "桌面端群语音通话入口已经收口到聊天，正在恢复当前群聊的语音通话动作。"
 
+#: apps/app/src/routes/knowledge-base-page.tsx:58
+msgid "网址"
+msgstr "网址"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:60
+msgid "世界记忆"
+msgstr "世界记忆"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:62
+msgid "角色资料"
+msgstr "角色资料"
+
+#. placeholder {0}: doc.title
+#: apps/app/src/routes/knowledge-base-page.tsx:126
+#: apps/app/src/routes/knowledge-base-page.tsx:144
+#: apps/app/src/routes/knowledge-base-page.tsx:162
+msgid "已添加《{0}》"
+msgstr "已添加《{0}》"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:130
+msgid "上传失败，请稍后重试。"
+msgstr "上传失败，请稍后重试。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:148
+msgid "保存失败，请稍后重试。"
+msgstr "保存失败，请稍后重试。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:166
+msgid "添加网址失败，请稍后重试。"
+msgstr "添加网址失败，请稍后重试。"
+
+#. placeholder {0}: result.ingested
+#. placeholder {1}: result.skipped
+#: apps/app/src/routes/knowledge-base-page.tsx:178
+msgid "已导入 {0} 条，跳过 {1} 条。"
+msgstr "已导入 {0} 条，跳过 {1} 条。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:183
+msgid "导入世界记忆失败，请稍后重试。"
+msgstr "导入世界记忆失败，请稍后重试。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:193
+msgid "已删除"
+msgstr "已删除"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:197
+#: apps/app/src/routes/moments-page.tsx:1102
+#: apps/app/src/routes/profile-feed-page.tsx:224
+#: apps/app/src/routes/profile-moments-page.tsx:718
+msgid "删除失败，请稍后重试。"
+msgstr "删除失败，请稍后重试。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:212
+msgid "文件超过 16MB 上限，请换一份更小的文件。"
+msgstr "文件超过 16MB 上限，请换一份更小的文件。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:253
+#: apps/app/src/routes/profile-page.tsx:168
+msgid "知识库"
+msgstr "知识库"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:270
+msgid "上传文件"
+msgstr "上传文件"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:271
+msgid "粘贴文本"
+msgstr "粘贴文本"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:272
+#: apps/app/src/routes/knowledge-base-page.tsx:400
+msgid "添加网址"
+msgstr "添加网址"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:303
+msgid "添加个人知识"
+msgstr "添加个人知识"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:306
+msgid "上传文件、粘贴文本或添加网址，作为你的专属上下文，帮助世界里的角色更懂你。"
+msgstr "上传文件、粘贴文本或添加网址，作为你的专属上下文，帮助世界里的角色更懂你。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:343
+msgid "正在上传…"
+msgstr "正在上传…"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:344
+msgid "点击选择文件"
+msgstr "点击选择文件"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:348
+msgid "支持 txt / md / pdf / docx / doc，单个文件最大 16MB。"
+msgstr "支持 txt / md / pdf / docx / doc，单个文件最大 16MB。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:359
+#: apps/app/src/routes/knowledge-base-page.tsx:392
+msgid "标题（可选）"
+msgstr "标题（可选）"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:365
+msgid "粘贴或输入你想让角色记住的内容…"
+msgstr "粘贴或输入你想让角色记住的内容…"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:374
+msgid "保存中…"
+msgstr "保存中…"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:374
+msgid "保存文本"
+msgstr "保存文本"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:385
+msgid "https://…"
+msgstr "https://…"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:400
+msgid "添加中…"
+msgstr "添加中…"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:419
+msgid "正在导入世界记忆…"
+msgstr "正在导入世界记忆…"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:420
+msgid "导入世界记忆"
+msgstr "导入世界记忆"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:423
+msgid "把世界里已发生的重要经历整理进你的知识库。"
+msgstr "把世界里已发生的重要经历整理进你的知识库。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:431
+msgid "我的知识库"
+msgstr "我的知识库"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:435
+msgid "正在加载知识库…"
+msgstr "正在加载知识库…"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:443
+msgid "还没有任何内容，先上传一个文件或粘贴一段文字吧。"
+msgstr "还没有任何内容，先上传一个文件或粘贴一段文字吧。"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:453
+msgid "已向量化"
+msgstr "已向量化"
+
+#: apps/app/src/routes/knowledge-base-page.tsx:453
+msgid "词法检索"
+msgstr "词法检索"
+
 #: apps/app/src/routes/legacy-friend-moments-redirect-page.tsx:56
 msgid "正在打开角色朋友圈..."
 msgstr "正在打开角色朋友圈..."
 
 #: apps/app/src/routes/legal-community-page.tsx:10
-#: apps/app/src/routes/profile-page.tsx:233
+#: apps/app/src/routes/profile-page.tsx:254
 #: apps/app/src/routes/profile-settings-desktop.tsx:130
 msgid "社区规范"
 msgstr "社区规范"
 
 #: apps/app/src/routes/legal-privacy-page.tsx:10
-#: apps/app/src/routes/profile-page.tsx:221
+#: apps/app/src/routes/profile-page.tsx:242
 #: apps/app/src/routes/profile-settings-desktop.tsx:128
 msgid "隐私政策"
 msgstr "隐私政策"
 
 #: apps/app/src/routes/legal-terms-page.tsx:10
-#: apps/app/src/routes/profile-page.tsx:227
+#: apps/app/src/routes/profile-page.tsx:248
 msgid "服务条款"
 msgstr "服务条款"
 
@@ -28553,12 +28711,6 @@ msgstr "重试删除"
 msgid "删除失败：{0}"
 msgstr "删除失败：{0}"
 
-#: apps/app/src/routes/moments-page.tsx:1102
-#: apps/app/src/routes/profile-feed-page.tsx:224
-#: apps/app/src/routes/profile-moments-page.tsx:718
-msgid "删除失败，请稍后重试。"
-msgstr "删除失败，请稍后重试。"
-
 #: apps/app/src/routes/moments-page.tsx:1117
 #: apps/app/src/routes/profile-moments-page.tsx:755
 msgid "已删除这条朋友圈。"
@@ -28792,7 +28944,7 @@ msgid "导入失败，请稍后再试"
 msgstr "导入失败，请稍后再试"
 
 #: apps/app/src/routes/profile-character-import-page.tsx:340
-#: apps/app/src/routes/profile-page.tsx:206
+#: apps/app/src/routes/profile-page.tsx:227
 msgid "导入角色"
 msgstr "导入角色"
 
@@ -29187,28 +29339,28 @@ msgstr "正在打开桌面我的朋友圈..."
 msgid "重新加载中..."
 msgstr "重新加载中..."
 
-#: apps/app/src/routes/profile-page.tsx:140
+#: apps/app/src/routes/profile-page.tsx:143
 msgid "查看与编辑个人资料"
 msgstr "查看与编辑个人资料"
 
-#: apps/app/src/routes/profile-page.tsx:190
+#: apps/app/src/routes/profile-page.tsx:199
 #: apps/app/src/routes/wallet-page.tsx:101
 msgid "钱包"
 msgstr "钱包"
 
-#: apps/app/src/routes/profile-page.tsx:243
-#: apps/app/src/routes/profile-page.tsx:256
+#: apps/app/src/routes/profile-page.tsx:264
+#: apps/app/src/routes/profile-page.tsx:277
 #: apps/app/src/routes/profile-settings-desktop.tsx:931
 #: apps/app/src/routes/profile-settings-desktop.tsx:1003
 msgid "退出登录"
 msgstr "退出登录"
 
-#: apps/app/src/routes/profile-page.tsx:252
+#: apps/app/src/routes/profile-page.tsx:273
 #: apps/app/src/routes/profile-settings-desktop.tsx:927
 msgid "确认退出登录？"
 msgstr "确认退出登录？"
 
-#: apps/app/src/routes/profile-page.tsx:254
+#: apps/app/src/routes/profile-page.tsx:275
 #: apps/app/src/routes/profile-settings-desktop.tsx:929
 msgid "退出后会回到世界入口，下次需要重新登录云账号。"
 msgstr "退出后会回到世界入口，下次需要重新登录云账号。"
