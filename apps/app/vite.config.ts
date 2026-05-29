@@ -219,6 +219,16 @@ export default defineConfig(({ command }) => ({
     // 接管历史装机，main.tsx 也不再 register，新用户根本不会装 SW。
   ],
   build: {
+    // 默认输出目录**故意不是** nginx 直 serve 的 `dist`。线上部署必须走
+    // scripts/deploy-app-web.sh —— 它构建到 dist-staging 后原子 mv 切换到 dist，
+    // 并把上一版的旧 hash chunk 叠回（保留窗口 3 天）防止已打开页签 404。
+    // 历史反复出事的根因：有人/会话直接 `pnpm --filter @yinjie/app build`，
+    // vite 默认 outDir=dist + emptyOutDir 就地清空重建，删掉旧 chunk 又无原子
+    // swap → 在线用户的旧 index.html 引用的 entry/lazy chunk 全 404，卡死或被迫
+    // reload。把裸 build 的默认落点改到不被 serve 的 dist-build，裸 build 再也碰
+    // 不到线上；deploy-app-web.sh（--outDir dist-staging）与移动壳构建
+    // （--outDir dist-mobile）都传显式 --outDir，CLI 覆盖此默认值，不受影响。
+    outDir: process.env.YINJIE_APP_OUT_DIR ?? "dist-build",
     emptyOutDir: shouldEmptyOutDir(command),
     rollupOptions: {
       output: {

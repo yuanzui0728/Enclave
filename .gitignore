@@ -23,7 +23,9 @@ build/
 out/
 apps/*/dist/
 apps/*/dist-mobile/
+apps/*/dist-build/
 apps/*/dist-staging/
+apps/*/.tsbuild-node/
 apps/*/dist-prev-walk/
 packages/*/dist/
 apps/desktop/src-tauri/target/

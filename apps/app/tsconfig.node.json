@@ -4,7 +4,13 @@
     "composite": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    // composite 必须 emit（不能 noEmit）。默认会把 vite.config.js / .d.ts 吐在
+    // vite.config.ts 旁边 —— 而 vite 配置文件解析里 .js 优先级高于 .ts，于是这个
+    // 转译产物会**反向遮蔽**真正的 .ts 源：改了 vite.config.ts 却不生效（deploy
+    // 脚本直接 `vite build` 不带前置 tsc，吃到的就是这个旧 .js）。把 tsc -b 的产物
+    // 重定向到 .tsbuild-node，永不和源同级，杜绝遮蔽。
+    "outDir": "./.tsbuild-node"
   },
   "include": [
     "vite.config.ts"
