@@ -1023,7 +1023,7 @@ export function ConversationThreadPanel({
                   role="alert"
                   aria-live="assertive"
                   tone="danger"
-                  className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
+                  className="rounded-[var(--radius-md)] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-3 py-2 text-[length:var(--text-eyebrow)] leading-[1.45] shadow-none"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="min-w-0 flex-1">{socketError}</span>
@@ -1254,7 +1254,7 @@ function MobileThreadStatusCard({
       className={cn(
         "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >

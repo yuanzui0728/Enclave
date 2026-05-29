@@ -566,7 +566,7 @@ function MobileGroupMemberPickerPage({
               selectedIds.length && !submitMutation.isPending
                 ? mode === "add"
                   ? "bg-[color:var(--brand-primary)] text-[color:var(--text-on-brand)] active:opacity-90"
-                  : "bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] active:opacity-90"
+                  : "bg-[color:var(--state-danger-solid)] text-[color:var(--text-on-brand)] active:opacity-90"
                 : "text-[color:var(--text-dim)]",
             )}
           >
@@ -1004,7 +1004,7 @@ function MobileGroupMemberPickerStatusCard({
       className={cn(
         "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >

@@ -1318,13 +1318,16 @@ function MobileChatDetailsPage({ conversationId }: { conversationId: string }) {
                 disabled={busy}
                 onToggle={handleToggleMute}
               />
-              <ChatSettingRow
-                label={t(msg`置顶聊天`)}
-                variant="wechat"
-                checked={isPinned}
-                disabled={busy}
-                onToggle={handleTogglePin}
-              />
+              {isSelfMirror ? null : (
+                // self 镜像恒置顶不可取消——隐掉「置顶聊天」开关。
+                <ChatSettingRow
+                  label={t(msg`置顶聊天`)}
+                  variant="wechat"
+                  checked={isPinned}
+                  disabled={busy}
+                  onToggle={handleTogglePin}
+                />
+              )}
               {isSelfMirror ? null : (
                 // self 镜像：自我对话没有"对方发来新消息"事件，3 小时强提醒
                 // 不会触发任何 push —— toggle 完全是 no-op，隐掉。
@@ -1666,7 +1669,7 @@ function MobileChatDetailsStatusCard({
       className={cn(
         "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >

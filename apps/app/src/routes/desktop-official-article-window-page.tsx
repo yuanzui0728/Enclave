@@ -324,7 +324,7 @@ export function DesktopOfficialArticleWindowPage() {
 
   return (
     <div className="flex h-full min-h-0 flex-col bg-[color:var(--surface-card)]">
-      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.92)] px-4 py-2.5 backdrop-blur-xl">
+      <header className="flex shrink-0 items-center justify-between gap-4 border-b border-[color:var(--border-faint)] bg-[color:var(--surface-frosted)] px-4 py-2.5 backdrop-blur-xl">
         <div className="flex min-w-0 items-center gap-3">
           <StandaloneActionButton
             label={t(msg`回到来源`)}
@@ -439,7 +439,7 @@ function DesktopArticleWindowStatusPane({
         className={cn(
           "w-full rounded-[22px] border px-8 py-10 text-center shadow-none",
           tone === "danger"
-            ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+            ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
         )}
       >

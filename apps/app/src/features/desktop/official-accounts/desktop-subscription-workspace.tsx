@@ -450,7 +450,7 @@ function ReaderStatusPane({
         className={cn(
           "w-full rounded-[22px] border px-8 py-10 text-center shadow-none",
           tone === "danger"
-            ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+            ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-console)]",
         )}
       >
@@ -514,7 +514,7 @@ function SidebarStatusPane({
       className={cn(
         "rounded-[18px] border px-4 py-5 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]",
         className,
       )}

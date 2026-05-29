@@ -771,7 +771,7 @@ function ServiceDesktopStatusPane({
         className={cn(
           "w-full rounded-[var(--radius-xl)] border px-8 py-10 text-center shadow-none",
           tone === "danger"
-            ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+            ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]",
         )}
       >
@@ -836,7 +836,7 @@ function ServiceThreadStatusPane({
         className={cn(
           "rounded-[var(--radius-xl)] border px-6 py-8 text-center shadow-none",
           tone === "danger"
-            ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+            ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
             : "border-[color:var(--border-faint)] bg-[color:var(--surface-secondary)]",
         )}
       >
@@ -904,7 +904,7 @@ function MobileOfficialStatusCard({
       className={cn(
         "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >

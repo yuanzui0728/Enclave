@@ -1903,7 +1903,7 @@ function MobileChatListStatusCard({
       className={cn(
         "rounded-[var(--radius-lg)] border px-4 py-5 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >
@@ -2395,7 +2395,7 @@ function ConversationListItemLinkImpl({
           <button
             type="button"
             onClick={onToggleReadState}
-            className="flex w-[68px] items-center justify-center bg-[color:var(--state-info-bg)] text-[color:var(--text-on-brand)] active:brightness-[0.96]"
+            className="flex w-[68px] items-center justify-center bg-[color:var(--state-info-solid)] text-[color:var(--text-on-brand)] active:brightness-[0.96]"
           >
             <div className="flex flex-col items-center gap-0.5 text-[length:var(--text-eyebrow)]">
               {conversation.unreadCount > 0 ? (
@@ -2410,7 +2410,7 @@ function ConversationListItemLinkImpl({
         <button
           type="button"
           onClick={onHide}
-          className="flex w-[68px] items-center justify-center bg-[color:var(--state-danger-bg)] text-[color:var(--text-on-brand)] active:brightness-[0.96]"
+          className="flex w-[68px] items-center justify-center bg-[color:var(--state-danger-solid)] text-[color:var(--text-on-brand)] active:brightness-[0.96]"
         >
           <div className="flex flex-col items-center gap-0.5 text-[length:var(--text-eyebrow)]">
             <Trash2 size={13} aria-hidden="true" />

@@ -332,7 +332,7 @@ function MobileSubscriptionInboxPage() {
                   </div>
                 </div>
                 {group.unreadCount > 0 ? (
-                  <span className="rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-[10px] leading-none text-[color:var(--text-on-brand)]">
+                  <span className="rounded-full bg-[color:var(--state-danger-solid)] px-1.5 py-0.5 text-[10px] leading-none text-[color:var(--text-on-brand)]">
                     {group.unreadCount}
                   </span>
                 ) : null}
@@ -449,7 +449,7 @@ function MobileSubscriptionInboxStatusCard({
       className={cn(
         "rounded-[var(--radius-md)] border px-3.5 py-4 text-center shadow-none",
         tone === "danger"
-          ? "border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))]"
+          ? "border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)]"
           : "border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)]",
       )}
     >

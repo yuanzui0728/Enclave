@@ -3164,7 +3164,7 @@ function MobileFeedStatusCard({
     <section
       className={
         tone === "danger"
-          ? "rounded-[var(--radius-lg)] border border-[color:var(--border-danger)] bg-[linear-gradient(180deg,rgba(255,245,245,0.96),rgba(254,242,242,0.94))] px-4 py-5 text-center shadow-none"
+          ? "rounded-[var(--radius-lg)] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-4 py-5 text-center shadow-none"
           : "rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--bg-canvas-elevated)] px-4 py-5 text-center shadow-none"
       }
     >
