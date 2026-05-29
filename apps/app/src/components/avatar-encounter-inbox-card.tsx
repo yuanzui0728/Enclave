@@ -16,7 +16,9 @@ type StatusPill = {
 
 const PILL_MATCHED: StatusPill = {
   label: msg`已匹配`,
-  className: "bg-[color:var(--state-danger-bg)] text-[color:var(--state-danger-text)]",
+  // 「已匹配」是正向结果，用 success 绿而非 danger 红（之前误用红色 = 像报错）。
+  className:
+    "bg-[color:var(--state-success-bg)] text-[color:var(--state-success-text)]",
 };
 const PILL_MUTED = (label: MessageDescriptor): StatusPill => ({
   label,
@@ -34,6 +36,19 @@ function resolveStatusPill(
   if (status === "matched") {
     return PILL_MATCHED;
   }
+  // awaiting_initiator：发起方视角=该自己看/决策→待查看；被匹配方视角（多轮回弹、轮到发起方）
+  // =等对方→等待对方。复用已抽取的串，避免新增 msg`` 未 extract 渲染成哈希 id。
+  if (status === "awaiting_initiator") {
+    return role === "initiator"
+      ? {
+          label: msg`待查看`,
+          className: "bg-[color:var(--state-info-bg)] text-[color:var(--state-info-text)]",
+        }
+      : {
+          label: msg`等待对方`,
+          className: "bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]",
+        };
+  }
   if (status === "awaiting_recipient") {
     return role === "recipient"
       ? {
@@ -47,6 +62,10 @@ function resolveStatusPill(
   }
   if (status === "closed_recipient_skipped") {
     return role === "recipient" ? PILL_MUTED(msg`已略过`) : PILL_MUTED(msg`对方略过`);
+  }
+  // closed_initiator_skipped 只会出现在被匹配方收件箱（多轮里发起方中途略过）→ 对方略过。
+  if (status === "closed_initiator_skipped") {
+    return PILL_MUTED(msg`对方略过`);
   }
   return PILL_MUTED(msg`已结束`);
 }

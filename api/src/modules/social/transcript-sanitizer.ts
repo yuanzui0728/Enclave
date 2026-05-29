@@ -28,6 +28,29 @@ export function cleanTranscriptText(raw: string): string {
   return stripNarration(sanitizeAiText(raw || ''));
 }
 
+/** 文本是否疑似含真实联系方式（summary 也要扫，不只 turns）。 */
+export function hasContactLeak(text: string): boolean {
+  return CONTACT_LEAK_PATTERNS.some((re) => re.test(text));
+}
+
+// 保证「一来一回」：把模型偶发的连续同一发言人合并成一条气泡（保留全部文本，不丢内容）。
+// 调用方再校验合并后是否两位都出场——只剩单方自说自话的退化脚本应判失败。
+export function enforceTurnAlternation(
+  turns: Array<{ speaker: 'initiator' | 'recipient'; text: string }>,
+): Array<{ speaker: 'initiator' | 'recipient'; text: string }> {
+  const merged: Array<{ speaker: 'initiator' | 'recipient'; text: string }> =
+    [];
+  for (const turn of turns) {
+    const last = merged[merged.length - 1];
+    if (last && last.speaker === turn.speaker) {
+      last.text = `${last.text} ${turn.text}`.trim();
+    } else {
+      merged.push({ ...turn });
+    }
+  }
+  return merged;
+}
+
 // 清洗 turns：剥 <think>/旁白、丢空行、丢任何疑似泄漏联系方式的整轮。
 export function sanitizeTranscriptTurns(
   turns: RawTranscriptTurn[],

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
 import { Copy, Inbox, LoaderCircle, Phone, UsersRound } from "lucide-react";
@@ -273,6 +273,7 @@ function DiscoverTab({
   const [contactCopied, setContactCopied] = useState(false);
   // 对话逐条揭示完成前不放出决策栏，避免还没读到内容就误点「略过/想要」。
   const [revealDone, setRevealDone] = useState(false);
+  const queryClient = useQueryClient();
 
   const decideMutation = useMutation({
     mutationFn: (next: AvatarEncounterChoice) => {
@@ -290,6 +291,14 @@ function DiscoverTab({
       if (result.status === "matched" && result.contact) {
         setRevealedContact(result.contact);
       }
+      // 这次决策改了该相遇状态：让「我的相遇」列表 + 额度概览失效，切到那个 tab 时拉到最新，
+      // 否则列表服旧缓存（缺这条/状态 pill 滞后）。
+      void queryClient.invalidateQueries({
+        queryKey: ["avatar-encounter-inbox"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["avatar-encounter-overview"],
+      });
     },
   });
 
@@ -320,7 +329,11 @@ function DiscoverTab({
     startMutation.isError &&
     isApiRequestError(startMutation.error) &&
     startMutation.error.errorCode === "AVATAR_ENCOUNTER_DAILY_LIMIT";
-  const creditsExhausted = remainingCredits !== null && remainingCredits <= 0;
+  // 优先用刚发起返回的最新剩余次数（session），其次才是 mount 时的概览快照——否则发起后
+  // 概览异步刷新落地前，「撞墙」判定会用旧值，导致 0 次时仍可点击发起再被 429 弹回。
+  const effectiveRemainingCredits = session?.remainingCredits ?? remainingCredits;
+  const creditsExhausted =
+    effectiveRemainingCredits !== null && effectiveRemainingCredits <= 0;
   const startDisabled =
     startMutation.isPending || dailyLimitHit || creditsExhausted;
 
@@ -620,6 +633,7 @@ function ReceivedDetail({
   onBack,
 }: ReceivedDetailProps) {
   const t = useRuntimeTranslator();
+  const queryClient = useQueryClient();
   const [revealedContact, setRevealedContact] =
     useState<AvatarEncounterContact | null>(null);
   const [contactCopied, setContactCopied] = useState(false);
@@ -654,6 +668,13 @@ function ReceivedDetail({
       }
       // 续聊推进会改 transcript / 轮次 / 轮到谁——重拉 view 拿最新（DecisionResult 不带脚本）。
       void viewQuery.refetch();
+      // 列表 pill / 额度也变了，失效掉避免返回列表时滞后。
+      void queryClient.invalidateQueries({
+        queryKey: ["avatar-encounter-inbox"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["avatar-encounter-overview"],
+      });
     },
   });
 

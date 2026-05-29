@@ -39,12 +39,13 @@ function TypingDots() {
   );
 }
 
-// 分身相遇脚本：一段匿名对方画像头部 + 多轮气泡。turns[].speaker 已经是
+// 分身相遇脚本：一段对方画像头部 + 多轮气泡。turns[].speaker 已经是
 // **相对查看者**视角（"mine" = 自己分身，"theirs" = 对方分身），后端按请求者
 // 身份翻译过，前端不再二次映射。
-// 隐私红线：matched 之前对方始终匿名——这里只渲染 partner.nickname（昵称伪名）
-// + personaBlurb + matchReason，绝不渲染真名/头像/联系方式（contact 由调用方
-// 在 status==='matched' 时单独披露，不进这个组件）。
+// 注：partner.nickname 现为对方的真实世界昵称（owner.username，已放弃配对前匿名，
+// 后端 freezeSnapshot 冻结真实昵称、缺失才回退伪名池）。这里只渲染 nickname +
+// personaBlurb + matchReason；联系方式仍只在 status==='matched' 时由调用方单独披露，
+// 不进这个组件。
 export function AvatarEncounterTranscript({
   summary,
   turns,
@@ -114,7 +115,7 @@ export function AvatarEncounterTranscript({
 
   return (
     <section className="space-y-3">
-      {/* 匿名对方画像卡：昵称 + 一句画像简介 + 为什么匹配上你。 */}
+      {/* 对方画像卡：昵称（真实世界昵称）+ 一句画像简介 + 为什么匹配上你。 */}
       <div className="rounded-[var(--radius-md)] border border-[color:var(--brand-primary)]/16 bg-[color:var(--surface-card)] px-4 py-3.5">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[14px] bg-[color:var(--brand-soft)] text-[color:var(--brand-primary)]">
