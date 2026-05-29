@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { msg } from "@lingui/macro";
@@ -20,11 +20,18 @@ import {
   Plane,
   Theater,
   Trees,
+  UserPlus,
   Utensils,
 } from "lucide-react";
-import { isApiRequestError, triggerSceneFriendRequest } from "@yinjie/contracts";
+import {
+  acceptFriendRequest,
+  declineFriendRequest,
+  isApiRequestError,
+  triggerSceneFriendRequest,
+} from "@yinjie/contracts";
 import { useRuntimeTranslator } from "@yinjie/i18n";
 import {
+  Button,
   InlineNotice,
   cn,
 } from "@yinjie/ui";
@@ -33,7 +40,7 @@ type MessageDescriptor = Parameters<ReturnType<typeof useRuntimeTranslator>>[0];
 import { MobileDiscoverToolShell } from "../components/mobile-discover-tool-shell";
 import { RouteRedirectState } from "../components/route-redirect-state";
 import { translateAppErrorCode } from "../lib/error-translate";
-import { buildMobileFriendRequestsRouteHash } from "../features/contacts/mobile-friend-requests-route-state";
+import { invalidateFriendDisplayQueries } from "../features/contacts/invalidate-friend-display";
 import { parseMobileDiscoverToolRouteState } from "../features/discover/mobile-discover-tool-route-state";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
 import { MOBILE_EXPLORE_HOME_PATH } from "../lib/explore-home";
@@ -175,7 +182,17 @@ function MobileDiscoverScenePage() {
   const baseUrl = runtimeConfig.apiBaseUrl;
   const [message, setMessage] = useState("");
   const [tone, setTone] = useState<"info" | "success" | "warning">("info");
-  const [lastRequestId, setLastRequestId] = useState<string | null>(null);
+  // 匹配到人后的「待确认相遇」：此刻后端已建了一条 pending 好友申请，但是否
+  // 加为好友交给用户在卡片上点「加为好友」/「跳过」就地决定（对齐摇一摇），
+  // 不再跳去好友申请页。null = 当前没有待确认相遇。
+  const [pendingEncounter, setPendingEncounter] = useState<{
+    requestId: string;
+    characterName: string;
+    characterAvatar: string;
+    greeting: string;
+    matchSource: "scene" | "fallback";
+    sceneLabel: string;
+  } | null>(null);
   const [cooldownUntil, setCooldownUntil] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [encounterCount, setEncounterCount] = useState(
@@ -215,6 +232,44 @@ function MobileDiscoverScenePage() {
     };
   }, [cooldownUntil]);
 
+  // 用户点「加为好友」= 就地通过这条 pending 好友申请（与好友申请页「通过」
+  // 同口径：激活 friendship + 把开场白落进会话 + 刷新好友/会话/朋友圈缓存）。
+  const acceptMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      const result = await acceptFriendRequest(requestId, baseUrl);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["app-friend-requests", baseUrl],
+        }),
+        invalidateFriendDisplayQueries(queryClient, baseUrl),
+      ]);
+      return result;
+    },
+    onSuccess: () => {
+      const characterName =
+        pendingEncounter?.characterName?.trim() || t(msg`世界角色`);
+      setPendingEncounter(null);
+      setTone("success");
+      setMessage(t(msg`${characterName} 已加入通讯录`));
+    },
+  });
+
+  // 用户点「跳过」= 就地忽略这条申请（置 declined，不残留在好友申请收件箱）。
+  const declineMutation = useMutation({
+    mutationFn: async (requestId: string) => {
+      await declineFriendRequest(requestId, baseUrl);
+      await queryClient.invalidateQueries({
+        queryKey: ["app-friend-requests", baseUrl],
+      });
+    },
+    onMutate: () => {
+      // 乐观清掉卡片：跳过是「不要这个人」，无论后端成功与否都不该再看到它。
+      setPendingEncounter(null);
+      setTone("info");
+      setMessage(t(msg`已跳过这次相遇。`));
+    },
+  });
+
   const sceneMutation = useMutation({
     mutationFn: async (scene: string) => {
       // 走查 R2-Round2：把 mutate 触发那一刻的 baseUrl 一起带回 onSuccess，
@@ -237,7 +292,9 @@ function MobileDiscoverScenePage() {
     // Date.now()+2.5s，让新 world 第一次就背着一条幽灵冷却 ban。
     onMutate: () => {
       setMessage(""); // i18n-ignore-line: clearing state
-      setLastRequestId(null);
+      setPendingEncounter(null);
+      acceptMutation.reset();
+      declineMutation.reset();
       return { capturedBaseUrl: baseUrl };
     },
     onError: (error, _scene, context) => {
@@ -273,29 +330,25 @@ function MobileDiscoverScenePage() {
       if (!request || matchSource === "none") {
         setTone("warning");
         setMessage(t(msg`${sceneLabel}里和别处都暂时没有新的相遇了。`));
-        setLastRequestId(null);
+        setPendingEncounter(null);
         return;
       }
 
       const greeting = request.greeting ?? t(msg`对你产生了兴趣。`);
 
-      if (matchSource === "fallback") {
-        setTone("info");
-        setMessage(
-          t(
-            msg`${request.characterName} 不在${sceneLabel}，但顺路碰到了你：${greeting}`,
-          ),
-        );
-      } else {
-        setTone("success");
-        setMessage(
-          t(
-            msg`${request.characterName} 在${sceneLabel}里注意到了你：${greeting}`,
-          ),
-        );
-      }
+      // 匹配到人：清掉提示文案，改为在当前页展示待确认卡片，等用户点
+      // 「加为好友」/「跳过」就地处理（对齐摇一摇），不再跳好友申请页。
+      setMessage(""); // i18n-ignore-line: clearing state
+      setTone(matchSource === "fallback" ? "info" : "success");
+      setPendingEncounter({
+        requestId: request.id,
+        characterName: request.characterName,
+        characterAvatar: request.characterAvatar ?? "",
+        greeting,
+        matchSource,
+        sceneLabel,
+      });
 
-      setLastRequestId(request.id);
       const nextCount = saveEncounter(baseUrl, {
         scene,
         characterName: request.characterName,
@@ -309,7 +362,9 @@ function MobileDiscoverScenePage() {
 
   useEffect(() => {
     setMessage(""); // i18n-ignore-line: clearing state
-    setLastRequestId(null);
+    setPendingEncounter(null);
+    acceptMutation.reset();
+    declineMutation.reset();
     setEncounterCount(loadEncounters(baseUrl).length);
     // 走查 R2：切 world 时也要把冷却清掉。前 world 设置的 cooldownUntil 跟新
     // world 没关系（服务端按 owner 维度独立限频），残留会让人无法立即试新 world。
@@ -323,16 +378,6 @@ function MobileDiscoverScenePage() {
   // 都 reset。仅 baseUrl 真正变更时执行清理。
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseUrl]);
-
-  const handleGoToRequests = useCallback(() => {
-    const requestHash = buildMobileFriendRequestsRouteHash({
-      returnPath: "/discover/scene",
-    });
-    void navigate({
-      to: "/friend-requests",
-      ...(requestHash ? { hash: requestHash } : {}),
-    });
-  }, [navigate]);
 
   function navigateToRouteStateReturn() {
     if (
@@ -394,20 +439,7 @@ function MobileDiscoverScenePage() {
             role="status"
             aria-live="polite"
           >
-            {lastRequestId ? (
-              <div className="flex items-center justify-between gap-2">
-                <span className="min-w-0 flex-1">{message}</span>
-                <button
-                  type="button"
-                  onClick={handleGoToRequests}
-                  className="shrink-0 rounded-full border border-[color:var(--brand-primary)]/24 bg-[color:var(--surface-card)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--brand-primary)]"
-                >
-                  {t(msg`去通过`)}
-                </button>
-              </div>
-            ) : (
-              message
-            )}
+            {message}
           </InlineNotice>
         ) : null
       }
@@ -468,6 +500,77 @@ function MobileDiscoverScenePage() {
         >
           {t(msg`稍等 ${cooldownRemainSec} 秒再出发吧。`)}
         </div>
+      ) : null}
+
+      {pendingEncounter ? (
+        // 待确认相遇卡片：匹配到人后在当前页展示对方信息，用户点「加为好友」
+        // 才就地通过这条 pending 申请（入通讯录），点「跳过」就地忽略——对齐
+        // [[discover-encounter-page]] 摇一摇的同意闸，不再跳去好友申请页。
+        // role=status + aria-live=polite，让 SR 在 AI 跑完一刻读出结果。
+        <section
+          role="status"
+          aria-live="polite"
+          className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-3.5 shadow-sm"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)]/12 text-[length:var(--text-section)]">
+              {pendingEncounter.characterAvatar.trim() || "🙂"}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[length:var(--text-body)] font-semibold text-[color:var(--text-primary)]">
+                {pendingEncounter.characterName.trim() || t(msg`世界角色`)}
+              </div>
+              <div className="mt-0.5 truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-muted)]">
+                {pendingEncounter.matchSource === "fallback"
+                  ? t(msg`不在${pendingEncounter.sceneLabel}，但顺路碰到了你`)
+                  : t(msg`在${pendingEncounter.sceneLabel}里注意到了你`)}
+              </div>
+            </div>
+          </div>
+
+          {pendingEncounter.greeting.trim() ? (
+            <div className="mt-2.5 whitespace-pre-line break-words rounded-[var(--radius-sm)] bg-[color:var(--surface-card-hover)] px-3 py-2 text-[length:var(--text-caption)] leading-5 text-[color:var(--text-secondary)]">
+              {pendingEncounter.greeting}
+            </div>
+          ) : null}
+
+          <div className="mt-3 flex items-center justify-end gap-2">
+            <Button
+              type="button"
+              disabled={acceptMutation.isPending || declineMutation.isPending}
+              onClick={() => declineMutation.mutate(pendingEncounter.requestId)}
+              variant="secondary"
+              size="sm"
+              className="h-9 min-w-[4rem] rounded-[var(--radius-sm)] border-[color:var(--border-faint)] bg-[color:var(--surface-card)] px-3 text-[length:var(--text-caption)] shadow-none hover:bg-[color:var(--surface-card-hover)]"
+            >
+              {t(msg`跳过`)}
+            </Button>
+            <Button
+              type="button"
+              disabled={acceptMutation.isPending || declineMutation.isPending}
+              aria-busy={acceptMutation.isPending || undefined}
+              onClick={() => acceptMutation.mutate(pendingEncounter.requestId)}
+              variant="primary"
+              size="sm"
+              className="h-9 min-w-[5.5rem] rounded-full bg-[color:var(--brand-primary)] px-3 text-[length:var(--text-caption)] text-[color:var(--text-on-brand)] shadow-none hover:bg-[color:var(--brand-primary)] [background-image:none]"
+            >
+              {acceptMutation.isPending ? (
+                <LoaderCircle size={14} className="animate-spin" />
+              ) : (
+                <UserPlus size={14} />
+              )}
+              {acceptMutation.isPending ? t(msg`添加中...`) : t(msg`加为好友`)}
+            </Button>
+          </div>
+
+          {acceptMutation.isError && acceptMutation.error instanceof Error ? (
+            <div className="mt-2 rounded-[var(--radius-sm)] border border-[color:var(--border-danger)] bg-[color:var(--state-danger-bg)] px-2.5 py-1.5 text-[length:var(--text-eyebrow)] leading-4 text-[color:var(--state-danger-text)]">
+              {(isApiRequestError(acceptMutation.error)
+                ? translateAppErrorCode(acceptMutation.error)
+                : null) ?? acceptMutation.error.message}
+            </div>
+          ) : null}
+        </section>
       ) : null}
 
       <section className="overflow-hidden rounded-[var(--radius-md)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]">
