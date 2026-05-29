@@ -4,6 +4,7 @@ import type {
   CelebrityCharacterPresetGroupKey,
 } from './celebrity-character-presets';
 import type { CharacterEntity } from './character.entity';
+import { maybeGetCharacterAvatarBySourceKey } from './character-avatar-assets';
 
 export type IntelligenceCouncilTier = 'core' | 'extended' | 'shadow';
 
@@ -1074,7 +1075,9 @@ function buildCouncilCharacter(
   return {
     id: definition.id,
     name: definition.name,
-    avatar: definition.avatar,
+    avatar:
+      maybeGetCharacterAvatarBySourceKey(definition.presetKey) ??
+      definition.avatar,
     relationship: definition.relationship,
     relationshipType: definition.relationshipType,
     personality:
@@ -1229,7 +1232,9 @@ function buildCouncilPreset(
     groupKey: definition.groupKey,
     id: definition.id,
     name: definition.name,
-    avatar: definition.avatar,
+    avatar:
+      maybeGetCharacterAvatarBySourceKey(definition.presetKey) ??
+      definition.avatar,
     relationship: definition.relationship,
     description: definition.description,
     expertDomains: definition.expertDomains,

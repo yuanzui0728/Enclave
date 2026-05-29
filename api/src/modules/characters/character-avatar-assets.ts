@@ -99,6 +99,38 @@ const CHARACTER_AVATAR_FILE_BY_SOURCE_KEY = {
   knowledge_base_engineer: 'knowledge-base-engineer.svg',
   delivery_ops_manager: 'delivery-ops-manager.svg',
   automation_rpa_engineer: 'automation-rpa-engineer.svg',
+  // 2026-05-29 新增：24 个个人智囊团（intelligence-council）席位头像，
+  // 从 emoji 升级为统一风格 SVG；source key = preset key。
+  council_decision_architect_shen_ju: 'council-decision-architect-shen-ju.svg',
+  council_red_team_bai_ta: 'council-red-team-bai-ta.svg',
+  council_research_curator_luo_yin: 'council-research-curator-luo-yin.svg',
+  council_campaign_chief_he_ran: 'council-campaign-chief-he-ran.svg',
+  council_user_researcher_ye_qing: 'council-user-researcher-ye-qing.svg',
+  council_writing_editor_lu_yan: 'council-writing-editor-lu-yan.svg',
+  council_negotiation_agent_gu_tang: 'council-negotiation-agent-gu-tang.svg',
+  council_safety_gatekeeper_deng_ta: 'council-safety-gatekeeper-deng-ta.svg',
+  council_growth_experimenter_cheng_jing:
+    'council-growth-experimenter-cheng-jing.svg',
+  council_brand_director_wu_ye: 'council-brand-director-wu-ye.svg',
+  council_engineering_commander_tie_niao:
+    'council-engineering-commander-tie-niao.svg',
+  council_ai_architect_lin_qi: 'council-ai-architect-lin-qi.svg',
+  council_finance_quartermaster_su_heng:
+    'council-finance-quartermaster-su-heng.svg',
+  council_recovery_officer_qiao_lan: 'council-recovery-officer-qiao-lan.svg',
+  council_space_organizer_mo_he: 'council-space-organizer-mo-he.svg',
+  council_social_operator_ling_xiaoman:
+    'council-social-operator-ling-xiaoman.svg',
+  council_conflict_mediator_wen_yue: 'council-conflict-mediator-wen-yue.svg',
+  council_relationship_observer_lu_zhi:
+    'council-relationship-observer-lu-zhi.svg',
+  council_aesthetic_director_huai_xu: 'council-aesthetic-director-huai-xu.svg',
+  council_story_worldwriter_tang_wei: 'council-story-worldwriter-tang-wei.svg',
+  council_content_editor_bai_zhou: 'council-content-editor-bai-zhou.svg',
+  council_trend_radar_guan_lan: 'council-trend-radar-guan-lan.svg',
+  council_learning_designer_shen_yu: 'council-learning-designer-shen-yu.svg',
+  council_long_cycle_strategist_xing_pan:
+    'council-long-cycle-strategist-xing-pan.svg',
 } as const;
 
 export type CharacterAvatarSourceKey =
