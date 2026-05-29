@@ -703,30 +703,11 @@ function CyberAvatarStatusHero({
   );
 }
 
-function SectionHeader({
-  title,
-  actionLabel,
-  to,
-}: {
-  title: string;
-  actionLabel?: string;
-  to?: "/tabs/chat" | "/tabs/contacts";
-}) {
+function SectionHeader({ title }: { title: string }) {
   return (
-    <div className="flex items-center justify-between">
-      <h2 className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
-        {title}
-      </h2>
-      {actionLabel && to ? (
-        <Link
-          to={to}
-          className="flex items-center gap-0.5 text-[length:var(--text-caption)] text-[color:var(--text-muted)]"
-        >
-          {actionLabel}
-          <ChevronRight size={14} />
-        </Link>
-      ) : null}
-    </div>
+    <h2 className="text-[length:var(--text-base)] font-semibold text-[color:var(--text-primary)]">
+      {title}
+    </h2>
   );
 }
 
@@ -912,7 +893,9 @@ function CondensedEntryCell({
       className="flex flex-col items-center gap-1.5 rounded-[var(--radius-md)] py-1 text-center transition-colors duration-[var(--motion-fast)] ease-[var(--ease-standard)] active:bg-[color:var(--surface-card-hover)]"
     >
       <MonoIconTile icon={entry.icon} size="md" tone="neutral" />
-      <span className="w-full truncate text-[length:var(--text-eyebrow)] text-[color:var(--text-secondary)]">
+      {/* 4 列窄格：标签允许折到两行（en/ja/ko 长词如「会员中心/Membership Center」单行会被截断），
+          min-h 预留两行高度让各格图标对齐。 */}
+      <span className="line-clamp-2 min-h-[2.5em] w-full text-center text-[length:var(--text-eyebrow)] leading-tight text-[color:var(--text-secondary)]">
         {t(entry.label)}
       </span>
     </Link>
