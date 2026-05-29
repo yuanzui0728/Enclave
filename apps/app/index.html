@@ -21,14 +21,16 @@
     <link rel="preconnect" href="/" crossorigin />
     <link rel="dns-prefetch" href="/" />
     <!--
-      MiSans 品牌字体清单：unicode-range 切块（每块 ~10-20KB）+ font-display:swap，
-      浏览器只下载当前页面用到的中文字形块；基础 ASCII/数字不在块内，按 body 的
-      font-family 栈优雅回落系统字体（保护首屏带宽，无 tofu）。生成脚本见
+      MiSans 品牌字体清单：unicode-range 切块（中文块每块 ~5KB）+ font-display:swap，
+      浏览器只下载当前页面用到的字形块；中文/数字/拉丁均走 MiSans（.latin 小块
+      ~12KB 覆盖 U+20-7F 的数字/字母/标点，仅用到才拉），只有 MiSans 未覆盖的字形
+      才回落 body 的 font-family 系统字体栈（无 tofu）。生成脚本见
       apps/app/scripts/build-misans-subset.mjs。
       刻意用 preload→onload 异步形态（与 vite asyncCssPlugin 同款），让这份较大的
       @font-face 清单**不并进首屏关键 CSS、也不阻塞渲染**：boot 屏（上方 inline CSS）
-      与 App UI 先按系统字体画出来，清单到位后 swap 切 MiSans，零白屏。
-      boot 屏自身（index.html 内联）保持系统字体即时首帧，不等任何字体。
+      与 App UI 先按系统字体画出来，清单到位后 swap 切 MiSans，零白屏（FCP 不受影响，
+      字体块走低优先级 swap，不抢关键 JS/CSS）。
+      boot 屏首帧即时按系统字体画出（不等任何字体），随后与全站一致 swap 到 MiSans。
     -->
     <link
       rel="preload"

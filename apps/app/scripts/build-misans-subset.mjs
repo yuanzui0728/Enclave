@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 生成 apps/app/src/fonts/misans/ 下的 MiSans 自托管 webfont 子集。
+// 生成 apps/app/public/fonts/misans/ 下的 MiSans 自托管 webfont 子集。
 //
 // 为什么这样做：全 App 几乎都是中文，中文整字体每 weight 数 MB，naive 加载会拖垮
 // 首屏。MiSans（小米，免费可商用）经 unicode-range 切成上百个小 woff2 块 +
@@ -8,7 +8,10 @@
 //
 // 字形切分不是我们手切的 —— 直接复用社区维护的 `misans` npm 包（DSRKafuU,
 // Apache-2.0，包了 Xiaomi 免费 MiSans）。它的 lib/Normal/ 就是简体中文 CJK 家族，
-// 每个 weight 已切成 100 个 unicode-range 块 + 带 font-display:swap 的 @font-face CSS。
+// 每个 weight 已切成 100 个 unicode-range 块 + 带 font-display:swap 的 @font-face CSS：
+// ~96 个数字编号块是 CJK 汉字，外加 .latin（含 U+20-7F 的数字/字母/标点，~12KB）、
+// .latin-ext / .cyrillic / .vietnamese 四个命名块 —— 所以数字/拉丁也走 MiSans，
+// 不回落系统字体。
 // 该包用「视觉等比」的非标准 font-weight 值（Regular=330 … Heavy=700），与本 App
 // 设计 token 的 400/500/600/700 不对应，所以这里把选用的 4 个 weight 归一化成标准值。
 //
