@@ -355,7 +355,10 @@ export const MOMENT_GENERATE_CHANCE = 0.15;
 // 2026-05-13: 视频号视频走 MiniMax，per-key 配额紧张，把生成概率从 0.22 降到 0.1
 // 减少单 world 触发频率，配合 cloud-api per-world 配额派发避免抢光
 export const CHANNEL_GENERATE_CHANCE = 0.1;
-export const SCENE_FRIEND_REQUEST_CHANCE = 0.4;
+// 2026-05-29：场景相遇是「主动推荐好友」里量最大、最随机、最像骚扰的一类
+// （现网占主动好友申请 ~85%，整体接受率仅 ~3%）。从 0.4 下调到 0.15，配合
+// SocialService 的全局背压闸（新用户宽限 + 忽略背压），大幅压低无效冷启动推荐。
+export const SCENE_FRIEND_REQUEST_CHANCE = 0.15;
 export const SCENE_FRIEND_REQUEST_SCENES = [
   'coffee_shop',
   'gym',

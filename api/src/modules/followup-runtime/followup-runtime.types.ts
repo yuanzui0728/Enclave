@@ -251,7 +251,8 @@ export const DEFAULT_FOLLOWUP_RUNTIME_RULES: FollowupRuntimeRulesValue = {
   maxSourceMessagesPerThread: 10,
   maxOpenLoopsPerRun: 3,
   maxRecommendationsPerRun: 2,
-  dailyRecommendationLimit: 3,
+  // 2026-05-29：每天主动跟进推荐上限从 3 收到 1，避免与场景相遇/need-discovery 叠加轰炸。
+  dailyRecommendationLimit: 1,
   minOpenLoopScore: 0.68,
   minHandoffNeedScore: 0.58,
   sameTopicCooldownHours: 48,

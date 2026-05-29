@@ -281,6 +281,20 @@ export class NeedDiscoveryService {
         });
       }
 
+      // 主动推荐背压：新用户宽限期内 / 用户已积压多条没处理的主动好友申请时，
+      // 全局停发，不再生成新角色去发申请（force 模式跳过，便于后台调试）。
+      if (!input.force) {
+        const pressure =
+          await this.socialService.evaluateAutoFriendRequestSuppression();
+        if (pressure.suppress) {
+          return this.finishRun(run, {
+            status: 'skipped',
+            skipReason: `主动推荐背压闸：${pressure.reason}`,
+            summary: '用户暂不适合再收到主动推荐，这轮先不生成新角色。',
+          });
+        }
+      }
+
       const analysis = await this.analyzeNeeds(
         input.cadenceType,
         config,
@@ -1030,22 +1044,45 @@ export class NeedDiscoveryService {
       order: { lastInteractedAt: 'DESC', createdAt: 'ASC' },
       take: 12,
     });
-    if (!friendships.length) {
-      return '暂无已建立好友。';
+
+    const friendLines: string[] = [];
+    if (friendships.length) {
+      const characters = await new TenantRepository(this.characterRepo).find({
+        where: { id: In(friendships.map((item) => item.characterId)) },
+      });
+      const characterMap = new Map(characters.map((item) => [item.id, item]));
+      for (const friendship of friendships) {
+        const character = characterMap.get(friendship.characterId);
+        if (!character) continue;
+        friendLines.push(
+          `${character.name}：${(character.expertDomains ?? []).slice(0, 4).join('、') || '泛陪伴'}`,
+        );
+      }
     }
 
-    const characters = await new TenantRepository(this.characterRepo).find({
-      where: { id: In(friendships.map((item) => item.characterId)) },
-    });
-    const characterMap = new Map(characters.map((item) => [item.id, item]));
-    return friendships
-      .map((item) => characterMap.get(item.characterId))
-      .filter((item): item is CharacterEntity => Boolean(item))
+    // 关键去重修复（2026-05-29）：之前只把「已通过的好友」算作覆盖，pending（已发申请
+    // 但用户还没通过）的自动生成角色不算 —— 于是 LLM 看到「暂无好友覆盖」会反复就同一个
+    // 需求再造一个几乎一样的新角色（现网实测同一用户连出两个同名「阿暖」）。把还挂着的
+    // friend_request_pending 候选也列进来标注「已邀请待通过」，让 LLM 知道这个位已经占了。
+    const pendingCandidates = await new TenantRepository(this.candidateRepo).find(
+      {
+        where: { status: 'friend_request_pending' },
+        order: { createdAt: 'DESC' },
+        take: 12,
+      },
+    );
+    const pendingLines = pendingCandidates
+      .filter((item) => item.characterName?.trim())
       .map(
         (item) =>
-          `${item.name}：${(item.expertDomains ?? []).slice(0, 4).join('、') || '泛陪伴'}`,
-      )
-      .join('\n');
+          `${item.characterName}（已邀请待通过）：${(item.requestedDomains ?? []).slice(0, 4).join('、') || item.needCategory || '泛陪伴'}`,
+      );
+
+    const lines = [...friendLines, ...pendingLines];
+    if (!lines.length) {
+      return '暂无已建立好友。';
+    }
+    return lines.join('\n');
   }
 
   private async buildExistingCandidatesSummary() {

@@ -168,7 +168,7 @@ export const DEFAULT_NEED_DISCOVERY_CONFIG: NeedDiscoveryConfig = {
   daily: {
     enabled: true,
     executionMode: 'auto_send',
-    maxCandidatesPerRun: 2,
+    maxCandidatesPerRun: 1,
     minConfidenceScore: 0.68,
     runAtHour: 9,
     runAtMinute: 0,
@@ -221,7 +221,8 @@ export const DEFAULT_NEED_DISCOVERY_CONFIG: NeedDiscoveryConfig = {
   },
   shared: {
     pendingCandidateLimit: 3,
-    dailyCreationLimit: 3,
+    // 2026-05-29：每天最多自动生成的新角色数从 3 收到 1，避免一天给用户造一堆陌生角色发好友申请。
+    dailyCreationLimit: 1,
     expiryDays: 7,
     shortSuppressionDays: 3,
     dailySuppressionDays: 14,

@@ -10,7 +10,8 @@ import { CharacterEntity } from '../characters/character.entity';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { NarrativeService } from '../narrative/narrative.service';
 import { WorldOwnerService } from '../auth/world-owner.service';
-import { isSharedWorldMode } from '../tenancy/tenant-context';
+import { UserEntity } from '../auth/user.entity';
+import { isSharedWorldMode, isGlobalWorldOwner } from '../tenancy/tenant-context';
 import { TenantRepository } from '../tenancy/tenant-scoped.repository';
 import {
 // i18n-ignore-start: data / seed / preset content — not user-facing UI.
@@ -50,6 +51,25 @@ export const DEFAULT_FRIENDSHIP_CHARACTER_IDS = [SELF_CHARACTER_ID];
 // 是系统行为，保留旁路。
 const SCENE_USER_DAILY_LIMIT = 30;
 const SCENE_USER_MIN_INTERVAL_MS = 1500;
+
+// 主动推荐好友的全局背压闸（2026-05-29）：场景相遇 / need-discovery / followup
+// 三套系统各自独立发系统主动好友申请，叠起来对新用户/不感兴趣的用户形成轰炸
+// （现网 3 天发 ~354 条、仅 ~3% 被接受）。这里统一两道闸，三套系统在发请求前都查一遍：
+//   1) 新用户宽限：注册不满 N 天先不主动推（让用户自己先逛、自己摇），避免一进来被刷屏。
+//   2) 忽略背压：最近窗口内系统主动发出、用户一直没通过（pending/expired）的申请累计到阈值，
+//      说明用户对主动推荐无感，全局停发，直到用户处理掉积压（通过/拒绝/过期清理后回落）。
+// 用户自己主动摇场景（caller='user'）不受这两道闸限制——那是用户明确意图。
+const AUTO_FRIEND_NEW_USER_GRACE_DAYS = 3;
+const AUTO_FRIEND_IGNORE_LOOKBACK_DAYS = 7;
+const AUTO_FRIEND_IGNORE_THRESHOLD = 5;
+// 计入「忽略背压」的 triggerScene：16 个场景 + need-discovery 两个 cadence + followup。
+// 用户主动入口（shake / shake_keep / manual_add）不算。
+const AUTO_FRIEND_REQUEST_SCENES = [
+  ...SCENE_IDS,
+  'need_discovery_short_interval',
+  'need_discovery_daily',
+  'followup_runtime',
+];
 
 // 走查新 R1：updateFriendProfile 之前完全没卡 remark / tags 长度——前端
 // character-detail-page 自己声明了 REMARK_NAME_MAX_LENGTH=20、
@@ -631,6 +651,45 @@ export class SocialService implements OnModuleInit {
     }
   }
 
+  // 主动推荐好友的全局背压评估：三套系统（场景相遇 / need-discovery / followup）发系统
+  // 主动好友申请前都先调它。返回 suppress=true 时本轮不发。owner 可显式传入复用已查到的
+  // 实体，省一次 getOwnerOrThrow。
+  async evaluateAutoFriendRequestSuppression(
+    ownerInput?: UserEntity,
+  ): Promise<{ suppress: boolean; reason: string | null }> {
+    const owner = ownerInput ?? (await this.worldOwnerService.getOwnerOrThrow());
+    // 全局「世界居民」哨兵 owner 没有真人，主动推荐无意义，直接停。
+    if (isGlobalWorldOwner(owner.id)) {
+      return { suppress: true, reason: 'global_owner' };
+    }
+    const now = Date.now();
+    // 1) 新用户宽限期
+    const createdAtMs = new Date(owner.createdAt).getTime();
+    if (
+      Number.isFinite(createdAtMs) &&
+      now - createdAtMs < AUTO_FRIEND_NEW_USER_GRACE_DAYS * 24 * 60 * 60 * 1000
+    ) {
+      return { suppress: true, reason: 'new_user_grace' };
+    }
+    // 2) 忽略背压：窗口内系统主动发出且仍未被接受（pending/expired）的申请累计到阈值
+    const lookbackStart = new Date(
+      now - AUTO_FRIEND_IGNORE_LOOKBACK_DAYS * 24 * 60 * 60 * 1000,
+    );
+    const ignoredCount = await new TenantRepository(this.friendRequestRepo).count(
+      {
+        where: {
+          triggerScene: In([...AUTO_FRIEND_REQUEST_SCENES]),
+          status: In(['pending', 'expired']),
+          createdAt: MoreThanOrEqual(lookbackStart),
+        },
+      },
+    );
+    if (ignoredCount >= AUTO_FRIEND_IGNORE_THRESHOLD) {
+      return { suppress: true, reason: `ignored_backlog:${ignoredCount}` };
+    }
+    return { suppress: false, reason: null };
+  }
+
   async triggerSceneFriendRequest(
     scene: string,
     options?: { caller?: 'user' | 'scheduler' },
@@ -662,6 +721,18 @@ export class SocialService implements OnModuleInit {
       });
     }
     const owner = await this.worldOwnerService.getOwnerOrThrow();
+
+    // 主动推荐背压：scheduler 触发的场景相遇受全局节流闸（新用户宽限 + 忽略背压）。
+    // 用户自己摇场景（caller='user'）是明确意图，不受此限。
+    if (caller === 'scheduler') {
+      const pressure = await this.evaluateAutoFriendRequestSuppression(owner);
+      if (pressure.suppress) {
+        this.logger.debug(
+          `Scene friend request suppressed for owner ${owner.id}: ${pressure.reason}`,
+        );
+        return { request: null, matchSource: 'none' };
+      }
+    }
 
     const allPresets = listBuiltInCharacterPresets();
 
