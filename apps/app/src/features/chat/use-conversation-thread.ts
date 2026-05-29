@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { msg } from "@lingui/macro";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from "@tanstack/react-query";
 import { translateRuntimeMessage } from "@yinjie/i18n";
 import {
+  getConversationDelegations,
   getConversationMessages,
   getConversations,
+  interveneAgentDelegation,
   markConversationRead,
   REMINDER_CHARACTER_ID,
+  SELF_CHARACTER_ID,
   uploadChatAttachment,
+  type AgentDelegation,
   type ConversationListItem,
   type Message,
   type SendMessagePayload,
@@ -31,6 +40,10 @@ import {
   updatePendingDirectMessageStatus,
   upsertPendingDirectMessage,
 } from "./pending-direct-message-store";
+import {
+  loadLastMessageWindow,
+  saveLastMessageWindow,
+} from "./last-message-window-store";
 import { useScrollAnchor } from "../../hooks/use-scroll-anchor";
 import {
   emitChatMessage,
@@ -40,6 +53,7 @@ import {
   onChatMessage,
   onChatSocketConnect,
   onConversationUpdated,
+  onDelegationUpdate,
   onTypingStart,
   onTypingStop,
 } from "../../lib/socket";
@@ -47,6 +61,10 @@ import { handleSocketSubscriptionExpiredError } from "../../lib/subscription-exp
 import { getConversationDisplayTitle } from "../../lib/conversation-preview";
 import { useAppRuntimeConfig } from "../../runtime/runtime-config-store";
 import { useWorldOwnerStore } from "../../store/world-owner-store";
+import {
+  transientQueryRetry,
+  transientQueryRetryDelay,
+} from "../../lib/transient-query-retry";
 
 const t = translateRuntimeMessage;
 
@@ -126,10 +144,93 @@ export function useConversationThread(conversationId: string) {
     queryFn: () =>
       getConversationMessages(conversationId, baseUrl, { limit: messageLimit }),
     enabled: Boolean(conversationId),
+    // world(:4100)偶发被共享事件循环卡住 → 5xx/网络抖动，进聊天页首打就撞上
+    // 时面板直接弹错误态（「切页面报错、再进就好」）。对瞬时故障退避重试吃掉它，
+    // 4xx 不重试。详见 transient-query-retry.ts。
+    retry: transientQueryRetry,
+    retryDelay: transientQueryRetryDelay,
     // 全局 staleTime=60s 让 useQuery 在 mount 时把 60s 内的旧 cache 当 fresh
     // 不 refetch。聊天页面里 socket 漏一条（断网/切前后台/event drop）就会
     // 显示不出新消息。强制每次挂载 refetch 一次，RTT 一次换正确性。
     refetchOnMount: "always",
+    // 冷启动兜底（isLoading 翻 false → 不显示空白「正在同步」卡，真正的窗口
+    // 随后整体替换；用 placeholderData 而非 initialData：不写入缓存、不干扰
+    // refetchOnMount:"always"）。两级回退：
+    // 1) localStorage 持久化的"上次一屏"窗口（最多 40 条）——粘贴深链/整页刷新
+    //    时内存 cache 为空，这是唯一能瞬间画出整屏消息的来源。
+    // 2) 会话列表缓存里的 lastMessage（单条）——SPA 内导航时列表已热，兜最后一条。
+    // 持久化窗口更丰富，优先；都没有就回落到今天的加载卡。
+    placeholderData: () => {
+      // 只为"首屏初始窗口"兜底。loadOlderMessages 把 limit 加大（60→100…）会换
+      // queryKey 开新 query，期间 data 短暂为 undefined——既有逻辑靠"data 为空
+      // 时保留现有 messages state"平滑前置历史。若这里仍回放持久化窗口，会让
+      // 已显示的 60 条瞬间塌成 40 再跳到 100。limit≠初始值时返回 undefined，
+      // 沿用既有行为。conversationId 切换时 limit 已被重置回 INITIAL（见上方
+      // reset effect），故新会话首屏仍走兜底。
+      if (messageLimit !== INITIAL_MESSAGE_LIMIT) {
+        return undefined;
+      }
+      const persisted = loadLastMessageWindow(conversationId, baseUrl);
+      if (persisted && persisted.length > 0) {
+        return persisted;
+      }
+      const list = queryClient.getQueryData<ConversationListItem[]>([
+        "app-conversations",
+        baseUrl,
+      ]);
+      const last = list?.find((item) => item.id === conversationId)?.lastMessage;
+      return last ? [last] : undefined;
+    },
+  });
+
+  // 每次服务端窗口到手就落盘，供下次冷启动瞬间回放。只存真正的服务端响应
+  // （!isPlaceholderData——否则会把刚从 storage 读出的 placeholder 原样回写），
+  // 不含 local_* 乐观消息；空窗口也落盘以覆盖被清空的历史。
+  useEffect(() => {
+    if (messagesQuery.data && !messagesQuery.isPlaceholderData) {
+      saveLastMessageWindow(conversationId, baseUrl, messagesQuery.data);
+    }
+  }, [
+    messagesQuery.data,
+    messagesQuery.isPlaceholderData,
+    conversationId,
+    baseUrl,
+  ]);
+
+  // 「我↔专家」协作线程：折叠挂在「我」的 ack 气泡下。仅「我」会话会产生 delegation，
+  // 其它会话返回 []。socket delegation_update 增量合并 + 用户介入回流都更新 state。
+  // self 会话恒用 canonical id `direct_char-default-self`（隐藏的 __<owner> 后缀
+  // stub 不是用户打开的活跃会话），所以仅凭 conversationId 字符串判断即足够——
+  // 不必等 activeConversation 解析，避免冷链接进自我会话时漏发 delegations。
+  const isSelfConversation = conversationId === `direct_${SELF_CHARACTER_ID}`;
+  const [delegations, setDelegations] = useState<AgentDelegation[]>([]);
+  const delegationsQuery = useQuery({
+    queryKey: ["app-conversation-delegations", baseUrl, conversationId],
+    queryFn: () => getConversationDelegations(conversationId, baseUrl),
+    // 只有自我会话才有 delegation，其余会话恒返回 []——不发请求省一次隧道 RTT。
+    enabled: Boolean(conversationId) && isSelfConversation,
+    retry: transientQueryRetry,
+    retryDelay: transientQueryRetryDelay,
+    refetchOnMount: "always",
+  });
+  useEffect(() => {
+    if (delegationsQuery.data) {
+      setDelegations(delegationsQuery.data);
+    }
+  }, [delegationsQuery.data]);
+  const interveneMutation = useMutation({
+    mutationFn: (input: { delegationId: string; text: string }) =>
+      interveneAgentDelegation(
+        conversationId,
+        input.delegationId,
+        input.text,
+        baseUrl,
+      ),
+    onSuccess: (updated) => {
+      if (updated) {
+        setDelegations((current) => upsertDelegation(current, updated));
+      }
+    },
   });
 
   // 走查 R5：本 hook 在桌面侧由 ConversationThreadPanel 调用——desktop-chat-
@@ -141,6 +242,8 @@ export function useConversationThread(conversationId: string) {
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
     enabled: Boolean(ownerId),
+    retry: transientQueryRetry,
+    retryDelay: transientQueryRetryDelay,
     staleTime: 15_000,
   });
   const activeConversation = conversationsQuery.data?.find(
@@ -344,6 +447,14 @@ export function useConversationThread(conversationId: string) {
         void invalidateReminderQueries();
       }
 
+      // 红包消息会改变钱包余额（收到→拆开入账、发出→扣款）。服务端只在余额变动
+      // 落库后才 emit 这条（更新后的）红包消息，所以收到时余额一定已经提交——
+      // 此处 invalidate 无竞态。对齐 checkin-card 的「余额变动后失效钱包查询」做法，
+      // 让任何已挂载的余额展示（钱包页 / 充值卡 / 发红包弹窗）即时刷新而非等下次挂载。
+      if (payload.type === "red_packet") {
+        void queryClient.invalidateQueries({ queryKey: ["cloud-wallet"] });
+      }
+
       if (payload.senderType === "character") {
         setTypingState((current) =>
           current?.characterId === payload.senderId ? null : current,
@@ -425,6 +536,13 @@ export function useConversationThread(conversationId: string) {
       });
     });
 
+    const offDelegation = onDelegationUpdate((payload) => {
+      if (payload.parentConversationId !== conversationId) {
+        return;
+      }
+      setDelegations((current) => upsertDelegation(current, payload));
+    });
+
     const offError = onChatError((payload) => {
       // SUBSCRIPTION_EXPIRED 是系统级会员拦截(由群聊 cron / scheduler 通过
       // server.emit broadcast 推),不是"当前 1v1 会话的某条消息发送失败"。
@@ -446,6 +564,7 @@ export function useConversationThread(conversationId: string) {
       offTypingStart();
       offTypingStop();
       offConversationUpdated();
+      offDelegation();
       offError();
     };
   }, [
@@ -1044,6 +1163,9 @@ export function useConversationThread(conversationId: string) {
     loadAnchorWindow,
     messagesQuery,
     participants,
+    delegations,
+    interveneDelegation: (delegationId: string, interventionText: string) =>
+      interveneMutation.mutateAsync({ delegationId, text: interventionText }),
     renderedMessages,
     scrollAnchor,
     sendMutation,
@@ -1059,8 +1181,76 @@ export function useConversationThread(conversationId: string) {
   };
 }
 
-const INITIAL_MESSAGE_LIMIT = 60;
+export const INITIAL_MESSAGE_LIMIT = 60;
 const HISTORY_PAGE_SIZE = 40;
+
+// 点击/悬停会话行时把首屏消息窗口提前打进 messagesQuery 将要读取的"完全
+// 相同"的 queryKey，让网络往返与导航+挂载动画重叠：thread 挂载时直接命中
+// 缓存（isLoading=false → 不显示「正在同步」卡），省掉一次公网隧道 RTT。
+// queryKey 必须与 useConversationThread 里的 messagesQuery 逐字一致，否则
+// useQuery 不会复用这次预取。staleTime 让 hover→tap 去重；挂载时
+// refetchOnMount:"always" 仍会后台重校验，正确性不受影响。
+export function prefetchConversationMessages(
+  queryClient: QueryClient,
+  conversationId: string,
+  baseUrl: string | undefined,
+) {
+  if (!conversationId) {
+    return;
+  }
+  void queryClient.prefetchQuery({
+    queryKey: [
+      "app-conversation-messages",
+      baseUrl,
+      conversationId,
+      INITIAL_MESSAGE_LIMIT,
+    ],
+    queryFn: () =>
+      getConversationMessages(conversationId, baseUrl, {
+        limit: INITIAL_MESSAGE_LIMIT,
+      }),
+    staleTime: 10_000,
+  });
+}
+
+// 桌面 hover 预取的"意图延迟"去抖。公网隧道带宽 ~50KB/s，光标扫过一长串
+// 会话行若每行都立即预取（每个窗口 ~20KB），会和用户真正点开的那条抢带宽、
+// 反而拖慢目标。只有指针在某行停留 ~180ms 才视为有意图、才发预取；同一时刻
+// 只可能 hover 一行，单个模块级 timer 足够（下一次 enter 取消上一个待发）。
+let hoverPrefetchTimer: ReturnType<typeof setTimeout> | null = null;
+export function prefetchConversationMessagesOnHover(
+  queryClient: QueryClient,
+  conversationId: string,
+  baseUrl: string | undefined,
+) {
+  if (hoverPrefetchTimer) {
+    clearTimeout(hoverPrefetchTimer);
+  }
+  hoverPrefetchTimer = setTimeout(() => {
+    hoverPrefetchTimer = null;
+    prefetchConversationMessages(queryClient, conversationId, baseUrl);
+  }, 180);
+}
+
+export function cancelHoverPrefetch() {
+  if (hoverPrefetchTimer) {
+    clearTimeout(hoverPrefetchTimer);
+    hoverPrefetchTimer = null;
+  }
+}
+
+function upsertDelegation(
+  current: AgentDelegation[],
+  next: AgentDelegation,
+): AgentDelegation[] {
+  const index = current.findIndex((item) => item.id === next.id);
+  if (index === -1) {
+    return [...current, next];
+  }
+  const merged = current.slice();
+  merged[index] = next;
+  return merged;
+}
 
 function resolveTargetCharacterId(input: {
   conversationId: string;

@@ -27,6 +27,10 @@ import { isDesktopOnlyPath, navigateBackOrFallback } from "../lib/history-back";
 import { isPersistedGroupConversation } from "../lib/conversation-route";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
 import { useDesktopLayout } from "../features/shell/use-desktop-layout";
+import {
+  transientQueryRetry,
+  transientQueryRetryDelay,
+} from "../lib/transient-query-retry";
 
 const DesktopChatWorkspace = lazy(async () => {
   const mod = await import("../features/chat/chat-workspace-shell");
@@ -61,6 +65,8 @@ export function ChatRoomPage() {
   const conversationsQuery = useQuery({
     queryKey: ["app-conversations", baseUrl],
     queryFn: () => getConversations(baseUrl),
+    retry: transientQueryRetry,
+    retryDelay: transientQueryRetryDelay,
     staleTime: 15_000,
   });
   const activeConversation =
