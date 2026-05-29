@@ -372,15 +372,27 @@ function isKnownI18nLine(line) {
   return I18N_LINE_PATTERNS.some((pattern) => pattern.test(line));
 }
 
+// A `/` starts a regex literal (rather than division) only when the previous
+// significant character cannot end an expression. We bias conservatively: when
+// unsure we treat `/` as division and KEEP scanning the rest of the line, so a
+// real hardcoded string can never be hidden — at worst we over-report (visible,
+// fixable), never under-report.
+const REGEX_PRECEDERS = new Set([
+  "(", ",", "=", ":", "[", "{", ";", "!", "&", "|", "?", "+", "-", "*", "/",
+  "%", "<", ">", "^", "~", "}", "\n",
+]);
+
 // Remove comment content from a single line while tracking multi-line block
-// comment state. String/template literals are respected so that `//` or `/*`
-// appearing inside a string (e.g. a URL "https://…") is not mistaken for a
-// comment. Returns the code with comments stripped plus whether the line ends
-// still inside an open block comment.
+// comment state. String/template literals AND regex literals are respected so
+// that `//` or `/*` appearing inside a string (e.g. a URL "https://…") or a
+// regex (e.g. `/[/*]/`) is not mistaken for a comment. Returns the code with
+// comments stripped plus whether the line ends still inside an open block
+// comment.
 function stripCommentsTrackingBlock(line, startInBlock) {
   let inBlock = startInBlock;
   let quote = null; // active string delimiter: " ' or `
   let code = "";
+  let prevSignificant = null; // last non-space char emitted to code
 
   for (let i = 0; i < line.length; i += 1) {
     const char = line[i];
@@ -410,6 +422,7 @@ function stripCommentsTrackingBlock(line, startInBlock) {
     if (char === '"' || char === "'" || char === "`") {
       quote = char;
       code += char;
+      prevSignificant = char;
       continue;
     }
 
@@ -424,7 +437,40 @@ function stripCommentsTrackingBlock(line, startInBlock) {
       continue;
     }
 
+    // Possible regex literal: only when a `/` here cannot be division.
+    if (char === "/" && REGEX_PRECEDERS.has(prevSignificant ?? "\n")) {
+      let j = i + 1;
+      let inClass = false;
+      let closed = false;
+      while (j < line.length) {
+        const rc = line[j];
+        if (rc === "\\") {
+          j += 2;
+          continue;
+        }
+        if (rc === "[") inClass = true;
+        else if (rc === "]") inClass = false;
+        else if (rc === "/" && !inClass) {
+          closed = true;
+          break;
+        }
+        j += 1;
+      }
+      if (closed) {
+        // Keep the regex body in `code` (CJK inside a regex should still be
+        // visible to the rules), then resume after the closing slash.
+        code += line.slice(i, j + 1);
+        prevSignificant = "/";
+        i = j;
+        continue;
+      }
+      // Unterminated on this line → fall through and treat as a plain char.
+    }
+
     code += char;
+    if (char !== " " && char !== "\t") {
+      prevSignificant = char;
+    }
   }
 
   return { code, endInBlock: inBlock };
