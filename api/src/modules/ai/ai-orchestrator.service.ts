@@ -3436,6 +3436,13 @@ export class AiOrchestratorService {
     // spinner 等」的同步链路必须传一个有界值（见 generateQuickCharacter 同款），
     // 把卡死收敛成快速失败，由调用方/前端展示可重试错误。
     timeoutMs?: number;
+    // provider 硬失败（超时 / 鉴权 / 所有 fallback 耗尽）时抛出而非吞成 {}。
+    // 默认 false（其余调用方行为不变：拿 fallback ?? {}）。需要区分「整条推理通道
+    // 病了」与「AI 返回空/坏 JSON」的调用方设 true——典型是摇一摇的多 direction
+    // 生成循环：硬失败要立刻止损跳出，否则会把剩余 direction 逐个再 timeout×重试
+    // ×fallback 干烧一遍（放大成数倍上游浪费）。注意：JSON 解析失败 / 模型返回空
+    // 不算硬失败，仍回退 {}（属于「坏结果换一个」的范畴，不抛）。
+    throwOnError?: boolean;
   }): Promise<Record<string, unknown>> {
     if (!options.skipSubscriptionGate) {
       await this.subscription.assertCanUseAi('text');
@@ -3476,6 +3483,9 @@ export class AiOrchestratorService {
       }
     } catch (error) {
       this.logger.error('generateJsonObject error', error);
+      if (options.throwOnError) {
+        throw error;
+      }
       return options.fallback ?? {};
     }
   }

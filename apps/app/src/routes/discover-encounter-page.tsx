@@ -99,19 +99,25 @@ function MobileDiscoverEncounterPage() {
       // timeout 会无限挂起，按钮一直停在「正在寻找...」。给整个请求一个 150s 的
       // 兜底上限（够正常流程 + 一次 provider fallback），超时 abort 并转成可重试
       // 的友好错误，绝不让用户对着 spinner 干等。
+      // 用 AbortController + setTimeout 而非 AbortSignal.timeout()：后者要 Safari
+      // 16+ / Chrome 103+，vite/esbuild 不会 polyfill 这个运行时 API，旧版移动端
+      // WebView 上会直接 TypeError 把每次摇一摇都摔掉。对齐 client-public-ip.ts 的
+      // 既有写法。controller.signal.aborted 判定「是我们的超时」比对 DOMException
+      // name（浏览器 TimeoutError vs undici AbortError）更稳。
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 150_000);
       let preview: Awaited<ReturnType<typeof shake>>;
       try {
-        preview = await shake(undefined, baseUrl, AbortSignal.timeout(150_000));
+        preview = await shake(undefined, baseUrl, controller.signal);
       } catch (error) {
-        if (
-          error instanceof DOMException &&
-          (error.name === "TimeoutError" || error.name === "AbortError")
-        ) {
+        if (controller.signal.aborted) {
           throw new Error(
             t(msg`摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。`),
           );
         }
         throw error;
+      } finally {
+        clearTimeout(timeoutId);
       }
       if (!preview) {
         return null;

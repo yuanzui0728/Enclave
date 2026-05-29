@@ -31,8 +31,7 @@ export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
 2. 如果输入更像短期状态变化，就优先更新 liveState / recentState，不要轻易改 stableCore。
 3. 如果证据不足，字段保持保守、简短。
 4. 所有文字字段都写成人话，像内部观察笔记，不要写成咨询报告、人格测评或教科书语气。
-5. activeTopics / recurringTopics 只写中性的兴趣或话题主题（如“东京出差准备”“健身计划”“咖啡冲煮”），严禁出现任何人名、角色名、联系人名或对某个人的称呼。
-6. 必须严格输出合法 JSON，不要输出任何额外文字。
+5. 必须严格输出合法 JSON，不要输出任何额外文字。
 
 当前赛博分身快照：
 {{currentProfile}}
@@ -83,8 +82,7 @@ export const DEFAULT_CYBER_AVATAR_PROMPT_TEMPLATES: CyberAvatarPromptTemplates =
 1. 这是长期画像，不要被单次情绪带偏。
 2. 输出必须保守、具体、可解释。
 3. 所有文字字段都写成人话，像长期观察结论，不要写成模板化人格分析或空泛金句。
-4. activeTopics / recurringTopics 只写中性的兴趣或话题主题（如“东京出差准备”“健身计划”“咖啡冲煮”），严禁出现任何人名、角色名、联系人名或对某个人的称呼。
-5. 必须严格输出合法 JSON，不要输出任何额外文字。
+4. 必须严格输出合法 JSON，不要输出任何额外文字。
 
 现有赛博分身快照：
 {{currentProfile}}

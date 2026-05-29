@@ -26,7 +26,6 @@ import { NeedDiscoveryModule } from '../need-discovery/need-discovery.module';
 import { MessageEntity } from '../chat/message.entity';
 import { UserFeedInteractionEntity } from '../analytics/user-feed-interaction.entity';
 import { FeedPostEntity } from '../feed/feed-post.entity';
-import { CharacterEntity } from '../characters/character.entity';
 
 @Module({
   imports: [
@@ -39,7 +38,6 @@ import { CharacterEntity } from '../characters/character.entity';
       MessageEntity,
       UserFeedInteractionEntity,
       FeedPostEntity,
-      CharacterEntity,
     ]),
     SystemConfigModule,
     AuthModule,

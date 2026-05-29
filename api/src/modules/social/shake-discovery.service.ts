@@ -361,24 +361,38 @@ export class ShakeDiscoveryService {
           cyberAvatarSummary: buildCyberAvatarSummary(cyberAvatarProfile),
           signals: signalTexts.join('\n') || '暂无最近行为证据',
         });
-        const generationRaw = await this.ai.generateJsonObject({
-          prompt: candidatePrompt,
-          // 同 planning：摇一摇免费档，AI 生成豁免 hardBlock 会员闸。
-          skipSubscriptionGate: true,
-          // 同 planning：给 thinking 留够余量。
-          maxTokens: 4000,
-          temperature: 0.82,
-          // 同 planning：45s 单 attempt 上界，避免上游卡住时前端无限转圈。
-          timeoutMs: 45_000,
-          usageContext: {
-            surface: 'app',
-            scene: 'shake_discovery_generate',
-            scopeType: 'world',
-            scopeId: owner.id,
-            scopeLabel: candidateDirection.directionKey,
-            ownerId: owner.id,
-          },
-        });
+        let generationRaw: Record<string, unknown>;
+        try {
+          generationRaw = await this.ai.generateJsonObject({
+            prompt: candidatePrompt,
+            // 同 planning：摇一摇免费档，AI 生成豁免 hardBlock 会员闸。
+            skipSubscriptionGate: true,
+            // 同 planning：给 thinking 留够余量。
+            maxTokens: 4000,
+            temperature: 0.82,
+            // 同 planning：45s 单 attempt 上界，避免上游卡住时前端无限转圈。
+            timeoutMs: 45_000,
+            // 上游硬失败（超时 / 所有 provider 挂了）时抛出而非吞成 {}：整条推理
+            // 通道病了，再换下一个 direction 也只会同样超时。设 throwOnError 让下面
+            // catch 立刻 break 出循环走失败分支，避免把剩余 direction 逐个再
+            // timeout×重试×fallback 干烧（默认 4 个 direction = 4 倍上游浪费，
+            // 远超前端 150s 兜底）。
+            throwOnError: true,
+            usageContext: {
+              surface: 'app',
+              scene: 'shake_discovery_generate',
+              scopeType: 'world',
+              scopeId: owner.id,
+              scopeLabel: candidateDirection.directionKey,
+              ownerId: owner.id,
+            },
+          });
+        } catch {
+          // provider 硬失败：止损跳出。selectedDirection 仍为 null、aiGenerationEmpty
+          // 置 true → 循环后的失败分支记一条 failed session 并抛 SHAKE_AI_GENERATION_FAILED。
+          aiGenerationEmpty = true;
+          break;
+        }
         if (!hasUsableGeneratedName(generationRaw)) {
           aiGenerationEmpty = true;
           removeDirectionByKey(

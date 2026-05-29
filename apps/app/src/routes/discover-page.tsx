@@ -355,7 +355,25 @@ function DesktopDiscoverWorkspace() {
 
   const shakeMutation = useMutation({
     mutationFn: async () => {
-      const preview = await shake(undefined, baseUrl);
+      // 同 discover-encounter-page：后端 planning + 角色生成两次推理正常 ~60s，但
+      // shake() fetch 本身无 timeout，隧道 / 上游卡住时按钮一直停在「正在寻找...」
+      // 无限转圈。给整请求 150s 兜底上限（AbortController + setTimeout，不用要
+      // Safari16+/Chrome103+ 的 AbortSignal.timeout，旧 WebView 会 TypeError）。
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 150_000);
+      let preview: Awaited<ReturnType<typeof shake>>;
+      try {
+        preview = await shake(undefined, baseUrl, controller.signal);
+      } catch (error) {
+        if (controller.signal.aborted) {
+          throw new Error(
+            t(msg`摇一摇等待超时，可能是网络或服务器繁忙，请稍后重试。`),
+          );
+        }
+        throw error;
+      } finally {
+        clearTimeout(timeoutId);
+      }
       if (!preview) {
         return null;
       }
