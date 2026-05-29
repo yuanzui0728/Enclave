@@ -125,7 +125,7 @@ export function OfficialMessageEntryRow({
                   role="img"
                   className={cn(
                     "rounded-full",
-                    isDesktop ? "h-2 w-2 bg-[color:var(--state-danger-bg)]" : "h-2 w-2 bg-[#b8b8b8]",
+                    isDesktop ? "h-2 w-2 bg-[color:var(--state-danger-solid)]" : "h-2 w-2 bg-[#b8b8b8]",
                   )}
                   aria-label={
                     unreadCount > 99
@@ -147,7 +147,7 @@ export function OfficialMessageEntryRow({
                 <div
                   role="img"
                   className={cn(
-                    "flex items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] text-center text-[color:var(--text-on-brand)]",
+                    "flex items-center justify-center rounded-full bg-[color:var(--state-danger-solid)] text-center text-[color:var(--text-on-brand)]",
                     isDesktop
                       ? "min-w-5 px-1.5 py-0.5 text-[10px]"
                       : "min-h-[18px] min-w-[18px] px-1 text-[length:var(--text-eyebrow)] leading-none shadow-[0_4px_12px_rgba(250,81,81,0.18)]",

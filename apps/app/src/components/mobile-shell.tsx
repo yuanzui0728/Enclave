@@ -25,6 +25,7 @@ import { useKeyboardInset } from "../hooks/use-keyboard-inset";
 import { recordAppNavigation } from "../lib/history-back";
 import { isMobileWebRuntime } from "../runtime/platform";
 import { useAppRuntimeConfig } from "../runtime/runtime-config-store";
+import { useHasCloudSession } from "../store/cloud-session-store";
 
 const EMPTY_CONVERSATIONS = Object.freeze([]);
 
@@ -52,6 +53,7 @@ export function MobileShell({ children }: PropsWithChildren) {
     ? pathname
     : null;
   const runtimeConfig = useAppRuntimeConfig();
+  const hasCloudSession = useHasCloudSession();
   // 解析生效主题（day/night），render 期直接挂到 shell 的 data-appearance，
   // 配合同步 rehydrate 的 appearance-store 做到首帧即正确、零闪烁。
   const { resolved: resolvedAppearance } = useAppearance();
@@ -65,7 +67,7 @@ export function MobileShell({ children }: PropsWithChildren) {
   const { data: conversations } = useQuery({
     queryKey: ["app-conversations", runtimeConfig.apiBaseUrl],
     queryFn: () => getConversations(runtimeConfig.apiBaseUrl),
-    enabled: showTabs,
+    enabled: showTabs && hasCloudSession,
     staleTime: 15_000,
   });
   const conversationList = useMemo(
@@ -201,7 +203,7 @@ export function MobileShell({ children }: PropsWithChildren) {
                           "absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-0.5 text-[length:var(--text-eyebrow)] leading-none text-[color:var(--text-on-brand)]",
                           showReminderBadge
                             ? "bg-[color:var(--brand-primary)]"
-                            : "bg-[color:var(--state-danger-bg)]",
+                            : "bg-[color:var(--state-danger-solid)]",
                         )}
                       >
                         {badgeCount > 99 ? "99+" : badgeCount}

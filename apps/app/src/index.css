@@ -164,6 +164,7 @@ body.yj-desktop-window {
   --state-warning-text: #a16207;
   --state-danger-bg: rgba(239, 68, 68, 0.1);
   --state-danger-text: #b42318;
+  --state-danger-solid: #fa5151;
   --state-info-bg: rgba(99, 102, 241, 0.1);
   --state-info-text: #4338ca;
   --shadow-shell: 0 18px 52px rgba(15, 23, 42, 0.14);
@@ -247,6 +248,7 @@ body.yj-desktop-window[data-appearance="night"] {
   --state-warning-text: #fbbf24;
   --state-danger-bg: rgba(250, 81, 81, 0.16);
   --state-danger-text: #f87171;
+  --state-danger-solid: #ff6b6b;
   --state-info-bg: rgba(129, 140, 248, 0.18);
   --state-info-text: #a5b4fc;
   --shadow-shell: 0 18px 52px rgba(0, 0, 0, 0.5);
@@ -402,6 +404,7 @@ body.yj-mobile::after {
   --state-warning-text: #ad6800;
   --state-danger-bg: rgba(250, 81, 81, 0.1);
   --state-danger-text: #cf1322;
+  --state-danger-solid: #fa5151;
   --state-info-bg: rgba(99, 102, 241, 0.1);
   --state-info-text: #4338ca;
 
@@ -502,6 +505,7 @@ body.yj-mobile::after {
   --state-warning-text: #fbbf24;
   --state-danger-bg: rgba(250, 81, 81, 0.16);
   --state-danger-text: #f87171;
+  --state-danger-solid: #ff6b6b;
   --state-info-bg: rgba(129, 140, 248, 0.18);
   --state-info-text: #a5b4fc;
 

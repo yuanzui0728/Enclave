@@ -366,6 +366,11 @@ export function DesktopChatWorkspace({
       // 直接把新消息写进对应会话的 messages cache：staleTime 内 useQuery 会先
       // 返回旧 cache 再后台 refetch，用户切到该会话先看不到新消息。setQueriesData
       // 直接合并进所有 messageLimit 变体的 cache，切到 chat-room 立刻就在。
+      // 红包消息（收到拆开入账 / 发出扣款）会改余额；服务端落库后才 emit，故无竞态。
+      // 失效钱包查询让桌面外壳里任何已挂载的余额展示即时刷新（对齐 checkin-card）。
+      if (payload.type === "red_packet") {
+        void queryClient.invalidateQueries({ queryKey: ["cloud-wallet"] });
+      }
       if ("conversationId" in payload) {
         queryClient.setQueriesData<Message[]>(
           { queryKey: ["app-conversation-messages", baseUrl, payload.conversationId] },
@@ -1858,7 +1863,7 @@ export function DesktopChatWorkspace({
           aria-label={t(msg`会话列表`)}
           className="flex w-[320px] shrink-0 flex-col border-r border-[color:var(--border-faint)] bg-[color:var(--surface-shell)]"
         >
-          <div className="border-b border-[color:var(--border-faint)] bg-[rgba(255,255,255,0.78)] px-3 py-3 backdrop-blur-xl">
+          <div className="border-b border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-3 py-3 backdrop-blur-xl">
             <div className="relative z-20 flex items-center gap-2">
               {/* 走查新一轮 R13：和 R11 quickMenu 同款思路。聊天列表顶部的
                   搜索框 + 展开的 DesktopSearchDropdownPanel 都在 chat list 子树
@@ -2093,7 +2098,7 @@ export function DesktopChatWorkspace({
                         return (
                           <section
                             key={group.status}
-                            className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-card)]/90"
+                            className="rounded-[var(--radius-sm)] border border-[color:var(--border-faint)]/80 bg-[color:var(--surface-primary)]"
                           >
                             {collapsible ? (
                               <div className="flex items-center justify-between px-3 py-1.5">
@@ -2477,7 +2482,7 @@ export function DesktopChatWorkspace({
           </div>
         ) : (
           <div className="flex h-full items-center justify-center px-10">
-            <div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/86 px-8 py-10 shadow-[var(--shadow-soft)]">
+            <div className="w-full max-w-md rounded-[18px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-8 py-10 shadow-[var(--shadow-soft)]">
               <EmptyState
                 title={t(msg`选择一段聊天开始工作`)}
                 description={t(
@@ -3007,7 +3012,7 @@ function DesktopReminderCard({
         "flex items-center gap-2.5 rounded-[14px] border px-2.5 py-2 transition-[background-color,border-color,box-shadow] duration-[var(--motion-fast)] ease-[var(--ease-standard)]",
         active
           ? "border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color:var(--surface-card)] shadow-[0_8px_18px_color-mix(in_srgb,var(--brand-primary)_6%,transparent)]"
-          : "border-[color:var(--border-faint)]/70 bg-[color:var(--surface-card)]/88 hover:bg-[color:var(--surface-card)]",
+          : "border-[color:var(--border-faint)]/70 bg-[color:var(--surface-primary)] hover:bg-[color:var(--surface-card)]",
       )}
     >
       <button
@@ -3108,10 +3113,10 @@ const ConversationCardLink = memo(function ConversationCardLink({
   const className = active
     ? "flex items-center gap-3 rounded-[10px] border border-[color-mix(in_srgb,var(--brand-primary)_14%,transparent)] bg-[color:var(--surface-card)] px-3 py-2.5 shadow-[0_8px_22px_rgba(15,23,42,0.04)]"
     : contextMenuOpen
-      ? "flex items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)]/88 px-3 py-2.5"
+      ? "flex items-center gap-3 rounded-[10px] border border-[color:var(--border-faint)] bg-[color:var(--surface-primary)] px-3 py-2.5"
       : conversation.isPinned
         ? "flex items-center gap-3 rounded-[10px] border border-transparent bg-[color:var(--state-success-bg)] px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--state-success-bg)]"
-        : "flex items-center gap-3 rounded-[10px] border border-transparent bg-transparent px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-card)]/80";
+        : "flex items-center gap-3 rounded-[10px] border border-transparent bg-transparent px-3 py-2.5 transition-[background-color,border-color] duration-[var(--motion-fast)] ease-[var(--ease-standard)] hover:border-[color:var(--border-faint)] hover:bg-[color:var(--surface-primary)]";
   const preview = getConversationPreviewParts(
     conversation,
     localMessageActionState,
@@ -3227,7 +3232,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
                 // 把它当作"一张被命名的视觉指示"，AT 一致暴露 aria-label。
                 <div
                   role="img"
-                  className="h-2 w-2 rounded-full bg-[color:var(--state-danger-bg)]"
+                  className="h-2 w-2 rounded-full bg-[color:var(--state-danger-solid)]"
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 />
               ) : (
@@ -3245,7 +3250,7 @@ const ConversationCardLink = memo(function ConversationCardLink({
                 // 名称之外又复读一遍。
                 <div
                   role="img"
-                  className="min-w-5 rounded-full bg-[color:var(--state-danger-bg)] px-1.5 py-0.5 text-center text-[10px] text-[color:var(--text-on-brand)]"
+                  className="min-w-5 rounded-full bg-[color:var(--state-danger-solid)] px-1.5 py-0.5 text-center text-[10px] text-[color:var(--text-on-brand)]"
                   aria-label={t(msg`${conversation.unreadCount} 条未读消息`)}
                 >
                   <span aria-hidden="true">

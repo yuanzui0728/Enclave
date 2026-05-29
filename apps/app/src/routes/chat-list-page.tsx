@@ -2224,7 +2224,7 @@ function ConversationListItemLinkImpl({
                           )
                     }
                     className={cn(
-                      "flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[color:var(--state-danger-bg)] px-1 text-[length:var(--text-eyebrow)] leading-none text-[color:var(--text-on-brand)] shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
+                      "flex min-h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[color:var(--state-danger-solid)] px-1 text-[length:var(--text-eyebrow)] leading-none text-[color:var(--text-on-brand)] shadow-[0_4px_12px_rgba(250,81,81,0.18)]",
                       conversation.unreadCount > 9 ? "min-w-[22px]" : undefined,
                     )}
                   >
