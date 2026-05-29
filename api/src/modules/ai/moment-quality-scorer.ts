@@ -2,19 +2,26 @@
 // 全局共享池朋友圈「启发式质量打分」。纯函数。复用 moment-output-validator 的正则/锚点
 // 原语（不重写），叠加 moment-diversity 的 trigram 相似度做新颖度。best-of-N 在所有
 // 通过硬校验的候选里挑 total 最高者；低于阈值则整条不发（与现有「校验失败即跳过」一致）。
+//
+// 权重 / 近重复阈值 / 校验正则默认值来自 moment-quality-defaults，可被云平台
+// reply_logic_runtime_rules.momentQuality 覆盖（通过 weights / nearDupSimilarity /
+// validationConfig 入参传入；未传则用默认，行为逐字节不变）。
 import type {
   MomentGenerationContext,
   PersonalityProfile,
 } from './ai.types';
 import {
-  GENERIC_PATTERNS,
-  META_PATTERNS,
-  STAGE_DIRECTION_PATTERNS,
-  STRUCTURE_PATTERNS,
+  DEFAULT_MOMENT_VALIDATION_CONFIG,
   extractAnchorTokens,
   hasConcreteSignal,
   normalizeMomentText,
+  type MomentValidationConfig,
 } from './moment-output-validator';
+import {
+  DEFAULT_MOMENT_NEAR_DUP_SIMILARITY,
+  DEFAULT_MOMENT_SCORER_WEIGHTS,
+  type MomentScorerWeights,
+} from './moment-quality-defaults';
 import { maxSimilarityToRecent } from '../moments/moment-diversity';
 
 export interface QualityScoreComponents {
@@ -35,31 +42,25 @@ export interface QualityScore {
   hardRejected: boolean;
 }
 
-// total 权重（和为 1）。noTemplate 给到 0.25 来真正惩罚「过了 validator 但仍带模板腔」
-// 的候选——validator 已剔除最差，这里继续把 generic 措辞从「能过」拉到「拉不开分」。
-const WEIGHTS: QualityScoreComponents = {
-  specificity: 0.25,
-  novelty: 0.2,
-  naturalness: 0.2,
-  noTemplate: 0.25,
-  voiceFit: 0.1,
-};
-
-// 近重复硬拒阈值（trigram Jaccard）。
-const NEAR_DUP_SIMILARITY = 0.6;
+// 历史导出名（兼容直接 import 者）：默认权重 / 默认近重复阈值。
+const WEIGHTS: MomentScorerWeights = DEFAULT_MOMENT_SCORER_WEIGHTS;
+const NEAR_DUP_SIMILARITY = DEFAULT_MOMENT_NEAR_DUP_SIMILARITY;
 
 function clamp01(value: number): number {
   if (Number.isNaN(value)) return 0;
   return Math.max(0, Math.min(1, value));
 }
 
-export function weightedTotal(components: QualityScoreComponents): number {
+export function weightedTotal(
+  components: QualityScoreComponents,
+  weights: MomentScorerWeights = WEIGHTS,
+): number {
   return clamp01(
-    components.specificity * WEIGHTS.specificity +
-      components.novelty * WEIGHTS.novelty +
-      components.naturalness * WEIGHTS.naturalness +
-      components.noTemplate * WEIGHTS.noTemplate +
-      components.voiceFit * WEIGHTS.voiceFit,
+    components.specificity * weights.specificity +
+      components.novelty * weights.novelty +
+      components.naturalness * weights.naturalness +
+      components.noTemplate * weights.noTemplate +
+      components.voiceFit * weights.voiceFit,
   );
 }
 
@@ -69,6 +70,10 @@ export interface ScoreHeuristicInput {
   context?: MomentGenerationContext;
   /** 本角色 + 全局池近期帖文（新颖度对照）。 */
   recentTexts?: readonly string[];
+  /** 云平台可覆盖的权重 / 近重复阈值 / 校验正则；未传用默认。 */
+  weights?: MomentScorerWeights;
+  nearDupSimilarity?: number;
+  validationConfig?: MomentValidationConfig;
 }
 
 /**
@@ -76,11 +81,18 @@ export interface ScoreHeuristicInput {
  * 不做空文本/长度等硬校验——那由调用方先跑 validateGeneratedSceneOutput。
  */
 export function scoreHeuristic(input: ScoreHeuristicInput): QualityScore {
+  const weights = input.weights ?? WEIGHTS;
+  const nearDupThreshold = input.nearDupSimilarity ?? NEAR_DUP_SIMILARITY;
+  const validation = input.validationConfig ?? DEFAULT_MOMENT_VALIDATION_CONFIG;
   const text = normalizeMomentText(input.text);
   const reasons: string[] = [];
 
   // —— specificity：锚点命中 + 具体信号 + 数字/长度 ——
-  const anchorTokens = extractAnchorTokens(input.context, input.profile);
+  const anchorTokens = extractAnchorTokens(
+    input.context,
+    input.profile,
+    validation.stopwords,
+  );
   const anchorHit = anchorTokens.some((token) => text.includes(token));
   const concrete = hasConcreteSignal(text);
   let specificity = 0;
@@ -93,23 +105,23 @@ export function scoreHeuristic(input: ScoreHeuristicInput): QualityScore {
 
   // —— naturalness：扣 meta / 舞台动作 / 提纲腔 ——
   let naturalness = 1;
-  if (META_PATTERNS.some((p) => p.test(text))) {
+  if (validation.metaPatterns.some((p) => p.test(text))) {
     naturalness -= 0.5;
     reasons.push('AI 口吻/解释腔');
   }
-  if (STAGE_DIRECTION_PATTERNS.some((p) => p.test(text))) {
+  if (validation.stageDirectionPatterns.some((p) => p.test(text))) {
     naturalness -= 0.4;
     reasons.push('舞台动作描写');
   }
-  if (STRUCTURE_PATTERNS.some((p) => p.test(text))) {
+  if (validation.structurePatterns.some((p) => p.test(text))) {
     naturalness -= 0.2;
     reasons.push('提纲/总结腔');
   }
   naturalness = clamp01(naturalness);
 
   // —— noTemplate：通用模板 / 结构模板 ——
-  const hasGeneric = GENERIC_PATTERNS.some((p) => p.test(text));
-  const hasStructure = STRUCTURE_PATTERNS.some((p) => p.test(text));
+  const hasGeneric = validation.genericPatterns.some((p) => p.test(text));
+  const hasStructure = validation.structurePatterns.some((p) => p.test(text));
   let noTemplate = 1;
   if (hasGeneric) {
     noTemplate = 0;
@@ -122,7 +134,7 @@ export function scoreHeuristic(input: ScoreHeuristicInput): QualityScore {
   const recentTexts = input.recentTexts ?? [];
   const maxSim = maxSimilarityToRecent(text, recentTexts);
   const novelty = clamp01(1 - maxSim);
-  const hardRejected = maxSim >= NEAR_DUP_SIMILARITY;
+  const hardRejected = maxSim >= nearDupThreshold;
   if (hardRejected) reasons.push(`与近期帖近重复(${maxSim.toFixed(2)})`);
 
   // —— voiceFit：弱启发式（无 generic + 自然长度区间） ——
@@ -138,7 +150,7 @@ export function scoreHeuristic(input: ScoreHeuristicInput): QualityScore {
     novelty,
     noTemplate,
   };
-  let total = weightedTotal(components);
+  let total = weightedTotal(components, weights);
   if (hardRejected) total = Math.min(total, 0.1);
 
   return { total, components, source: 'heuristic', reasons, hardRejected };
@@ -151,6 +163,7 @@ export function scoreHeuristic(input: ScoreHeuristicInput): QualityScore {
 export function combineWithJudge(
   heuristic: QualityScore,
   judge: QualityScoreComponents,
+  weights: MomentScorerWeights = WEIGHTS,
 ): QualityScore {
   const components: QualityScoreComponents = {
     // 评委更可靠的语义维度以评委为主
@@ -161,7 +174,7 @@ export function combineWithJudge(
     // 新颖度以本地 trigram 为准
     novelty: heuristic.components.novelty,
   };
-  let total = weightedTotal(components);
+  let total = weightedTotal(components, weights);
   if (heuristic.hardRejected) total = Math.min(total, 0.1);
   return {
     total,

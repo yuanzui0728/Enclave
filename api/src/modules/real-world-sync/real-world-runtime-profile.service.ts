@@ -7,6 +7,7 @@ import type {
 } from '../ai/ai.types';
 import type { CharacterEntity } from '../characters/character.entity';
 import { RealWorldSyncService } from './real-world-sync.service';
+import { CharacterBehaviorBlueprintService } from '../characters/character-behavior-blueprint.service';
 
 const SCENE_KEYS: SceneKey[] = [
   'chat',
@@ -148,7 +149,14 @@ type CharacterEntityForRuntimeProfile = Pick<
   | 'expertDomains'
   | 'bio'
   | 'personality'
->;
+> &
+  // 平台行为蓝图寻址（仅预设/系统种子角色按 sourceType+sourceKey 参与统一行为覆盖）。
+  // 设为**可选**：现有窄 Pick 调用方（如 characters.service.getRuntimeProfileFromCharacter）
+  // 无需同步加字段即可通过类型检查；运行时实参是完整 CharacterEntity，这些字段都在，
+  // resolveBlueprintKey 照常取值。
+  Partial<
+    Pick<CharacterEntity, 'sourceType' | 'sourceKey' | 'wikiSourceCharacterId'>
+  >;
 
 /**
  * 用来判断一份 profile 是不是已经"够用"——name 或任意一种 prompt 文本里至少
@@ -214,7 +222,10 @@ function backfillProfileFromCharacterScalars(
 
 @Injectable()
 export class RealWorldRuntimeProfileService {
-  constructor(private readonly realWorldSync: RealWorldSyncService) {}
+  constructor(
+    private readonly realWorldSync: RealWorldSyncService,
+    private readonly blueprintService: CharacterBehaviorBlueprintService,
+  ) {}
 
   async buildRuntimeProfileFromCharacter(
     character: CharacterEntityForRuntimeProfile | null | undefined,
@@ -227,12 +238,29 @@ export class RealWorldRuntimeProfileService {
       | PersonalityProfile
       | null
       | undefined;
-    const baseProfile = hasMeaningfulProfile(rawProfile)
+    let baseProfile = hasMeaningfulProfile(rawProfile)
       ? cloneProfile(rawProfile)
       : backfillProfileFromCharacterScalars(
           rawProfile ? cloneProfile(rawProfile) : undefined,
           character,
         );
+
+    // 平台级角色行为蓝图：把全网统一的行为定义（coreLogic/scenePrompts/traits…）覆盖到
+    // per-owner profile 之上。**必须在 sceneOverlays merge 之前**——蓝图是「平台基线」，
+    // sceneOverlays 是「今日现实补丁」，顺序反了会冲掉当天补丁。蓝图为空（无 sourceKey /
+    // 私有角色 / 平台未编辑过）→ 原样回落 per-owner profile，行为逐字节不变、零迁移。
+    // 个性化字段（memory/intimacy/realWorldContext/name…）不在蓝图白名单，结构性不被覆盖。
+    const blueprintKey = this.blueprintService.resolveBlueprintKey(character);
+    if (blueprintKey) {
+      const blueprint = await this.blueprintService.getBlueprint(blueprintKey);
+      if (blueprint) {
+        baseProfile = this.blueprintService.applyBlueprintBehavior(
+          baseProfile,
+          blueprint,
+        );
+      }
+    }
+
     const runtimeContext = await this.realWorldSync.resolveRuntimeContext(
       character.id,
     );

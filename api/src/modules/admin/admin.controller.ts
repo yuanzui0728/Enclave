@@ -4,6 +4,7 @@ import {
   Get,
   Post,
   Patch,
+  Put,
   Delete,
   Param,
   Body,
@@ -16,6 +17,8 @@ import { AdminService } from './admin.service';
 import { CharacterEntity } from '../characters/character.entity';
 import { CharacterBlueprintService } from '../characters/character-blueprint.service';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
+import { CharacterBehaviorAdminService } from './character-behavior-admin.service';
+import type { CharacterBehaviorDefinition } from '../characters/character-behavior-blueprint.types';
 import { AiOrchestratorService } from '../ai/ai-orchestrator.service';
 import { AiUsageLedgerService } from '../analytics/ai-usage-ledger.service';
 import { N1nPricingSyncService } from '../analytics/n1n-pricing-sync.service';
@@ -58,6 +61,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly replyLogicAdminService: ReplyLogicAdminService,
+    private readonly characterBehaviorAdminService: CharacterBehaviorAdminService,
     private readonly characterBlueprintService: CharacterBlueprintService,
     private readonly ai: AiOrchestratorService,
     private readonly usageLedger: AiUsageLedgerService,
@@ -868,6 +872,32 @@ export class AdminController {
       body.userMessage?.trim() ?? '',
       body.actorCharacterId?.trim() || undefined,
     );
+  }
+
+  // ===== 平台级角色行为定义（蓝图）=====
+  // 经 PlatformAdminProxyController 反代（不选 world、固定运营 phone）；蓝图是全局裸键，
+  // 全网用户共享一份。
+  @Get('character-behavior/blueprints')
+  getCharacterBehaviorBlueprints() {
+    return this.characterBehaviorAdminService.getOverview();
+  }
+
+  @Get('character-behavior/blueprints/:key/seed-default')
+  getCharacterBehaviorSeedDefault(@Param('key') key: string) {
+    return this.characterBehaviorAdminService.getSeedDefault(key);
+  }
+
+  @Put('character-behavior/blueprints/:key')
+  setCharacterBehaviorBlueprint(
+    @Param('key') key: string,
+    @Body() body: CharacterBehaviorDefinition,
+  ) {
+    return this.characterBehaviorAdminService.putBlueprint(key, body);
+  }
+
+  @Delete('character-behavior/blueprints/:key')
+  deleteCharacterBehaviorBlueprint(@Param('key') key: string) {
+    return this.characterBehaviorAdminService.deleteBlueprint(key);
   }
 
   private parseSelfAgentWorkspaceDocumentName(

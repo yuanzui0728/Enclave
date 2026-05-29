@@ -10,6 +10,7 @@ import { CharacterRealWorldSyncRunEntity } from './character-real-world-sync-run
 import { RealWorldRuntimeProfileService } from './real-world-runtime-profile.service';
 import { RealWorldSyncRulesService } from './real-world-sync-rules.service';
 import { RealWorldSyncService } from './real-world-sync.service';
+import { CharacterBehaviorBlueprintService } from '../characters/character-behavior-blueprint.service';
 
 @Module({
   imports: [
@@ -27,11 +28,13 @@ import { RealWorldSyncService } from './real-world-sync.service';
     RealWorldSyncRulesService,
     RealWorldSyncService,
     RealWorldRuntimeProfileService,
+    CharacterBehaviorBlueprintService,
   ],
   exports: [
     RealWorldSyncRulesService,
     RealWorldSyncService,
     RealWorldRuntimeProfileService,
+    CharacterBehaviorBlueprintService,
   ],
 })
 export class RealWorldSyncModule {}

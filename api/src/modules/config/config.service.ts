@@ -18,6 +18,7 @@ const GLOBAL_EXACT_CONFIG_KEYS = new Set<string>([
   'need_discovery_config',
   'shake_discovery_config', // 注意：shake_discovery_sessions 是 per-owner（用户的摇一摇配额）
   'inference_multimodal_diagnostics_latest', // 平台 AI 能力诊断快照（boot 读，必须全局）
+  'character_behavior_blueprints', // 平台级角色行为定义（coreLogic/scenePrompts/traits 等，全 owner 共享）
 ]);
 
 function isGlobalConfigKey(key: string): boolean {

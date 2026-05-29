@@ -21,6 +21,7 @@ import { SystemConfigModule } from '../config/config.module';
 import { CharactersModule } from '../characters/characters.module';
 import { ChatModule } from '../chat/chat.module';
 import { ReplyLogicAdminService } from './reply-logic-admin.service';
+import { CharacterBehaviorAdminService } from './character-behavior-admin.service';
 import { ChatRecordsAdminService } from './chat-records-admin.service';
 import { ChatRecordsAdminController } from './chat-records-admin.controller';
 import { OwnerArchiveAdminController } from './owner-archive-admin.controller';
@@ -99,6 +100,7 @@ import { CloudRuntimeModule } from '../cloud-runtime/cloud-runtime.module';
   providers: [
     AdminService,
     ReplyLogicAdminService,
+    CharacterBehaviorAdminService,
     ChatRecordsAdminService,
     BehaviorRecordsAdminService,
     WechatSyncAdminService,

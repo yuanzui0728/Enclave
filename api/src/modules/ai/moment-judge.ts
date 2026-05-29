@@ -4,26 +4,25 @@
 // （不指定 characterId）。一次批量给全部候选打分，失败 → 返回 null → 回落启发式。
 import { extractJsonFromModelOutput } from './ai-text-sanitizer';
 import type { QualityScoreComponents } from './moment-quality-scorer';
+import { DEFAULT_MOMENT_JUDGE_SYSTEM_PROMPT } from './moment-quality-defaults';
 
 export interface JudgePrompt {
   system: string;
   user: string;
 }
 
-/** 构造评委 prompt：对一批朋友圈候选按 4 个维度打分（0..1）。 */
+/**
+ * 构造评委 prompt：对一批朋友圈候选按 4 个维度打分（0..1）。
+ * systemPrompt 默认 = DEFAULT_MOMENT_JUDGE_SYSTEM_PROMPT，可由云平台
+ * reply_logic_runtime_rules.momentQuality.judgeSystemPrompt 覆盖。
+ */
 export function buildMomentJudgePrompt(input: {
   candidates: readonly string[];
   personaSummary: string;
+  systemPrompt?: string;
 }): JudgePrompt {
-  const system = [
-    '你是一个中文社交动态（朋友圈）质量评审。只评估文本质量，不改写、不解释。',
-    '对每条候选按以下 4 个维度各打 0 到 1 的分（保留两位小数）：',
-    '- specificity 具体度：有没有具体的细节/名词/数字/场景，而不是空泛抒情。',
-    '- voiceFit 人设契合：是否像这个角色本人随手发的，而非通用 AI 腔。',
-    '- naturalness 自然度：像真人此刻发的一句话，没有解释腔、提纲、舞台动作描写。',
-    '- noTemplate 去模板：避开「记录一下/新的一天/继续加油/首先其次」等套话与结构化套路。',
-    '严格只输出 JSON，形如 {"scores":[{"i":0,"specificity":0.0,"voiceFit":0.0,"naturalness":0.0,"noTemplate":0.0}]}，不要任何额外文字。',
-  ].join('\n');
+  const system =
+    input.systemPrompt?.trim() || DEFAULT_MOMENT_JUDGE_SYSTEM_PROMPT;
 
   const persona = input.personaSummary?.trim()
     ? `角色：${input.personaSummary.trim()}`

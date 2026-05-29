@@ -5,6 +5,15 @@ import type {
   SceneKey,
 } from './ai.types';
 import { sanitizeAiText } from './ai-text-sanitizer';
+import {
+  DEFAULT_GENERIC_PATTERNS,
+  DEFAULT_META_PATTERNS,
+  DEFAULT_MOMENT_LENGTH_RANGES,
+  DEFAULT_MOMENT_STOPWORDS,
+  DEFAULT_STAGE_DIRECTION_PATTERNS,
+  DEFAULT_STRUCTURE_PATTERNS,
+  type MomentLengthRange,
+} from './moment-quality-defaults';
 
 export type MomentOutputValidationResult = {
   valid: boolean;
@@ -12,65 +21,135 @@ export type MomentOutputValidationResult = {
   reasons: string[];
 };
 
-export const META_PATTERNS = [
-  /作为AI/u,
-  /语言模型/u,
-  /^朋友圈[：:]/u,
-  /^文案[：:]/u,
-  /(以下|下面).{0,4}(朋友圈|文案|内容)/u,
-  /(只输出|不要解释|说明如下)/u,
-];
+// 兼容历史导出名：编译默认值即这些常量（moment-quality-scorer 等仍直接 import）。
+export const META_PATTERNS = DEFAULT_META_PATTERNS;
+export const GENERIC_PATTERNS = DEFAULT_GENERIC_PATTERNS;
+export const STRUCTURE_PATTERNS = DEFAULT_STRUCTURE_PATTERNS;
+export const STAGE_DIRECTION_PATTERNS = DEFAULT_STAGE_DIRECTION_PATTERNS;
 
-export const GENERIC_PATTERNS = [
-  /生活碎片/u,
-  /记录一下/u,
-  /随手一发/u,
-  /新的一天/u,
-  /继续加油/u,
-  /保持热爱/u,
-  /慢慢来/u,
-  /就是这样/u,
-  /最近状态/u,
-  /有时候/u,
-  /碎碎念/u,
-  /一切都会/u,
-];
+const DEFAULT_STOPWORDS_SET: ReadonlySet<string> = new Set(
+  DEFAULT_MOMENT_STOPWORDS,
+);
 
-export const STRUCTURE_PATTERNS = [
-  /首先/u,
-  /其次/u,
-  /最后/u,
-  /总之/u,
-  /以下(?:几点|几个方面|内容)/u,
-  /分(?:三|3)点/u,
-];
+/**
+ * 已编译的校验配置。运行时由 reply_logic_runtime_rules.momentQuality.validation
+ * 经 compileMomentValidationConfig 得到；未传则用 DEFAULT_MOMENT_VALIDATION_CONFIG
+ * （= 历史硬编码默认值，行为逐字节不变）。
+ */
+export interface MomentValidationConfig {
+  metaPatterns: readonly RegExp[];
+  genericPatterns: readonly RegExp[];
+  structurePatterns: readonly RegExp[];
+  stageDirectionPatterns: readonly RegExp[];
+  stopwords: ReadonlySet<string>;
+  lengthRanges: {
+    momentsPost: MomentLengthRange;
+    feedPost: MomentLengthRange;
+    channelPost: MomentLengthRange;
+    default: MomentLengthRange;
+  };
+}
 
-export const STAGE_DIRECTION_PATTERNS = [
-  /^[（(](?:轻笑|笑了笑|笑|苦笑|叹气|叹了口气|沉默|停顿|顿了顿|停了停|想了想|看了看|看向|看着|低头|抬头|耸肩|皱眉|挑眉|扶额|点头|摇头|拍拍|抱抱|凑近|后退|清了清嗓|咳了一声|压低声音|轻声|无奈|认真)[^）)]{0,12}[)）]/u,
-  /^[*＊](?:轻笑|笑了笑|笑|苦笑|叹气|叹了口气|沉默|停顿|顿了顿|停了停|想了想|看了看|看向|看着|低头|抬头|耸肩|皱眉|挑眉|扶额|点头|摇头|拍拍|抱抱|凑近|后退|清了清嗓|咳了一声|压低声音|轻声|无奈|认真)[^*＊\n]{0,12}[*＊]/u,
-];
+/** 云平台存储/编辑的原始（未编译）形态：正则以字符串源存储。 */
+export interface RawMomentValidationConfig {
+  metaPatterns?: readonly string[];
+  genericPatterns?: readonly string[];
+  structurePatterns?: readonly string[];
+  stageDirectionPatterns?: readonly string[];
+  stopwords?: readonly string[];
+  lengthRanges?: {
+    momentsPost?: Partial<MomentLengthRange>;
+    feedPost?: Partial<MomentLengthRange>;
+    channelPost?: Partial<MomentLengthRange>;
+    default?: Partial<MomentLengthRange>;
+  };
+}
 
-const STOPWORDS = new Set([
-  '今天',
-  '最近',
-  '现在',
-  '一下',
-  '一个',
-  '一些',
-  '这个',
-  '那个',
-  '就是',
-  '还是',
-  '真的',
-  '感觉',
-  '状态',
-  '因为',
-  '所以',
-  '继续',
-  '生活',
-  '自己',
-  '大家',
-]);
+export const DEFAULT_MOMENT_VALIDATION_CONFIG: MomentValidationConfig = {
+  metaPatterns: DEFAULT_META_PATTERNS,
+  genericPatterns: DEFAULT_GENERIC_PATTERNS,
+  structurePatterns: DEFAULT_STRUCTURE_PATTERNS,
+  stageDirectionPatterns: DEFAULT_STAGE_DIRECTION_PATTERNS,
+  stopwords: DEFAULT_STOPWORDS_SET,
+  lengthRanges: DEFAULT_MOMENT_LENGTH_RANGES,
+};
+
+// 逐条编译正则源；非法 pattern 静默跳过（运营填错不崩生成）。`sources` 未提供 →
+// 回落默认；提供空数组 → 视为运营有意清空该类（返回空，允许关闭某类校验）。
+function compilePatterns(
+  sources: readonly string[] | undefined,
+  fallback: readonly RegExp[],
+): readonly RegExp[] {
+  if (!Array.isArray(sources)) return fallback;
+  const out: RegExp[] = [];
+  for (const src of sources) {
+    if (typeof src !== 'string' || !src) continue;
+    try {
+      out.push(new RegExp(src, 'u'));
+    } catch {
+      // 跳过非法正则
+    }
+  }
+  return out;
+}
+
+function resolveRange(
+  raw: Partial<MomentLengthRange> | undefined,
+  fallback: MomentLengthRange,
+): MomentLengthRange {
+  const min =
+    typeof raw?.min === 'number' && Number.isFinite(raw.min)
+      ? raw.min
+      : fallback.min;
+  const max =
+    typeof raw?.max === 'number' && Number.isFinite(raw.max)
+      ? raw.max
+      : fallback.max;
+  return { min, max };
+}
+
+/** 把云平台存的原始配置编译成运行时 MomentValidationConfig（缺省回落默认）。 */
+export function compileMomentValidationConfig(
+  raw?: RawMomentValidationConfig | null,
+): MomentValidationConfig {
+  if (!raw) return DEFAULT_MOMENT_VALIDATION_CONFIG;
+  return {
+    metaPatterns: compilePatterns(raw.metaPatterns, DEFAULT_META_PATTERNS),
+    genericPatterns: compilePatterns(
+      raw.genericPatterns,
+      DEFAULT_GENERIC_PATTERNS,
+    ),
+    structurePatterns: compilePatterns(
+      raw.structurePatterns,
+      DEFAULT_STRUCTURE_PATTERNS,
+    ),
+    stageDirectionPatterns: compilePatterns(
+      raw.stageDirectionPatterns,
+      DEFAULT_STAGE_DIRECTION_PATTERNS,
+    ),
+    stopwords: Array.isArray(raw.stopwords)
+      ? new Set(raw.stopwords.filter((s) => typeof s === 'string' && s))
+      : DEFAULT_STOPWORDS_SET,
+    lengthRanges: {
+      momentsPost: resolveRange(
+        raw.lengthRanges?.momentsPost,
+        DEFAULT_MOMENT_LENGTH_RANGES.momentsPost,
+      ),
+      feedPost: resolveRange(
+        raw.lengthRanges?.feedPost,
+        DEFAULT_MOMENT_LENGTH_RANGES.feedPost,
+      ),
+      channelPost: resolveRange(
+        raw.lengthRanges?.channelPost,
+        DEFAULT_MOMENT_LENGTH_RANGES.channelPost,
+      ),
+      default: resolveRange(
+        raw.lengthRanges?.default,
+        DEFAULT_MOMENT_LENGTH_RANGES.default,
+      ),
+    },
+  };
+}
 
 export function normalizeMomentText(value: string) {
   return sanitizeAiText(value)
@@ -82,6 +161,7 @@ export function normalizeMomentText(value: string) {
 export function extractAnchorTokens(
   context: MomentGenerationContext | undefined,
   profile: PersonalityProfile,
+  stopwords: ReadonlySet<string> = DEFAULT_STOPWORDS_SET,
 ) {
   const tokens = new Set<string>();
   const sourceValues = [
@@ -104,7 +184,7 @@ export function extractAnchorTokens(
       .map((item) => item.trim())
       .filter(Boolean);
     for (const part of [normalized, ...parts]) {
-      if (part.length < 2 || part.length > 18 || STOPWORDS.has(part)) {
+      if (part.length < 2 || part.length > 18 || stopwords.has(part)) {
         continue;
       }
       tokens.add(part);
@@ -124,16 +204,19 @@ export function hasConcreteSignal(text: string) {
   );
 }
 
-function resolveLengthRange(sceneKey: SceneKey) {
+function resolveLengthRange(
+  sceneKey: SceneKey,
+  config: MomentValidationConfig,
+): MomentLengthRange {
   switch (sceneKey) {
     case 'moments_post':
-      return { min: 5, max: 160 };
+      return config.lengthRanges.momentsPost;
     case 'feed_post':
-      return { min: 8, max: 220 };
+      return config.lengthRanges.feedPost;
     case 'channel_post':
-      return { min: 16, max: 320 };
+      return config.lengthRanges.channelPost;
     default:
-      return { min: 4, max: 180 };
+      return config.lengthRanges.default;
   }
 }
 
@@ -141,25 +224,26 @@ function validateSceneSpecificRules(input: {
   normalizedText: string;
   sceneKey: SceneKey;
   reasons: string[];
+  config: MomentValidationConfig;
 }) {
-  const { normalizedText, sceneKey, reasons } = input;
+  const { normalizedText, sceneKey, reasons, config } = input;
 
   if (
-    STAGE_DIRECTION_PATTERNS.some((pattern) => pattern.test(normalizedText))
+    config.stageDirectionPatterns.some((pattern) => pattern.test(normalizedText))
   ) {
     reasons.push('含有舞台动作描写');
   }
 
   if (
     (sceneKey === 'feed_post' || sceneKey === 'channel_post') &&
-    STRUCTURE_PATTERNS.some((pattern) => pattern.test(normalizedText))
+    config.structurePatterns.some((pattern) => pattern.test(normalizedText))
   ) {
     reasons.push('内容像提纲或总结稿');
   }
 
   if (
     (sceneKey === 'moments_post' || sceneKey === 'feed_post') &&
-    GENERIC_PATTERNS.some((pattern) => pattern.test(normalizedText))
+    config.genericPatterns.some((pattern) => pattern.test(normalizedText))
   ) {
     reasons.push('内容偏模板化');
   }
@@ -170,7 +254,9 @@ export function validateGeneratedSceneOutput(input: {
   context?: MomentGenerationContext;
   profile: PersonalityProfile;
   sceneKey?: SceneKey;
+  config?: MomentValidationConfig;
 }): MomentOutputValidationResult {
+  const config = input.config ?? DEFAULT_MOMENT_VALIDATION_CONFIG;
   const normalizedText = normalizeMomentText(input.text);
   const reasons: string[] = [];
   const sceneKey = input.sceneKey ?? 'moments_post';
@@ -183,14 +269,14 @@ export function validateGeneratedSceneOutput(input: {
     };
   }
 
-  const lengthRange = resolveLengthRange(sceneKey);
+  const lengthRange = resolveLengthRange(sceneKey, config);
   if (normalizedText.length < lengthRange.min) {
     reasons.push('内容过短');
   }
   if (normalizedText.length > lengthRange.max) {
     reasons.push('内容过长');
   }
-  if (META_PATTERNS.some((pattern) => pattern.test(normalizedText))) {
+  if (config.metaPatterns.some((pattern) => pattern.test(normalizedText))) {
     reasons.push('带有解释或 AI 口吻');
   }
 
@@ -198,14 +284,19 @@ export function validateGeneratedSceneOutput(input: {
     normalizedText,
     sceneKey,
     reasons,
+    config,
   });
 
   if (sceneKey === 'moments_post') {
-    const anchorTokens = extractAnchorTokens(input.context, input.profile);
+    const anchorTokens = extractAnchorTokens(
+      input.context,
+      input.profile,
+      config.stopwords,
+    );
     const hasAnchorHit = anchorTokens.some((token) =>
       normalizedText.includes(token),
     );
-    const hasGenericPattern = GENERIC_PATTERNS.some((pattern) =>
+    const hasGenericPattern = config.genericPatterns.some((pattern) =>
       pattern.test(normalizedText),
     );
     const concreteSignal = hasConcreteSignal(normalizedText);
