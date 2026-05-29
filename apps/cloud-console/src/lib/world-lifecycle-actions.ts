@@ -69,13 +69,17 @@ export const WORLD_LIFECYCLE_ACTION_RULES = {
   failed: ["resume", "retry", "reconcile"],
   disabled: ["reconcile"],
   deleting: ["reconcile"],
+  // 注销墓碑世界（仅供后台寻址浏览），无任何生命周期操作。
+  archived: [],
 } as const satisfies Record<
   CloudWorldLifecycleStatus,
   readonly WorldLifecycleAction[]
 >;
 
 function getAllowedWorldActions(status: CloudWorldLifecycleStatus) {
-  return WORLD_LIFECYCLE_ACTION_RULES[status] as readonly WorldLifecycleAction[];
+  // 兜底空数组：任何未登记状态都不暴露操作，避免 .includes 读到 undefined 崩页。
+  return (WORLD_LIFECYCLE_ACTION_RULES[status] ??
+    []) as readonly WorldLifecycleAction[];
 }
 
 export function canResumeWorld(status: CloudWorldLifecycleStatus) {
@@ -112,7 +116,7 @@ export function createWorldActionLabel(
     case "resume":
       return `${world.name} resume queued.`;
     case "suspend":
-      return `${world.name} suspend queued.`;
+      return `${world.name} pause queued.`;
     case "retry":
       return `${world.name} retry queued.`;
     case "reconcile":
@@ -136,8 +140,8 @@ export function createWorldActionDisplayLabel(
       });
     case "suspend":
       return selectCloudConsoleText(locale, {
-        "en-US": "Suspend",
-        "zh-CN": "挂起",
+        "en-US": "Pause",
+        "zh-CN": "暂停",
         "ja-JP": "一時停止",
         "ko-KR": "일시 중지",
       });
@@ -173,8 +177,8 @@ export function createWorldActionPendingLabel(
       });
     case "suspend":
       return selectCloudConsoleText(locale, {
-        "en-US": "Suspending...",
-        "zh-CN": "正在挂起…",
+        "en-US": "Pausing...",
+        "zh-CN": "正在暂停…",
         "ja-JP": "一時停止中…",
         "ko-KR": "일시 중지 중…",
       });
@@ -227,19 +231,19 @@ export function createWorldActionConfirmationCopy(
         title: formatCloudConsoleSuspendWorldTitle(world.name, resolvedLocale),
         description: selectCloudConsoleText(resolvedLocale, {
           "en-US":
-            "The world will move toward sleeping state and active sessions may need to reconnect after it wakes again.",
+            "This user world will be paused; active sessions may need to reconnect after it resumes.",
           "zh-CN":
-            "世界将进入休眠状态，重新唤醒后活跃会话可能需要重新连接。",
+            "该用户世界将暂停服务，恢复后活跃会话可能需要重新连接。",
           "ja-JP":
-            "ワールドはスリープ状態に移行し、再開後はアクティブなセッションを再接続する必要がある場合があります。",
+            "このユーザーワールドは一時停止され、再開後はアクティブなセッションを再接続する必要がある場合があります。",
           "ko-KR":
-            "월드는 절전 상태로 전환되며, 다시 깨어난 후 활성 세션은 재연결이 필요할 수 있습니다.",
+            "이 사용자 월드는 일시 중지되며, 재개된 후 활성 세션은 재연결이 필요할 수 있습니다.",
         }),
         confirmLabel: selectCloudConsoleText(resolvedLocale, {
-          "en-US": "Suspend world",
-          "zh-CN": "挂起世界",
-          "ja-JP": "ワールドを一時停止",
-          "ko-KR": "월드 일시 중지",
+          "en-US": "Pause user world",
+          "zh-CN": "暂停用户世界",
+          "ja-JP": "ユーザーワールドを一時停止",
+          "ko-KR": "사용자 월드 일시 중지",
         }),
         pendingLabel: createWorldActionPendingLabel(action, resolvedLocale),
         danger: true,
@@ -253,13 +257,13 @@ export function createWorldActionConfirmationCopy(
         ),
         description: selectCloudConsoleText(resolvedLocale, {
           "en-US":
-            "This will queue a new recovery action and clear the current failure state for the world.",
+            "This will queue a new recovery action and clear the current failure state for this user world.",
           "zh-CN":
-            "这会排队一个新的恢复动作，并清除该世界当前的失败状态。",
+            "这会排队一个新的恢复动作，并清除该用户世界当前的失败状态。",
           "ja-JP":
-            "新しい復旧アクションをキューに追加し、ワールドの現在の失敗状態をクリアします。",
+            "新しい復旧アクションをキューに追加し、このユーザーワールドの現在の失敗状態をクリアします。",
           "ko-KR":
-            "새 복구 작업을 큐에 추가하고 월드의 현재 실패 상태를 초기화합니다.",
+            "새 복구 작업을 큐에 추가하고 이 사용자 월드의 현재 실패 상태를 초기화합니다.",
         }),
         confirmLabel: selectCloudConsoleText(resolvedLocale, {
           "en-US": "Retry recovery",
