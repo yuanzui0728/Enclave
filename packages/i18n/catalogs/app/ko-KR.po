@@ -24,18 +24,18 @@ msgid "音乐"
 msgstr "음악"
 
 #: apps/app/src/components/audio-card.tsx:202
-#: apps/app/src/i18n/static-dom-seed.ts:349
-#: apps/app/src/routes/channels-page.tsx:3454
-#: apps/app/src/routes/channels-page.tsx:3723
-msgid "播放"
-msgstr "재생"
-
-#: apps/app/src/components/audio-card.tsx:202
 #: apps/app/src/features/games/tank-war/tank-war-game.tsx:107
 #: apps/app/src/routes/channels-page.tsx:3454
 #: apps/app/src/routes/channels-page.tsx:3723
 msgid "暂停"
 msgstr "일시정지"
+
+#: apps/app/src/components/audio-card.tsx:202
+#: apps/app/src/i18n/static-dom-seed.ts:349
+#: apps/app/src/routes/channels-page.tsx:3454
+#: apps/app/src/routes/channels-page.tsx:3723
+msgid "播放"
+msgstr "재생"
 
 #: apps/app/src/components/audio-card.tsx:227
 msgid "音频进度"
@@ -458,10 +458,10 @@ msgid "图片发送失败，请稍后再试。"
 msgstr "이미지 전송에 실패했습니다. 잠시 후 다시 시도하세요."
 
 #: apps/app/src/components/chat-composer.tsx:3260
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:484
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:520
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:543
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:568
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:502
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:557
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:580
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:605
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:406
 #: apps/app/src/i18n/static-dom-seed.ts:1071
 #: apps/app/src/routes/mobile-note-editor-page.tsx:535
@@ -668,7 +668,7 @@ msgstr "Enter로 보내기"
 #: apps/app/src/features/desktop/chat/desktop-notes-workspace.tsx:1192
 #: apps/app/src/features/desktop/contacts/desktop-add-friend-send-dialog.tsx:194
 #: apps/app/src/features/notes/mobile-note-send-sheet.tsx:206
-#: apps/app/src/features/world/world-page.tsx:455
+#: apps/app/src/features/world/world-page.tsx:462
 #: apps/app/src/routes/channels-page.tsx:5677
 #: apps/app/src/routes/discover-page.tsx:1335
 #: apps/app/src/routes/mobile-add-friend-page.tsx:1313
@@ -1355,8 +1355,8 @@ msgstr "시스템 공유를 일시적으로 사용할 수 없어 노트 요약�
 #: apps/app/src/components/chat-message-list.tsx:1781
 #: apps/app/src/components/chat-message-list.tsx:5162
 #: apps/app/src/components/chat-message-list.tsx:5232
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:352
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:445
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:364
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:457
 #: apps/app/src/routes/chat-details-page.tsx:426
 msgid "对方"
 msgstr "상대"
@@ -1785,7 +1785,7 @@ msgid "聊天记录"
 msgstr "채팅 기록"
 
 #: apps/app/src/components/chat-message-list.tsx:4027
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:299
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:311
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1222
 #: apps/app/src/features/chat/group-message-context-menu.tsx:68
 #: apps/app/src/features/chat/message-quote-selection-sheet.tsx:148
@@ -1803,7 +1803,7 @@ msgid "发送失败"
 msgstr "보내기 실패"
 
 #: apps/app/src/components/chat-message-list.tsx:4298
-#: apps/app/src/features/world/world-page.tsx:388
+#: apps/app/src/features/world/world-page.tsx:395
 msgid "我的"
 msgstr "내 정보"
 
@@ -1811,7 +1811,7 @@ msgstr "내 정보"
 #: apps/app/src/components/chat-message-list.tsx:4308
 #: apps/app/src/components/chat-message-list.tsx:5333
 #: apps/app/src/components/mobile-shell.tsx:36
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:444
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:456
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:678
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1297
 #: apps/app/src/features/desktop/chat/desktop-chat-details-panel.tsx:1735
@@ -1942,7 +1942,7 @@ msgstr "첨부파일 저장"
 #: apps/app/src/components/chat-message-list.tsx:5396
 #: apps/app/src/components/mobile-shell.tsx:34
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:191
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1302
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1339
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1862
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:2079
 #: apps/app/src/features/desktop/chat/desktop-chat-history-panel.tsx:905
@@ -2460,7 +2460,7 @@ msgstr "결과 요약"
 #: apps/app/src/components/chat-message-list.tsx:7721
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:121
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:62
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:798
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:835
 #: apps/app/src/features/chat/digital-human-stage.tsx:62
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1489
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:356
@@ -2477,7 +2477,7 @@ msgstr "영상 통화"
 #: apps/app/src/components/chat-message-list.tsx:7721
 #: apps/app/src/components/mobile-chat-plus-panel.tsx:175
 #: apps/app/src/features/chat-details/chat-call-fallback-section.tsx:55
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:792
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:829
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1475
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:356
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:805
@@ -3200,9 +3200,9 @@ msgstr "도구 공유"
 #: apps/app/src/components/mobile-discover-tool-shell.tsx:186
 #: apps/app/src/components/mobile-document-shell.tsx:197
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:644
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:184
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1081
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1138
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:196
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1118
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1175
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:193
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1923
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1965
@@ -4570,7 +4570,7 @@ msgid "全部成员"
 msgstr "전체 멤버"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:612
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:985
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1022
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1838
 #: apps/app/src/features/desktop/official-accounts/desktop-subscription-workspace.tsx:392
 #: apps/app/src/features/official-accounts/service/official-account-service-thread.tsx:651
@@ -4609,7 +4609,7 @@ msgid "聊天记录暂时不可用"
 msgstr "채팅 기록을 일시적으로 사용할 수 없습니다"
 
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:635
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:198
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:210
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:209
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:663
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:717
@@ -4680,7 +4680,7 @@ msgstr "다시 불러오기"
 #: apps/app/src/features/chat/chat-message-search-panel.tsx:657
 #: apps/app/src/features/chat/chat-reminder-entries.ts:74
 #: apps/app/src/features/chat/chat-reminder-entries.ts:105
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1090
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1127
 #: apps/app/src/features/desktop/chat/desktop-chat-window-route-state.ts:26
 #: apps/app/src/features/desktop/chat/desktop-chat-window-route-state.ts:133
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:2505
@@ -4919,33 +4919,33 @@ msgstr "새 메시지를 보냈습니다"
 
 #. placeholder {0}: membersQuery.data.length
 #. placeholder {0}: participants.length
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:246
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:258
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:859
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1451
 #: apps/app/src/routes/group-chat-details-page.tsx:665
 msgid "{0} 人群聊"
 msgstr "{0}명 그룹 채팅"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:248
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:260
 msgid "对方正在生成图片..."
 msgstr "상대방이 이미지 생성 중..."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:250
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:262
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:610
 msgid "对方正在回复..."
 msgstr "상대방이 답장 중..."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:361
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:373
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:799
 msgid "新消息"
 msgstr "새 메시지"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:367
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:379
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:805
 msgid "{senderName}：{preview}"
 msgstr "{senderName}: {preview}"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:982
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1019
 #: apps/app/src/features/desktop/chat/desktop-chat-workspace.tsx:2025
 #: apps/app/src/routes/desktop-chat-files-page.tsx:670
 #: apps/app/src/routes/desktop-chat-history-page.tsx:381
@@ -4953,15 +4953,15 @@ msgstr "{senderName}: {preview}"
 msgid "正在读取会话..."
 msgstr "대화 불러오는 중..."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:986
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1023
 msgid "正在读取会话"
 msgstr "대화 읽는 중"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:987
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1024
 msgid "稍等一下，正在同步这段聊天里的消息。"
 msgstr "잠시만 기다려 주세요. 이 채팅의 메시지를 동기화 중입니다."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1002
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1039
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:652
 #: apps/app/src/features/chat/mobile-ai-call-screen.tsx:706
 #: apps/app/src/routes/chat-background-page.tsx:583
@@ -4969,42 +4969,42 @@ msgstr "잠시만 기다려 주세요. 이 채팅의 메시지를 동기화 중�
 msgid "会话"
 msgstr "대화"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1003
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1040
 msgid "会话暂时不可用"
 msgstr "대화를 일시적으로 사용할 수 없습니다"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1091
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1128
 msgid "还没有消息"
 msgstr "아직 메시지가 없습니다"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1092
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1129
 msgid "先发一句开场白，把这段对话真正聊起来。"
 msgstr "먼저 인사말을 한 마디 던져 이 대화를 본격적으로 시작하세요."
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1128
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1165
 #: apps/app/src/i18n/static-dom-seed.ts:755
 msgid "直接说：明早8点提醒我吃药"
 msgstr "예: 내일 아침 8시에 약 먹으라고 알려줘"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1129
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1166
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:1960
 #: apps/app/src/i18n/static-dom-seed.ts:736
 msgid "输入消息"
 msgstr "메시지 입력"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1221
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1258
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:2001
 #: apps/app/src/routes/chat-video-call-page.tsx:56
 #: apps/app/src/routes/group-video-call-page.tsx:55
 msgid "视频通话功能开发中"
 msgstr "영상 통화 기능 개발 중"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1222
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1259
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:2002
 msgid "语音通话功能开发中"
 msgstr "음성 통화 기능 개발 중"
 
-#: apps/app/src/features/chat/conversation-thread-panel.tsx:1224
+#: apps/app/src/features/chat/conversation-thread-panel.tsx:1261
 #: apps/app/src/features/chat/group-chat-thread-panel.tsx:2004
 #: apps/app/src/routes/chat-video-call-page.tsx:57
 #: apps/app/src/routes/group-video-call-page.tsx:56
@@ -8212,7 +8212,7 @@ msgstr "사교 자세"
 
 #: apps/app/src/features/cyber-avatar/cyber-avatar-insights.tsx:162
 #: apps/app/src/features/games/farm/components/neighbor-farm-modal.tsx:231
-#: apps/app/src/features/world/world-page.tsx:596
+#: apps/app/src/features/world/world-page.tsx:603
 msgid "近期动向"
 msgstr "최근 동향"
 
@@ -8543,7 +8543,7 @@ msgid "图集"
 msgstr "사진 갤러리"
 
 #: apps/app/src/features/desktop/channels/desktop-channels-workspace.tsx:3121
-#: apps/app/src/features/world/world-page.tsx:377
+#: apps/app/src/features/world/world-page.tsx:384
 #: apps/app/src/i18n/static-dom-seed.ts:1051
 #: apps/app/src/routes/channel-author-page.tsx:415
 #: apps/app/src/routes/channel-author-page.tsx:1070
@@ -10258,13 +10258,13 @@ msgid "成功后会同步到当前聊天消息里。"
 msgstr "완료되면 현재 채팅에 동기화됩니다."
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
-msgid "解除麦克风静音"
-msgstr "마이크 음소거 해제"
-
-#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:460
 msgid "静音麦克风"
 msgstr "마이크 음소거"
+
+#: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:549
+msgid "解除麦克风静音"
+msgstr "마이크 음소거 해제"
 
 #: apps/app/src/features/desktop/chat/desktop-direct-call-panel.tsx:562
 #: apps/app/src/features/desktop/chat/desktop-group-call-panel.tsx:466
@@ -13548,7 +13548,7 @@ msgstr "매일 체크인"
 #: apps/app/src/features/games/farm/components/checkin-sheet.tsx:81
 #: apps/app/src/features/games/farm/components/leaderboard-sheet.tsx:80
 #: apps/app/src/features/games/farm/components/quest-sheet.tsx:88
-#: apps/app/src/features/world/world-page.tsx:526
+#: apps/app/src/features/world/world-page.tsx:533
 #: apps/app/src/routes/profile-feed-page.tsx:438
 #: apps/app/src/routes/wallet-transactions-page.tsx:162
 msgid "加载中…"
@@ -17593,7 +17593,7 @@ msgid "偏创作、分发、沉淀和内容协同。"
 msgstr "제작, 배포, 축적, 콘텐츠 협업에 적합합니다."
 
 #: apps/app/src/features/mini-programs/mini-programs-data.ts:102
-#: apps/app/src/features/world/world-page.tsx:382
+#: apps/app/src/features/world/world-page.tsx:389
 #: apps/app/src/i18n/static-dom-seed.ts:150
 msgid "生活"
 msgstr "생활"
@@ -20243,7 +20243,7 @@ msgid "意见与建议"
 msgstr "의견 및 제안"
 
 #: apps/app/src/features/world/world-page.tsx:245
-#: apps/app/src/features/world/world-page.tsx:394
+#: apps/app/src/features/world/world-page.tsx:401
 #: apps/app/src/routes/profile-page.tsx:199
 #: apps/app/src/routes/wallet-page.tsx:101
 msgid "钱包"
@@ -20293,64 +20293,64 @@ msgstr "{worldDay}일째"
 msgid "个人主页"
 msgstr "프로필"
 
-#: apps/app/src/features/world/world-page.tsx:369
+#: apps/app/src/features/world/world-page.tsx:376
 msgid "探索"
 msgstr "탐색"
 
-#: apps/app/src/features/world/world-page.tsx:372
+#: apps/app/src/features/world/world-page.tsx:379
 msgid "相遇"
 msgstr "만남"
 
-#: apps/app/src/features/world/world-page.tsx:448
-#: apps/app/src/features/world/world-page.tsx:449
+#: apps/app/src/features/world/world-page.tsx:455
+#: apps/app/src/features/world/world-page.tsx:456
 msgid "和我说点什么…"
 msgstr "말 걸어보세요…"
 
-#: apps/app/src/features/world/world-page.tsx:521
+#: apps/app/src/features/world/world-page.tsx:528
 msgid "守护中"
 msgstr "수호 중"
 
-#: apps/app/src/features/world/world-page.tsx:523
+#: apps/app/src/features/world/world-page.tsx:530
 msgid "成形中"
 msgstr "형성 중"
 
-#: apps/app/src/features/world/world-page.tsx:525
+#: apps/app/src/features/world/world-page.tsx:532
 msgid "待唤醒"
 msgstr "활성화 대기"
 
-#: apps/app/src/features/world/world-page.tsx:543
+#: apps/app/src/features/world/world-page.tsx:550
 msgid "你的分身"
 msgstr "나의 아바타"
 
-#: apps/app/src/features/world/world-page.tsx:548
+#: apps/app/src/features/world/world-page.tsx:555
 msgid "心情 {mood}"
 msgstr "기분 {mood}"
 
-#: apps/app/src/features/world/world-page.tsx:549
+#: apps/app/src/features/world/world-page.tsx:556
 msgid "能量 {energy}"
 msgstr "에너지 {energy}"
 
-#: apps/app/src/features/world/world-page.tsx:574
+#: apps/app/src/features/world/world-page.tsx:581
 msgid "多在世界里互动，分身会越来越像你"
 msgstr "월드에서 더 많이 교류할수록 아바타가 점점 당신을 닮아갑니다"
 
-#: apps/app/src/features/world/world-page.tsx:585
+#: apps/app/src/features/world/world-page.tsx:592
 msgid "已分析 {signalCount} 条信号"
 msgstr "{signalCount}개 신호 분석 완료"
 
-#: apps/app/src/features/world/world-page.tsx:586
+#: apps/app/src/features/world/world-page.tsx:593
 msgid " · 待分析 {pendingCount} 条"
 msgstr " · {pendingCount}개 대기 중"
 
-#: apps/app/src/features/world/world-page.tsx:593
+#: apps/app/src/features/world/world-page.tsx:600
 msgid "当前关注"
 msgstr "현재 관심사"
 
-#: apps/app/src/features/world/world-page.tsx:610
+#: apps/app/src/features/world/world-page.tsx:617
 msgid "去看看你的赛博分身"
 msgstr "사이버 아바타 보러 가기"
 
-#: apps/app/src/features/world/world-page.tsx:610
+#: apps/app/src/features/world/world-page.tsx:617
 msgid "看完整画像与对话"
 msgstr "전체 프로필 및 대화 보기"
 
@@ -22742,7 +22742,7 @@ msgstr "테스트"
 
 #: apps/app/src/lib/character-i18n.ts:73
 msgid "复盘"
-msgstr "复盘"
+msgstr "회고"
 
 #: apps/app/src/lib/character-i18n.ts:74
 msgid "租房"
@@ -25371,33 +25371,33 @@ msgstr "채팅 기록 불러오는 중..."
 msgid "换个关键词试试，或者切到图片、文件、链接分类继续找。"
 msgstr "다른 키워드를 시도하거나 이미지, 파일, 링크 분류로 바꿔 계속 찾아보세요."
 
-#: apps/app/src/routes/chat-room-page.tsx:267
+#: apps/app/src/routes/chat-room-page.tsx:272
 #: apps/app/src/routes/group-chat-page.tsx:173
 msgid "发语音继续"
 msgstr "음성으로 계속 보내기"
 
-#: apps/app/src/routes/chat-room-page.tsx:271
+#: apps/app/src/routes/chat-room-page.tsx:276
 msgid "本轮语音通话已结束。你可以直接继续输入，也可以切回语音发送。"
 msgstr "이번 라운드 음성 통화가 종료되었습니다. 바로 계속 입력하거나 음성 전송으로 돌아갈 수 있습니다."
 
-#: apps/app/src/routes/chat-room-page.tsx:274
+#: apps/app/src/routes/chat-room-page.tsx:279
 msgid "本轮视频通话已结束。你可以直接继续输入，也可以切回语音发送。"
 msgstr "이번 라운드 영상 통화가 종료되었습니다. 바로 계속 입력하거나 음성 전송으로 돌아갈 수 있습니다."
 
-#: apps/app/src/routes/chat-room-page.tsx:288
+#: apps/app/src/routes/chat-room-page.tsx:293
 #: apps/app/src/routes/group-chat-page.tsx:194
 msgid "继续打字"
 msgstr "계속 입력"
 
-#: apps/app/src/routes/chat-room-page.tsx:370
+#: apps/app/src/routes/chat-room-page.tsx:375
 msgid "正在打开桌面对话"
 msgstr "데스크톱 대화 여는 중"
 
-#: apps/app/src/routes/chat-room-page.tsx:371
+#: apps/app/src/routes/chat-room-page.tsx:376
 msgid "正在打开桌面聊天，马上恢复当前会话。"
 msgstr "데스크톱 채팅을 여는 중 — 현재 대화가 곧 복원됩니다."
 
-#: apps/app/src/routes/chat-room-page.tsx:372
+#: apps/app/src/routes/chat-room-page.tsx:377
 msgid "正在打开桌面对话..."
 msgstr "데스크톱 채팅 여는 중..."
 
@@ -29303,23 +29303,23 @@ msgstr "하나 더 가져오기"
 
 #: apps/app/src/routes/profile-feed-page.tsx:157
 msgid "评论加载失败，请稍后重试。"
-msgstr "评论加载失败，请稍后重试。"
+msgstr "댓글을 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
 
 #: apps/app/src/routes/profile-feed-page.tsx:254
 msgid "已删除这条广场动态。"
-msgstr "已删除这条广场动态。"
+msgstr "게시물을 삭제했어요."
 
 #: apps/app/src/routes/profile-feed-page.tsx:286
 msgid "广场动态加载失败，请稍后重试。"
-msgstr "广场动态加载失败，请稍后重试。"
+msgstr "게시물을 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
 
 #: apps/app/src/routes/profile-feed-page.tsx:314
 msgid "还没有发布广场动态"
-msgstr "还没有发布广场动态"
+msgstr "아직 게시물이 없어요"
 
 #: apps/app/src/routes/profile-feed-page.tsx:315
 msgid "你在广场发布的动态会出现在这里，可随时删除管理。"
-msgstr "你在广场发布的动态会出现在这里，可随时删除管理。"
+msgstr "광장에 올린 게시물이 여기에 표시돼요. 언제든지 삭제하고 관리할 수 있어요."
 
 #: apps/app/src/routes/profile-feed-page.tsx:335
 msgid "重新加载中…"
@@ -29327,19 +29327,19 @@ msgstr "다시 불러오는 중…"
 
 #: apps/app/src/routes/profile-feed-page.tsx:354
 msgid "删除这条广场动态"
-msgstr "删除这条广场动态"
+msgstr "이 게시물 삭제"
 
 #: apps/app/src/routes/profile-feed-page.tsx:461
 msgid "我的广场动态"
-msgstr "我的广场动态"
+msgstr "내 게시물"
 
 #: apps/app/src/routes/profile-feed-page.tsx:514
 msgid "删除这条广场动态？"
-msgstr "删除这条广场动态？"
+msgstr "이 게시물을 삭제할까요?"
 
 #: apps/app/src/routes/profile-feed-page.tsx:517
 msgid "删除后将一并移除它的评论与互动记录，且无法恢复。"
-msgstr "删除后将一并移除它的评论与互动记录，且无法恢复。"
+msgstr "삭제하면 댓글과 상호작용 기록도 함께 사라지며 되돌릴 수 없어요."
 
 #: apps/app/src/routes/profile-feedback-page.tsx:173
 msgid "请填写标题和详细描述"
