@@ -1,4 +1,6 @@
-export type TokenUsageStatus = "success" | "failed";
+// "retried" = 此次 attempt 失败但被同 provider 退避重试 / fallback 救回，仅留观测，
+// 不计入失败率 / requestCount（与 world 侧 ai_usage_ledger status 取值对齐）。
+export type TokenUsageStatus = "success" | "failed" | "retried";
 
 export type TokenUsageSurface = "app" | "admin" | "scheduler" | "system";
 
