@@ -9,6 +9,8 @@ import {
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   addFeedComment,
+  dismissShakeSession,
+  getActiveShakeSession,
   getBlockedCharacters,
   getFeed,
   keepShakeSession,
@@ -18,6 +20,7 @@ import {
   unlikeFeedPost,
   type FeedComment,
   type FeedListResponse,
+  type ShakeDiscoverySessionPreview,
 } from "@yinjie/contracts";
 import {
   Blocks,
@@ -26,11 +29,13 @@ import {
   Gamepad2,
   Heart,
   ImagePlus,
+  LoaderCircle,
   MapPin,
   Newspaper,
   PlaySquare,
   ShoppingBag,
   Sparkles,
+  UserPlus,
   Users,
   UsersRound,
   Video,
@@ -294,6 +299,20 @@ function DesktopDiscoverWorkspace() {
     Record<string, string>
   >({});
   const [successNotice, setSuccessNotice] = useState("");
+  // 摇一摇待确认相遇：摇出后只是 preview（后端未建角色 / 未加好友），用户点「加为
+  // 好友」才落库入通讯录（同意闸），点「跳过」/「换一个」丢弃。与 discover-encounter-page
+  // 同构。null = 当前没有待确认的相遇。
+  const [shakePreview, setShakePreview] =
+    useState<ShakeDiscoverySessionPreview | null>(null);
+  // 记录「已为哪个 baseUrl seed 过」，切 world 自动重新 seed；用户主动操作后置成当前
+  // baseUrl，挡住迟到的 active-session 查询把本地最新状态盖回去。详见 encounter 页注释。
+  const seededShakeBaseUrlRef = useRef<string | undefined>(undefined);
+  const activeShakeQuery = useQuery({
+    queryKey: ["app-shake-active", baseUrl],
+    queryFn: () => getActiveShakeSession(baseUrl),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
 
   const feedQuery = useQuery({
     queryKey: ["app-feed", baseUrl],
@@ -354,7 +373,11 @@ function DesktopDiscoverWorkspace() {
   });
 
   const shakeMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (vars?: { mode?: "new" | "reroll" }) => {
+      // 「换一个」走 reroll：后端原子地 dismiss 当前 preview_ready 再生成新的（绕
+      // cooldown），保证换到不同的人；首摇走 new（new 模式撞到已 active 的 preview
+      // 会原样返回它，不重复生成）。
+      const mode = vars?.mode === "reroll" ? "reroll" : "new";
       // 同 discover-encounter-page：后端 planning + 角色生成两次推理正常 ~60s，但
       // shake() fetch 本身无 timeout，隧道 / 上游卡住时按钮一直停在「正在寻找...」
       // 无限转圈。给整请求 150s 兜底上限（AbortController + setTimeout，不用要
@@ -363,7 +386,7 @@ function DesktopDiscoverWorkspace() {
       const timeoutId = setTimeout(() => controller.abort(), 150_000);
       let preview: Awaited<ReturnType<typeof shake>>;
       try {
-        preview = await shake(undefined, baseUrl, controller.signal);
+        preview = await shake({ mode }, baseUrl, controller.signal);
       } catch (error) {
         if (controller.signal.aborted) {
           throw new Error(
@@ -374,28 +397,34 @@ function DesktopDiscoverWorkspace() {
       } finally {
         clearTimeout(timeoutId);
       }
-      if (!preview) {
-        return null;
-      }
-
-      await keepShakeSession(preview.id, baseUrl);
-      return preview;
+      // 只摇出 preview，绝不在这里 keep——是否加为好友交给用户点「加为好友」决定。
+      return preview ?? null;
     },
     onMutate: () => {
       // 摇一摇要等 AI ~60s，期间按钮显示"正在寻找..."但 sceneMessage 还挂着上一次的
       // 「X 已加入通讯录: Y」，用户看不出新一次到底有没有真的开始。统一清掉。
       setSceneMessage(""); // i18n-ignore-line: clearing state
+      // 上一次「加为好友」失败的错误条不串到换一个后的新卡片上。
+      keepShakeMutation.reset();
+      // 用户主动摇，标记当前 world 已 seed，挡住迟到的 active-session 查询盖掉本地状态。
+      seededShakeBaseUrlRef.current = baseUrl;
     },
-    onSuccess: async (result) => {
+    onSuccess: (result) => {
       if (!result) {
+        setShakePreview(null);
         setSceneMessage(t(msg`附近暂时没有新的相遇。`));
         return;
       }
+      // 摇到了人：展示待确认卡片，等用户点「加为好友」/「跳过」。
+      setShakePreview(result);
+      setSceneMessage(""); // i18n-ignore-line: clearing state
+    },
+  });
 
-      setSuccessNotice(t(msg`随机相遇已写入通讯录。`));
-      const characterName = result.character.name ?? t(msg`世界角色`);
-      const greeting = result.greeting ?? t(msg`刚刚和你打了招呼。`);
-      setSceneMessage(t(msg`${characterName} 已加入通讯录：${greeting}`));
+  // 用户点「加为好友」= 同意，这一步才真正落库（建角色 + 加好友 + 落 greeting）。
+  const keepShakeMutation = useMutation({
+    mutationFn: async (target: ShakeDiscoverySessionPreview) => {
+      const result = await keepShakeSession(target.id, baseUrl);
       await Promise.all([
         queryClient.invalidateQueries({
           queryKey: ["app-friend-requests", baseUrl],
@@ -405,8 +434,37 @@ function DesktopDiscoverWorkspace() {
           queryKey: ["app-conversations", baseUrl],
         }),
       ]);
+      return { result, target };
+    },
+    onSuccess: ({ result, target }) => {
+      setShakePreview(null);
+      setSuccessNotice(t(msg`随机相遇已写入通讯录。`));
+      const characterName =
+        result.characterName ?? target.character.name ?? t(msg`世界角色`);
+      const greeting = target.greeting?.trim() || t(msg`刚刚和你打了招呼。`);
+      setSceneMessage(t(msg`${characterName} 已加入通讯录：${greeting}`));
     },
   });
+
+  // 用户点「跳过」= 不加为好友，丢弃这次相遇（不入通讯录）。
+  const dismissShakeMutation = useMutation({
+    mutationFn: async (target: ShakeDiscoverySessionPreview) => {
+      await dismissShakeSession(target.id, { reason: "user_skipped" }, baseUrl);
+    },
+    onMutate: () => {
+      setShakePreview(null);
+      setSceneMessage(t(msg`已跳过这次相遇。`));
+    },
+  });
+
+  // 若已有待确认 preview，「再摇」=「换一个」(reroll，后端原子换人)；否则首摇 new。
+  // 生成成功前保留旧卡片（按钮在 shake 期间禁用），失败时旧卡片仍可「加为好友」。
+  const triggerShake = () => {
+    if (shakeMutation.isPending || keepShakeMutation.isPending) {
+      return;
+    }
+    shakeMutation.mutate({ mode: shakePreview ? "reroll" : "new" });
+  };
 
   const sceneMutation = useMutation({
     mutationFn: async (scene: string) => {
@@ -708,6 +766,46 @@ function DesktopDiscoverWorkspace() {
     return () => window.clearTimeout(timer);
   }, [successNotice]);
 
+  // 切 world（baseUrl 变）时清掉上一个 world 的待确认 preview + 残留提示。声明在下面
+  // 的 seed effect 之前：同一次 baseUrl flush 里 reset 先把 preview 置 null，seed 后跑
+  // 命中新 world 缓存会再设回，最终以 seed 为准。不动 seededShakeBaseUrlRef（仍指旧
+  // baseUrl ≠ 新 baseUrl，seed 据此为新 world 重新 seed）。
+  useEffect(() => {
+    setShakePreview(null);
+    setSceneMessage(""); // i18n-ignore-line: clearing state
+    shakeMutation.reset();
+    keepShakeMutation.reset();
+    dismissShakeMutation.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseUrl]);
+
+  // 为当前 world 恢复未决 preview：本 baseUrl 未 seed 过且 active-session 查询已返回时
+  // 跑一次。命中 preview_ready → 显示卡片，否则置 null。
+  useEffect(() => {
+    if (seededShakeBaseUrlRef.current === baseUrl) {
+      return;
+    }
+    if (!activeShakeQuery.isSuccess) {
+      return;
+    }
+    seededShakeBaseUrlRef.current = baseUrl;
+    const active = activeShakeQuery.data;
+    setShakePreview(
+      active && active.status === "preview_ready" ? active : null,
+    );
+  }, [baseUrl, activeShakeQuery.isSuccess, activeShakeQuery.data]);
+
+  // 让 active-shake 查询缓存与本地 preview 同步：keep/dismiss/换一个 后写成最新，避免
+  // 组件重挂时把已 keep/dismiss 的旧 preview_ready 重新 seed 成卡片。仅本 baseUrl 已
+  // seed 后才同步。
+  useEffect(() => {
+    if (seededShakeBaseUrlRef.current !== baseUrl) {
+      return;
+    }
+    queryClient.setQueryData(["app-shake-active", baseUrl], shakePreview);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shakePreview, baseUrl]);
+
   async function handleImageFilesSelected(files: FileList | null) {
     try {
       await composeDraft.addImageFiles(files);
@@ -835,18 +933,116 @@ function DesktopDiscoverWorkspace() {
 
               <div className="flex items-center gap-3">
                 <Button
-                  onClick={() => shakeMutation.mutate()}
-                  disabled={shakeMutation.isPending}
+                  onClick={() => triggerShake()}
+                  disabled={shakeMutation.isPending || keepShakeMutation.isPending}
                   variant="primary"
                 >
                   {shakeMutation.isPending
                     ? t(msg`正在寻找...`)
-                    : t(msg`摇一摇`)}
+                    : shakePreview
+                      ? t(msg`换一个`)
+                      : t(msg`摇一摇`)}
                 </Button>
                 <div className="text-xs text-[color:var(--text-muted)]">
                   {t(msg`先生成临时候选，你决定要不要把他留下。`)}
                 </div>
               </div>
+
+              {shakePreview ? (
+                // 待确认相遇卡片：摇出后展示候选，点「加为好友」才入通讯录（同意闸），
+                // 点「跳过」丢弃。
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="rounded-[var(--radius-lg)] border border-[color:var(--border-faint)] bg-[color:var(--surface-card)] p-4 shadow-none"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[color:var(--brand-primary)]/12 text-[length:var(--text-section)]">
+                      {shakePreview.character.avatar?.trim() || "🙂"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-sm font-semibold text-[color:var(--text-primary)]">
+                        {shakePreview.character.name?.trim() || t(msg`世界角色`)}
+                      </div>
+                      {shakePreview.character.relationship?.trim() ? (
+                        <div className="mt-0.5 truncate text-xs text-[color:var(--text-muted)]">
+                          {shakePreview.character.relationship}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {shakePreview.character.expertDomains &&
+                  shakePreview.character.expertDomains.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {shakePreview.character.expertDomains
+                        .slice(0, 4)
+                        .map((domain, index) => (
+                          <span
+                            key={`${domain}-${index}`}
+                            className="inline-flex items-center rounded-full bg-[color:var(--brand-primary)]/10 px-2 py-0.5 text-[length:var(--text-eyebrow)] text-[color:var(--brand-primary)]"
+                          >
+                            {domain}
+                          </span>
+                        ))}
+                    </div>
+                  ) : null}
+
+                  {shakePreview.greeting?.trim() ? (
+                    <div className="mt-3 whitespace-pre-line break-words rounded-[var(--radius-sm)] bg-[color:var(--surface-card-hover)] px-3 py-2 text-xs leading-5 text-[color:var(--text-secondary)]">
+                      {shakePreview.greeting}
+                    </div>
+                  ) : null}
+
+                  {shakePreview.matchReason?.trim() ? (
+                    <div className="mt-2 text-[length:var(--text-eyebrow)] leading-5 text-[color:var(--text-muted)]">
+                      {t(msg`相遇理由：${shakePreview.matchReason}`)}
+                    </div>
+                  ) : null}
+
+                  <div className="mt-3 flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      disabled={
+                        keepShakeMutation.isPending || shakeMutation.isPending
+                      }
+                      onClick={() => dismissShakeMutation.mutate(shakePreview)}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      {t(msg`跳过`)}
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={
+                        keepShakeMutation.isPending || shakeMutation.isPending
+                      }
+                      aria-busy={keepShakeMutation.isPending || undefined}
+                      onClick={() => keepShakeMutation.mutate(shakePreview)}
+                      variant="primary"
+                      size="sm"
+                    >
+                      {keepShakeMutation.isPending ? (
+                        <LoaderCircle size={14} className="animate-spin" />
+                      ) : (
+                        <UserPlus size={14} />
+                      )}
+                      {keepShakeMutation.isPending
+                        ? t(msg`添加中...`)
+                        : t(msg`加为好友`)}
+                    </Button>
+                  </div>
+
+                  {keepShakeMutation.isError &&
+                  keepShakeMutation.error instanceof Error ? (
+                    <div className="mt-2">
+                      <ErrorBlock
+                        message={describeRequestError(keepShakeMutation.error)}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="flex flex-wrap gap-2">
                 {scenes.map((scene) => (
