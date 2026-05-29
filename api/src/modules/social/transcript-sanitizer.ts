@@ -5,7 +5,8 @@ import { sanitizeAiText } from '../ai/ai-text-sanitizer';
 
 const CONTACT_LEAK_PATTERNS: RegExp[] = [
   /\b\d{11}\b/, // 11 位手机号
-  /(微信|weixin|wechat|vx|wx|qq)\s*[:：]?\s*[A-Za-z0-9_-]{4,}/i,
+  /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/, // 邮箱（prompt 已禁止，这里兜底）
+  /(微信|weixin|wechat|vx|wx|qq)号?\s*[:：是为]?\s*[A-Za-z0-9_-]{4,}/i,
   /(加|搜)\s*(我|一下)?\s*(微信|vx|wx|qq|联系方式|手机号)/i,
   /https?:\/\/\S+/i,
   /二维码|扫码|qr\s*code/i,

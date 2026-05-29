@@ -42,20 +42,35 @@ describe('CyberAvatarService matchmaking privacy', () => {
       ) => CyberAvatarSignalEntity[];
     }).filterSignalsByLiveCharacters(signals, ids);
 
-  it('strips interest tags that mention any character name, keeps neutral topics', () => {
+  it('drops bare/segment character-name tags, keeps neutral topics', () => {
     const tags = callCollect(
       {
         activeTopics: [
-          '顾棠和林眠的身份',
+          '顾棠和林眠的身份', // 分隔段 顾棠 命中 → 丢
           '东京出差准备',
-          '阿澄、苏笺、江渡分别是谁',
+          '阿澄、苏笺、江渡分别是谁', // 分隔段 阿澄/苏笺 命中 → 丢
+          '阿澄', // 整条==人名 → 丢
         ],
       },
-      { recurringTopics: ['健身计划', '和顾棠聊到的事'] },
+      { recurringTopics: ['健身计划'] },
       ['顾棠', '林眠', '阿澄', '苏笺', '江渡'],
     );
     expect(tags).toEqual(['东京出差准备', '健身计划']);
-    expect(tags.some((t) => /顾棠|林眠|阿澄|苏笺|江渡/.test(t))).toBe(false);
+  });
+
+  it('does NOT over-strip topics that merely contain a name as a substring', () => {
+    // 角色名 小红/费曼 不应误伤 小红书/费曼学习法（保守匹配，非子串匹配）。
+    const tags = callCollect(
+      { activeTopics: ['小红书运营', '费曼学习法', '阅读'] },
+      { recurringTopics: ['马斯克传记读后感'] },
+      ['小红', '费曼', '马斯克'],
+    );
+    expect(tags).toEqual([
+      '小红书运营',
+      '费曼学习法',
+      '阅读',
+      '马斯克传记读后感',
+    ]);
   });
 
   it('keeps all tags when no character names provided (back-compat)', () => {

@@ -354,12 +354,23 @@ export class CyberAvatarService {
   ): string[] {
     const out: string[] = [];
     const seen = new Set<string>();
-    const nameNeedles = characterNames
-      .map((name) => name.trim().toLowerCase())
-      .filter((name) => name.length >= 2);
+    const nameNeedles = new Set(
+      characterNames
+        .map((name) => name.trim().toLowerCase())
+        .filter((name) => name.length >= 2),
+    );
+    // 保守匹配：只在「整条标签==角色名」或「角色名是某个分隔段（、，/和与跟及·空格）」时
+    // 判定为人名。绝不做任意子串匹配——否则角色名「小红」会误伤「小红书」、「费曼」误伤
+    // 「费曼学习法」等正当兴趣主题。删除角色名的彻底清除靠重建时的 signal 过滤（layer1）
+    // + prompt 禁人名（layer3），这里只是兜底拦掉裸人名标签。
     const mentionsPerson = (tag: string) => {
       const lower = tag.toLowerCase();
-      return nameNeedles.some((needle) => lower.includes(needle));
+      if (nameNeedles.has(lower)) return true;
+      for (const seg of lower.split(/[、,，;；/\\\s和与跟及·]+/)) {
+        const trimmed = seg.trim();
+        if (trimmed && nameNeedles.has(trimmed)) return true;
+      }
+      return false;
     };
     const collect = (source: unknown, field: string) => {
       const arr = (source as Record<string, unknown> | null)?.[field];
@@ -603,6 +614,12 @@ export class CyberAvatarService {
         promptSnapshot.projectionTemplates = {
           ...rules.promptTemplates,
         } as Record<string, unknown>;
+      } else if (!usableSignals.length) {
+        // 本批 source signals 全部引用已删除角色 → 过滤后无可用信号。绝不拿空聚合跑
+        // LLM/merge（会把现有画像 liveState/recentState 冲成空，等于损坏画像）。保持
+        // 当前画像不变（nextPayload=currentPayload），下方仍把 sourceSignals 标记 merged
+        // 消费掉、不再回环重选。
+        nextPayload = currentPayload;
       } else if (input.mode === 'incremental') {
         const prompt = renderTemplate(
           rules.promptTemplates.incrementalDigestPrompt,
