@@ -49,6 +49,7 @@ docker compose up -d
 | Gateway | Why pick it | Free tier? |
 |---|---|---|
 | [OpenRouter](https://openrouter.ai/keys) | One key, 100+ models, easy switching | ✅ free Llama / Mistral models |
+| [Requesty](https://app.requesty.ai/api-keys) | OpenAI-compatible gateway, one key, 400+ models | — |
 | [Groq](https://console.groq.com/keys) | Fastest inference on Earth | ✅ large daily quota |
 | [DeepSeek](https://platform.deepseek.com/api_keys) | Cheapest paid option | — |
 | [Together AI](https://api.together.xyz/settings/api-keys) | Llama 3.1 70B / Qwen 2.5 etc. | $5 signup credit |

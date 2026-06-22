@@ -31,6 +31,7 @@ chat-completions protocol. Any of these work:
 | Gateway | Free tier | Sign-up |
 |---|---|---|
 | **OpenRouter** | ✅ Free Llama / Mistral models | https://openrouter.ai/keys |
+| **Requesty** | OpenAI-compatible gateway, one key, 400+ models | https://app.requesty.ai/api-keys |
 | **Groq** | ✅ Generous daily quota, fastest inference | https://console.groq.com/keys |
 | **DeepSeek** | ❌ Paid but cheapest ($0.07/M tokens) | https://platform.deepseek.com/api_keys |
 | **Ollama (local)** | ✅ Fully offline, your GPU pays the bill | https://ollama.com/ |
@@ -51,9 +52,17 @@ Open `api/.env` in your editor. The file has commented-out templates for each
 gateway. Uncomment the one you picked. For OpenRouter, it looks like:
 
 ```env
-DEEPSEEK_API_KEY=sk-or-v1-your-openrouter-key-here
+DEEPSEEK_API_KEY=sk-or-...here
 OPENAI_BASE_URL=https://openrouter.ai/api/v1
 AI_MODEL=meta-llama/llama-3.1-8b-instruct:free
+```
+
+Or for Requesty (OpenAI-compatible gateway, `provider/model` naming):
+
+```env
+DEEPSEEK_API_KEY=rqsty-...here
+OPENAI_BASE_URL=https://router.requesty.ai/v1
+AI_MODEL=openai/gpt-4o-mini
 ```
 
 > The variable is called `DEEPSEEK_API_KEY` for historical reasons. It works
