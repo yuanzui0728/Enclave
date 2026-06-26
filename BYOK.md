@@ -16,6 +16,7 @@ so any of them drop into the same three env vars.
 | Gateway | Best for | Free tier | Sign-up |
 |---|---|---|---|
 | **OpenRouter** | International users — one key, 100+ models, easy switching | Yes (free Llama / Mistral models) | <https://openrouter.ai/keys> |
+| **Requesty** | OpenAI-compatible gateway, one key, 400+ models | — | <https://app.requesty.ai/api-keys> |
 | **Groq** | Fastest inference, generous free quota | Yes (large daily limit) | <https://console.groq.com/keys> |
 | **DeepSeek** | Cheapest paid option, great for Chinese-language users | $5 signup credit historically | <https://platform.deepseek.com/api_keys> |
 | **Together AI** | Open-weight Llama 3.1 70B / Qwen 2.5 etc. | $5 signup credit | <https://api.together.xyz/settings/api-keys> |
@@ -45,6 +46,14 @@ Or Groq free Llama 3.3 70B:
 DEEPSEEK_API_KEY=gsk_your-groq-key
 OPENAI_BASE_URL=https://api.groq.com/openai/v1
 AI_MODEL=llama-3.3-70b-versatile
+```
+
+Or Requesty (OpenAI-compatible gateway, `provider/model` naming):
+
+```env
+DEEPSEEK_API_KEY=rqsty-...-key
+OPENAI_BASE_URL=https://router.requesty.ai/v1
+AI_MODEL=openai/gpt-4o-mini
 ```
 
 > The variable is called `DEEPSEEK_API_KEY` for historical reasons —
